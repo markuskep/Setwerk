@@ -1,10 +1,15 @@
-# Netlify configuration for Setwerk
-# The app is a static site; no build step is required.
-
+# Build from the repository root so Netlify installs the Function dependency.
 [build]
+  command = "node --check netlify/functions/workout-store.mjs"
   publish = "Setwerk-Webapp-1.2.0-Projektdateien/dist"
+  functions = "netlify/functions"
 
-# Setwerk is a client-side web app. Route unknown paths back to the app entry point.
+[build.environment]
+  NODE_VERSION = "22"
+
+[functions]
+  node_bundler = "esbuild"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

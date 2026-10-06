@@ -18,3 +18,16 @@
 
 
 @keyframes auth-enter{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* Account status and cloud controls */
+.sidebar-auth-button{white-space:normal;overflow-wrap:anywhere;line-height:1.4;position:relative;padding-left:28px}
+.sidebar-auth-button[data-auth-state="signed-in"]::before{content:"";position:absolute;left:13px;top:18px;width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.sidebar-auth-button[data-sync-state="synced"]::before{background:var(--accent)}
+.sidebar-auth-button[data-sync-state="conflict"]::before,.sidebar-auth-button[data-sync-state="offline"]::before,.sidebar-auth-button[data-sync-state="unconfigured"]::before{background:#e7af65}
+#cloud-account{width:min(480px,calc(100% - 32px));padding:26px;border:1px solid var(--line);border-radius:20px;background:var(--surface);color:var(--ink);box-sizing:border-box}
+#cloud-account::backdrop{background:rgba(0,0,0,.6);backdrop-filter:blur(5px)}
+#cloud-account h2{font-size:24px;margin:0 0 18px}
+#cloud-account p{overflow-wrap:anywhere;margin:0 0 14px}
+.cloud-description{font-weight:600;color:var(--green)}
+.cloud-actions{display:grid;gap:10px;margin-top:24px}
+.cloud-actions .btn{width:100%;white-space:normal;text-align:center;justify-content:center}

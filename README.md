@@ -1,18 +1,31 @@
 # Setwerk
 
-Fitness web app deployed with Netlify.
+Workout-Webapp für Netlify mit Trainingsvorlagen, Focus Mode, Kalender und optionalem Online-Speicher in einer privaten Google-Tabelle.
 
-## Netlify deployment
+## Google-Sheets-Anbindung aktivieren
 
-The production-ready static website is located in:
+Die vorhandene Anmeldung verwendet Netlify Identity. Abgeschlossene Einheiten, Vorlagen, eigene Übungen und Einstellungen können geräteübergreifend synchronisiert werden. Laufende Workouts und Entwürfe bleiben lokal.
 
-`Setwerk-Webapp-1.2.0-Projektdateien/dist`
+**Die Verbindung ist erst nach der Kontokonfiguration aktiv.** Folge [GOOGLE-SHEETS-SETUP.md](GOOGLE-SHEETS-SETUP.md): private Tabelle erstellen, [Apps Script](google-sheets/Code.gs) bereitstellen, `SETWERK_SHEETS_URL` und `SETWERK_SHEETS_SECRET` in Netlify setzen, neu deployen. Bestehende lokale Trainings können anschließend im Konto-Menü ausdrücklich übernommen werden.
 
-Deployment settings are defined in the root-level `netlify.toml`, so Netlify can deploy the repository without manually configuring a publish directory.
+## Netlify-Deployment
 
-- Production branch: `main`
-- Build command: none
-- Publish directory: `Setwerk-Webapp-1.2.0-Projektdateien/dist`
-- Entry point: `index.html`
+`netlify.toml` in der Repository-Wurzel konfiguriert den GitHub-Deploy:
 
-Do not upload ZIP deploys for normal releases. Push changes to `main` and let Netlify Continuous Deployment publish them.
+- Produktionsbranch: `main`
+- Basisverzeichnis: Repository-Wurzel
+- Build-Befehl: `node --check netlify/functions/workout-store.mjs`
+- Publish-Verzeichnis: `Setwerk-Webapp-1.2.0-Projektdateien/dist`
+- Functions-Verzeichnis: `netlify/functions`
+- Node.js 22; Function-Abhängigkeiten aus dem Root-`package.json`
+
+Für diese Version den GitHub-Deploy verwenden. Ein reiner `dist`-ZIP-Upload enthält keine Server-Function und aktiviert den Online-Speicher nicht.
+
+## Tests
+
+```bash
+npm ci
+npm test
+```
+
+Die Tests prüfen Trainingsabläufe, Import/Export, Anmeldung, lokale Kontospeicher, Offline-Uploads, Versionskonflikte und die Server-/Sheets-Speicherlogik. Google und Netlify werden dabei simuliert; nach Einrichtung ist der Live-Test aus der Anleitung erforderlich.
