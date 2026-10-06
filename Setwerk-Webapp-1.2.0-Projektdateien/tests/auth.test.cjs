@@ -109,7 +109,7 @@ test('password reset uses the entered email without requiring a password', async
 });
 test('Firebase auth state updates from another tab connect each account only once',async()=>{
  const x=await setup();try{
-  const calls=[];x.w.SetwerkCloud={user:null,connect:async user=>{calls.push(user?.id||null);x.w.SetwerkCloud.user=user;}};
+  const calls=[];x.w.SetwerkCloud={user:null,description:()=> 'Saved online',connect:async user=>{calls.push(user?.id||null);x.w.SetwerkCloud.user=user;}};
   x.w.activateUser({id:'alice',email:'alice@example.at'});x.w.activateUser({id:'alice',email:'alice@example.at'});
   x.w.activateUser(null);x.w.activateUser(null);
   assert.deepEqual(calls,['alice',null]);
