@@ -1,0 +1,17 @@
+{
+  "hosting": {
+    "site": "setwerk-cb1e0",
+    "public": "Setwerk-Webapp-1.2.0-Projektdateien/dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
