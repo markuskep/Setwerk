@@ -1,4 +1,4 @@
-import { signup, login, logout, getUser, handleAuthCallback } from 'https://esm.sh/@netlify/identity@2.0.0';
+import { signup, login, logout, getUser, subscribeAuth, resetPassword } from './firebase-service.js';
 
 const gate = document.getElementById('auth-gate');
 const panel = document.getElementById('auth-panel');
@@ -20,6 +20,7 @@ function showLogin() {
   document.getElementById('auth-name-wrap').hidden = true;
   document.querySelector('#auth-form input[name="name"]').disabled = true;
   document.querySelector('#auth-form input[name="password"]').autocomplete = 'current-password';
+  document.getElementById('auth-reset').hidden = false;
   setMessage('');
 }
 function showSignup() {
@@ -30,6 +31,7 @@ function showSignup() {
   document.getElementById('auth-name-wrap').hidden = false;
   document.querySelector('#auth-form input[name="name"]').disabled = false;
   document.querySelector('#auth-form input[name="password"]').autocomplete = 'new-password';
+  document.getElementById('auth-reset').hidden = true;
   setMessage('');
 }
 function closeAuth() {
@@ -64,9 +66,10 @@ function updateAuthButton(user = currentUser) {
   }
 }
 function activateUser(user) {
+  const unchanged=currentUser?.id===user?.id && window.SetwerkCloud?.user?.id===user?.id;
   currentUser = user;
   updateAuthButton();
-  if (!window.AndroidGym) window.SetwerkCloud?.connect(user).catch(() => updateAuthButton());
+  if (!unchanged && !window.AndroidGym) window.SetwerkCloud?.connect(user).catch(() => updateAuthButton());
 }
 window.addEventListener('setwerk:render', () => updateAuthButton());
 window.addEventListener('setwerk:cloud-status', () => updateAuthButton());
@@ -90,7 +93,7 @@ document.addEventListener('keydown', event => {
   if (gate.hidden) return;
   if (event.key === 'Escape') { event.preventDefault(); closeAuth(); return; }
   if (event.key !== 'Tab') return;
-  const controls = [...panel.querySelectorAll('button:not(:disabled), input:not(:disabled)')];
+  const controls = [...panel.querySelectorAll('button:not(:disabled), input:not(:disabled)')].filter(control => !control.hidden && !control.closest('[hidden]'));
   const first = controls[0], last = controls.at(-1);
   if (event.shiftKey && (document.activeElement === first || !panel.contains(document.activeElement))) {
     event.preventDefault(); last?.focus();
@@ -110,9 +113,9 @@ document.getElementById('auth-form').addEventListener('submit', async event => {
   setMessage('');
   try {
     if (panel.dataset.mode === 'signup') {
-      await signup(email, password, name ? { full_name: name } : {});
-      showLogin();
-      setMessage(text('Konto erstellt. Bitte bestätige deine E-Mail und melde dich danach an.', 'Account created. Please confirm your email, then sign in.'));
+      const user = await signup(email, password, name);
+      closeAuth();
+      activateUser(user);
     } else {
       const user = await login(email, password);
       closeAuth();
@@ -120,24 +123,43 @@ document.getElementById('auth-form').addEventListener('submit', async event => {
     }
     formElement.reset();
   } catch (error) {
-    setMessage(error?.message || 'Das hat nicht geklappt. Bitte versuche es erneut.', true);
+    setMessage(authError(error), true);
   } finally {
     submit.disabled = false;
   }
 });
-(async () => {
-  try {
-    const callback = await handleAuthCallback();
-    const user = callback?.user || await getUser();
-    if (!user && navigator.onLine === false && currentUser) updateAuthButton();
-    else activateUser(user);
-    if (callback?.user) history.replaceState(null, '', location.pathname + location.search);
-  } catch (error) {
-    console.warn('Identity unavailable; Setwerk continues without login.', error);
-    updateAuthButton();
-  }
-})();
-window.addEventListener('online', async () => {
-  try { activateUser(await getUser()); } catch { updateAuthButton(); }
+function authError(error) {
+  const labels={
+    'auth/invalid-credential':text('E-Mail oder Passwort stimmt nicht.','Email or password is incorrect.'),
+    'auth/wrong-password':text('E-Mail oder Passwort stimmt nicht.','Email or password is incorrect.'),
+    'auth/user-not-found':text('E-Mail oder Passwort stimmt nicht.','Email or password is incorrect.'),
+    'auth/email-already-in-use':text('Diese E-Mail ist bereits registriert. Bitte melde dich an.','This email is already registered. Please sign in.'),
+    'auth/invalid-email':text('Bitte gib eine gültige E-Mail-Adresse ein.','Please enter a valid email address.'),
+    'auth/weak-password':text('Bitte verwende mindestens sechs Zeichen für dein Passwort.','Please use at least six characters for your password.'),
+    'auth/password-does-not-meet-requirements':text('Das Passwort erfüllt die Anforderungen nicht. Bitte wähle ein stärkeres Passwort.','Please choose a stronger password that meets the requirements.'),
+    'auth/operation-not-allowed':text('Die Anmeldung ist noch nicht eingerichtet. Bitte versuche es später erneut.','Sign-in is not configured yet. Please try again later.'),
+    'auth/configuration-not-found':text('Die Anmeldung ist noch nicht eingerichtet. Bitte versuche es später erneut.','Sign-in is not configured yet. Please try again later.'),
+    'auth/too-many-requests':text('Zu viele Versuche. Bitte warte kurz und versuche es erneut.','Too many attempts. Please wait and try again.'),
+    'auth/network-request-failed':text('Keine Verbindung. Deine Trainings bleiben auf diesem Gerät gespeichert.','Connection unavailable. Your workouts remain saved on this device.'),
+    'auth/user-disabled':text('Dieses Konto wurde deaktiviert.','This account has been disabled.'),
+    'setwerk/config':text('Die Anmeldung ist noch nicht eingerichtet. Bitte versuche es später erneut.','Sign-in is not configured yet. Please try again later.')
+  };
+  return labels[error?.code] || (error?.code ? text('Die Anmeldung konnte nicht abgeschlossen werden. Bitte versuche es erneut.','Could not complete sign-in. Please try again.') : error?.message) || text('Keine Verbindung. Bitte versuche es erneut.','Connection unavailable. Please try again.');
+}
+document.getElementById('auth-reset').addEventListener('click',async()=>{
+  const input=document.querySelector('#auth-form input[name="email"]');
+  if(!input.value.trim()||!input.checkValidity()){input.reportValidity();input.focus();return;}
+  const button=document.getElementById('auth-reset');button.disabled=true;
+  try{
+    await resetPassword(input.value.trim());
+    setMessage(text('Falls ein Konto zu dieser E-Mail existiert, erhältst du einen Link zum Zurücksetzen deines Passworts.','If an account exists for this email, you will receive a password reset link.'));
+  }catch(error){setMessage(authError(error),true);}finally{button.disabled=false;}
+});
+subscribeAuth(activateUser).catch(error=>{
+  console.warn('Firebase unavailable; local workouts remain available.',error.code||'network');
+  updateAuthButton();
+});
+window.addEventListener('online',async()=>{
+  try{activateUser(await getUser());}catch{updateAuthButton();}
 });
 updateAuthButton();

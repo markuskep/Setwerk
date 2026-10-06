@@ -8,8 +8,12 @@ function setup(stored={}){
  w.scrollTo=()=>{};w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false};
  for(const [key,value] of Object.entries(stored))w.localStorage.setItem(key,typeof value==='string'?value:JSON.stringify(value));
  let remote={revision:0,data:null};w.fetch=async(url,options)=>{calls.push({url,method:options.method,body:options.body&&JSON.parse(options.body)});if(options.method==='POST'){remote={revision:remote.revision+1,data:JSON.parse(options.body).data};return{ok:true,json:async()=>({revision:remote.revision,data:null})};}return{ok:true,json:async()=>remote};};
+ w.SetwerkFirebase={
+  async readStore(owner){const r=await w.fetch('/firestore/'+owner,{method:'GET'});return r.json();},
+  async writeStore(owner,revision,data){const r=await w.fetch('/firestore/'+owner,{method:'POST',body:JSON.stringify({revision,data})});return r.json();}
+ };
  for(const file of ['core.js','cloud-core.js','cloud.js'])w.eval(fs.readFileSync(path.join(root,file),'utf8'));
- const account=()=>JSON.parse(w.localStorage.getItem('setwerk.account.v1.'+w.SetwerkCloud.user.id));
+ const account=()=>JSON.parse(w.localStorage.getItem('setwerk.firebase.account.v1.'+w.SetwerkCloud.user.id));
  return{dom,w,calls,cloud:w.SetwerkCloud,account,remote:()=>remote,setRemote:r=>remote=r,loadApp(){for(const file of ['exercises.js','exercises-en.js','i18n.js','transfer.js','app.js'])w.eval(fs.readFileSync(path.join(root,file),'utf8'));}};
 }
 test('cloud payload excludes unfinished workout/draft and rejects injected IDs',()=>{
@@ -37,7 +41,7 @@ test('offline completion survives reload in the same account and retries when on
  const x=setup();let y;try{
   await x.cloud.connect({id:'alice'});Object.defineProperty(x.w.navigator,'onLine',{value:false,configurable:true});x.calls.length=0;
   const state=G.fresh();state.sessions=[session()];x.cloud.saveLocal(state);await x.cloud.sync();assert.equal(x.calls.length,0);assert.equal(x.account().pending,true);
-  y=setup({'setwerk.last-account.v1':{id:'alice'},'setwerk.account.v1.alice':x.account()});assert.equal(y.cloud.user.id,'alice');assert.equal(JSON.parse(y.cloud.readState()).sessions.length,1);
+  y=setup({'setwerk.firebase.last-account.v1':{id:'alice'},'setwerk.firebase.account.v1.alice':x.account()});assert.equal(y.cloud.user.id,'alice');assert.equal(JSON.parse(y.cloud.readState()).sessions.length,1);
   await y.cloud.connect({id:'alice'});assert.equal(y.remote().data.sessions.length,1);assert.equal(y.account().pending,false);
  }finally{x.dom.window.close();y?.dom.window.close();}
 });
@@ -46,7 +50,7 @@ test('account switch never moves the previous active workout into another accoun
   x.loadApp();await x.cloud.connect({id:'alice'});x.w.document.querySelector('[data-action="start-select"]').click();x.w.document.querySelector('[data-action="start-spontaneous"]').click();
   assert.ok(x.account().state.active);
   await x.cloud.connect({id:'bob'});assert.equal(x.account().state.active,null);assert.equal(x.account().state.sessions.length,0);
-  const alice=JSON.parse(x.w.localStorage.getItem('setwerk.account.v1.alice'));assert.ok(alice.state.active);
+  const alice=JSON.parse(x.w.localStorage.getItem('setwerk.firebase.account.v1.alice'));assert.ok(alice.state.active);
   await x.cloud.connect({id:'alice'});assert.ok(x.w.document.querySelector('.focus-main'));
  }finally{x.dom.window.close();}
 });
@@ -67,8 +71,8 @@ test('in-flight account response is ignored after switching accounts',async()=>{
  }finally{x.dom.window.close();}
 });
 test('corrupt account cache is preserved and cannot be overwritten or uploaded',async()=>{
- const raw='{broken',x=setup({'setwerk.account.v1.alice':raw});try{
-  await x.cloud.connect({id:'alice'});assert.equal(x.cloud.mode,'storage-error');assert.throws(()=>x.cloud.saveLocal(G.fresh()));await x.cloud.sync();assert.equal(x.calls.length,0);assert.equal(x.w.localStorage.getItem('setwerk.account.v1.alice'),raw);
+ const raw='{broken',x=setup({'setwerk.firebase.account.v1.alice':raw});try{
+  await x.cloud.connect({id:'alice'});assert.equal(x.cloud.mode,'storage-error');assert.throws(()=>x.cloud.saveLocal(G.fresh()));await x.cloud.sync();assert.equal(x.calls.length,0);assert.equal(x.w.localStorage.getItem('setwerk.firebase.account.v1.alice'),raw);
  }finally{x.dom.window.close();}
 });
 test('local guest import is explicit, leaves original data intact, and is idempotent',async()=>{
@@ -81,13 +85,13 @@ test('conflicting edits stop upload and preserve local changes; backup can resto
   x.setRemote({revision:1,data:{...C.project(G.fresh()),templates:[template()]}});await x.cloud.connect({id:'alice'});
   const state=x.account().state;state.templates[0].name='Local';x.cloud.saveLocal(state);const remote=C.project(G.fresh());remote.templates=[{...template(),name:'Remote'}];x.setRemote({revision:2,data:remote});x.calls.length=0;await x.cloud.sync();
   assert.equal(x.cloud.mode,'conflict');assert.deepEqual(x.calls.map(c=>c.method),['GET']);assert.equal(x.account().state.templates[0].name,'Local');
-  x.w.URL.createObjectURL=()=> 'blob:backup';x.w.URL.revokeObjectURL=()=>{};x.w.HTMLAnchorElement.prototype.click=()=>{};x.cloud.useCloudVersion();assert.equal(x.account().state.templates[0].name,'Remote');assert.equal(JSON.parse(x.w.localStorage.getItem('setwerk.account.v1.alice.conflict-backup')).templates[0].name,'Local');
+  x.w.URL.createObjectURL=()=> 'blob:backup';x.w.URL.revokeObjectURL=()=>{};x.w.HTMLAnchorElement.prototype.click=()=>{};x.cloud.useCloudVersion();assert.equal(x.account().state.templates[0].name,'Remote');assert.equal(JSON.parse(x.w.localStorage.getItem('setwerk.firebase.account.v1.alice.conflict-backup')).templates[0].name,'Local');
   const data=G.fresh();data.sessions=[session('backup')];await x.cloud.restoreBackup({size:500,text:async()=>JSON.stringify({format:'setwerk-backup-v1',data})});assert.equal(x.account().state.sessions.length,1);
  }finally{x.dom.window.close();}
 });
-test('service worker never caches private Netlify API responses',()=>{
+test('service worker never caches private API responses or Firebase configuration',()=>{
  const source=fs.readFileSync(path.join(root,'sw.js'),'utf8');let handler;const vm=require('node:vm');vm.runInNewContext(source,{self:{location:{origin:'https://setwerk.test'},addEventListener:(name,fn)=>{if(name==='fetch')handler=fn;}},URL});
- let handled=false;handler({request:{method:'GET',url:'https://setwerk.test/.netlify/functions/workout-store'},respondWith(){handled=true;}});assert.equal(handled,false);
+ for(const endpoint of ['/.netlify/functions/workout-store','/__/firebase/init.json']){let handled=false;handler({request:{method:'GET',url:'https://setwerk.test'+endpoint},respondWith(){handled=true;}});assert.equal(handled,false);}
 });
 test('real workout UI saves feedback locally and sends only the finished session',async()=>{
  const x=setup();try{
@@ -104,12 +108,20 @@ test('explicit local conflict choice preserves independent cloud workouts and a 
   x.setRemote({revision:1,data:{...C.project(G.fresh()),templates:[template()]}});await x.cloud.connect({id:'alice'});const local=x.account().state;local.templates[0].name='Local choice';x.cloud.saveLocal(local);
   x.setRemote({revision:2,data:{...C.project(G.fresh()),templates:[{...template(),name:'Other device'}],sessions:[session('other-device')]}});await x.cloud.sync();assert.equal(x.cloud.mode,'conflict');
   x.w.URL.createObjectURL=()=> 'blob:backup';x.w.URL.revokeObjectURL=()=>{};x.w.HTMLAnchorElement.prototype.click=()=>{};await x.cloud.useLocalVersion();
-  assert.equal(x.remote().data.templates[0].name,'Local choice');assert.equal(x.remote().data.sessions[0].id,'other-device');assert.equal(JSON.parse(x.w.localStorage.getItem('setwerk.account.v1.alice.cloud-conflict-backup')).templates[0].name,'Other device');assert.equal(x.cloud.mode,'synced');
+  assert.equal(x.remote().data.templates[0].name,'Local choice');assert.equal(x.remote().data.sessions[0].id,'other-device');assert.equal(JSON.parse(x.w.localStorage.getItem('setwerk.firebase.account.v1.alice.cloud-conflict-backup')).templates[0].name,'Other device');assert.equal(x.cloud.mode,'synced');
  }finally{x.dom.window.close();}
 });
 test('unchanged account data never uploads merely because JSON key order differs',async()=>{
  assert.equal(C.equal({a:1,b:2},{b:2,a:1}),true);const x=setup();try{
   await x.cloud.connect({id:'alice'});assert.equal(x.account().pending,false);assert.deepEqual(x.calls.map(c=>c.method),['GET']);
   x.cloud.saveLocal(x.account().state);await x.cloud.sync();assert.equal(x.account().pending,false);assert.equal(x.calls.some(c=>c.method==='POST'),false);
+ }finally{x.dom.window.close();}
+});
+
+test('Firebase permission errors keep completed workouts pending in local storage',async()=>{
+ const x=setup();try{
+  await x.cloud.connect({id:'alice'});const state=G.fresh();state.sessions=[session()];x.cloud.saveLocal(state);
+  x.w.SetwerkFirebase.readStore=async()=>{throw Object.assign(Error('permission-denied'),{status:403});};
+  await x.cloud.sync();assert.equal(x.cloud.mode,'permissions');assert.equal(x.account().pending,true);assert.equal(x.account().state.sessions.length,1);
  }finally{x.dom.window.close();}
 });

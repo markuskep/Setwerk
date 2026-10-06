@@ -1,7 +1,7 @@
 /* Per-account local storage; cloud requests only outside an active workout. */
 'use strict';
 window.SetwerkCloud=(()=>{
-  const C=SetwerkCloudCore,G=GymCore,guestKey='setwerk.v1',prefix='setwerk.account.v1.',lastUserKey='setwerk.last-account.v1';
+  const C=SetwerkCloudCore,G=GymCore,guestKey='setwerk.v1',prefix='setwerk.firebase.account.v1.',lastUserKey='setwerk.firebase.last-account.v1';
   let user=null,meta=null,current=G.fresh(),mode='guest',timer=null,inflight=null,epoch=0,remoteConflict=null,storageError=false,corruptRaw=null;
   const t=(de,en)=>document.documentElement.lang==='en'?en:de;
   const key=()=>user?prefix+user.id:guestKey;
@@ -28,9 +28,9 @@ window.SetwerkCloud=(()=>{
     timer=setTimeout(()=>sync(),900);
   }
   async function request(method,body){
-    const response=await fetch('/.netlify/functions/workout-store',{method,credentials:'same-origin',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
-    let data;try{data=await response.json();}catch{throw Error('unavailable');}
-    if(!response.ok){const error=Error(data.error||'unavailable');error.status=response.status;throw error;}
+    if(!window.SetwerkFirebase)throw Object.assign(Error('Firebase is not ready'),{status:503});
+    const owner=user?.id;
+    const data=method==='GET'?await window.SetwerkFirebase.readStore(owner):await window.SetwerkFirebase.writeStore(owner,body.revision,body.data);
     if(data.data)C.validate(data.data);
     if(!Number.isSafeInteger(data.revision)||data.revision<0)throw Error('unavailable');
     return data;
@@ -84,14 +84,14 @@ window.SetwerkCloud=(()=>{
         applyRemote(after.data);status(current.active?'local':meta.pending?'pending':'synced');
       }catch(error){
         if(token!==epoch)return;
-        status(error.storage?'storage-error':error.status===503?'unconfigured':error.status===401?'sign-in':error.status===409?'pending':error.status===413?'too-large':'offline');
+        status(error.storage?'storage-error':error.status===503?'unconfigured':error.status===401?'sign-in':error.status===403?'permissions':error.status===429?'quota':error.status===422?'invalid-cloud':error.status===409?'pending':error.status===413?'too-large':'offline');
       }
     })();
     inflight=job;
-    try{await job;}finally{if(inflight===job)inflight=null;}
+    try{await job;}finally{if(inflight===job){inflight=null;if(meta?.pending&&['pending','synced'].includes(mode))schedule();}}
   }
   function description(){
-    const labels={guest:t('Auf diesem Gerät','On this device'),loading:t('Online-Daten werden geladen …','Loading cloud data …'),syncing:t('Wird synchronisiert …','Syncing …'),synced:t('Online gespeichert','Saved online'),pending:t('Lokal gespeichert · Upload ausstehend','Saved locally · upload pending'),offline:t('Lokal gespeichert · Verbindung fehlt','Saved locally · connection unavailable'),unconfigured:t('Online-Speicher noch nicht eingerichtet','Cloud storage is not configured yet'),local:t('Training läuft lokal','Workout is running locally'),conflict:t('Änderungen auf zwei Geräten · Auswahl erforderlich','Changes on two devices · choose a version'), 'sign-in':t('Lokal gespeichert · bitte erneut anmelden','Saved locally · please sign in again'),'too-large':t('Lokal gespeichert · Online-Speichergrenze erreicht','Saved locally · cloud storage limit reached')};
+    const labels={guest:t('Auf diesem Gerät','On this device'),loading:t('Online-Daten werden geladen …','Loading cloud data …'),syncing:t('Wird synchronisiert …','Syncing …'),synced:t('Online gespeichert','Saved online'),pending:t('Lokal gespeichert · Upload ausstehend','Saved locally · upload pending'),offline:t('Lokal gespeichert · Verbindung fehlt','Saved locally · connection unavailable'),unconfigured:t('Online-Speicher noch nicht eingerichtet','Cloud storage is not configured yet'),local:t('Training läuft lokal','Workout is running locally'),conflict:t('Änderungen auf zwei Geräten · Auswahl erforderlich','Changes on two devices · choose a version'), 'sign-in':t('Lokal gespeichert · bitte erneut anmelden','Saved locally · please sign in again'),permissions:t('Online-Speicher ist noch nicht freigeschaltet. Deine Daten bleiben lokal gespeichert.','Cloud storage is not enabled yet. Your data remains saved locally.'),quota:t('Online-Speicher ist vorübergehend ausgelastet. Deine Daten bleiben lokal gespeichert.','Cloud storage quota reached. Your data remains saved locally.'),'invalid-cloud':t('Online-Daten konnten nicht gelesen werden. Deine lokalen Daten bleiben erhalten.','Cloud data could not be read. Your local data is preserved.'),'too-large':t('Lokal gespeichert · Online-Speichergrenze erreicht','Saved locally · cloud storage limit reached')};
     return mode==='storage-error'?t('Lokaler Speicher konnte nicht gelesen oder geschrieben werden.','Local storage could not be read or written.'):labels[mode]||labels.pending;
   }
   function downloadBackup(data=current){
@@ -175,7 +175,7 @@ window.SetwerkCloud=(()=>{
   window.addEventListener('online',()=>{if(user&&!current.active)sync();});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&user&&!current.active)sync();});
   // Reopen the last signed-in local account without requiring a network request.
-  // The server always verifies Identity separately before serving cloud data.
+  // Firebase Authentication and Firestore rules verify access separately before serving cloud data.
   try{
     const remembered=JSON.parse(localStorage.getItem(lastUserKey)||'null');
     if(remembered?.id&&/^[A-Za-z0-9_-]{1,100}$/.test(remembered.id)){

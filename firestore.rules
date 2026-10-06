@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owns(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+    function validSnapshot() {
+      let value = request.resource.data;
+      return value.keys().hasAll(['revision', 'payload', 'updatedAt'])
+        && value.keys().hasOnly(['revision', 'payload', 'updatedAt'])
+        && value.revision is int
+        && value.revision > 0
+        && value.payload is string
+        && value.payload.size() <= 800000
+        && value.updatedAt == request.time;
+    }
+    match /users/{userId}/state/main {
+      allow get: if owns(userId);
+      allow list, delete: if false;
+      allow create: if owns(userId) && validSnapshot() && request.resource.data.revision == 1;
+      allow update: if owns(userId) && validSnapshot()
+        && request.resource.data.revision == resource.data.revision + 1;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

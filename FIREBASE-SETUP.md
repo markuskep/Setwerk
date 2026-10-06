@@ -1,0 +1,38 @@
+# Setwerk: Firebase login and cloud data
+
+Website: https://setwerk-cb1e0.web.app
+Branch: firebase-migration
+
+## Services
+
+- Authentication: email/password registration and sign-in; password reset.
+- Firestore: default database in production mode. For a new database use Frankfurt (europe-west3).
+- Firestore Rules: publish the exact contents of firestore.rules. Do not enable public test-mode rules.
+- Public Firebase configuration is loaded from /__/firebase/init.json. Register a Web app in Project settings if this endpoint does not provide the project configuration.
+
+The GitHub deploy checks tests and attempts to configure these services using the existing deployment service account. Its job summary reports any project-owner steps still required. If the deployment account lacks database or rules permissions, create the database and publish the rules in the Firebase console using your owner account. No private keys need to be pasted into chat or into website files.
+
+## Data and offline behavior
+
+Each Firebase UID owns users/{uid}/state/main. It stores a JSON payload, an increasing revision, and a server timestamp. Firebase Security Rules permit only the owner to get/create/update it, require the next revision and deny listing, deletion and access to other paths.
+
+Completed workouts, templates, custom exercises, goals and language synchronize. Active workouts and drafts stay local. Firestore reads require the server; the application retains its own per-account offline cache and pending uploads. Transaction revision checks and three-way merging prevent silent overwrites from two devices. Conflicts retain recoverable backups.
+
+The JSON payload is limited to 800,000 UTF-8 bytes to stay below Firestore's document limit. Larger data remains local and can be exported using the account backup action. A later migration to one document per workout can remove this snapshot limit.
+
+## Existing data and accounts
+
+Netlify accounts and Google Sheets data are not automatically migrated. Firebase accounts must be created separately. Local guest workouts can be imported explicitly through Account > Import guest workouts. Account backup files can also be imported. Never import another person's account data. The Android APK still uses the previous backend until a separate Android update is installed.
+
+Firebase local account keys use setwerk.firebase.account.v1.{uid}; guest storage remains setwerk.v1. Existing Netlify account caches are preserved.
+
+## Verification
+
+Application tests run with npm test. Emulator tests verify registration/sign-in, cross-device workout retrieval, owner access, rejection of anonymous/other-account access, stale revisions and malformed updates.
+
+Run emulator tests:
+npm install --prefix .firebase-test --no-package-lock --ignore-scripts firebase@12.4.0 @firebase/rules-unit-testing@5.0.0 firebase-tools@14.20.0
+NODE_PATH=.firebase-test/node_modules .firebase-test/node_modules/.bin/firebase emulators:exec --only firestore,auth --project demo-setwerk "node --test --test-concurrency=1 firebase/tests/*.test.cjs"
+
+For future manual deployment of rules and indexes as the project owner:
+firebase deploy --only firestore --project setwerk-cb1e0

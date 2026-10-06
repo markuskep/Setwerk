@@ -11,12 +11,12 @@ async function setup(loginError) {
   });
   const w = dom.window, calls = [];
   w.document.getElementById('app').innerHTML = '<button data-auth-open>Login / Sign up</button><button id="background">Training starten</button>';
-  w.__identity = {
-    async login(email, password) { calls.push({ email, password }); if (loginError) throw Error(loginError); return { email }; },
-    async signup(email, password, metadata) { calls.push({ email, password, metadata }); },
-    async logout() {}, async getUser() { return null; }, async handleAuthCallback() { return null; },
+  w.__firebase = {
+    async login(email, password) { calls.push({ email, password }); if (loginError) throw Error(loginError); return { id:'alice', email }; },
+    async signup(email, password, name) { calls.push({ email, password, name }); return {id:'alice',email}; },
+    async logout() {}, async getUser() { return null; }, async subscribeAuth(listener) { listener(null); }, async resetPassword(email) {calls.push({reset:email});},
   };
-  const source = fs.readFileSync(path.join(root, 'auth.js'), 'utf8').replace(/^import[^\n]+\n/, 'const { signup, login, logout, getUser, handleAuthCallback } = window.__identity;\n');
+  const source = fs.readFileSync(path.join(root, 'auth.js'), 'utf8').replace(/^import[^\n]+\n/, 'const { signup, login, logout, getUser, subscribeAuth, resetPassword } = window.__firebase;\n');
   w.eval(source);
   await new Promise(resolve => setImmediate(resolve));
   return { dom, w, calls, q: selector => w.document.querySelector(selector), settle: () => new Promise(resolve => setImmediate(resolve)) };
@@ -48,7 +48,7 @@ test('login floats over the page, exposes only email/password, and restores focu
   } finally { x.dom.window.close(); }
 });
 
-test('email/password login resets the form after asynchronous Identity success', async () => {
+test('email/password login resets the form after asynchronous Firebase success', async () => {
   const x = await setup(); const { q, w } = x;
   try {
     q('[data-auth-open]').click();
@@ -85,4 +85,33 @@ test('failed login stays open; signup switches password autocomplete and name vi
     q('#auth-gate').click();
     assert.equal(q('#auth-gate').hidden, true);
   } finally { x.dom.window.close(); }
+});
+
+test('Firebase signup signs in immediately and never asks for a Netlify confirmation', async () => {
+  const x=await setup();try{
+    x.q('[data-auth-open]').click();x.q('#auth-switch').click();
+    x.q('[name="email"]').value='new@example.at';x.q('[name="password"]').value='new-password';x.q('[name="name"]').value='Markus';
+    x.q('#auth-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));await x.settle();
+    assert.deepEqual(x.calls,[{email:'new@example.at',password:'new-password',name:'Markus'}]);
+    assert.equal(x.q('#auth-gate').hidden,true);
+    assert.equal(x.q('[data-auth-open]').dataset.authState,'signed-in');
+    assert.equal(x.q('[name="password"]').value,'');
+  }finally{x.dom.window.close();}
+});
+test('password reset uses the entered email without requiring a password', async () => {
+  const x=await setup();try{
+    x.q('[data-auth-open]').click();x.q('[name="email"]').value='markus@example.at';
+    x.q('#auth-reset').click();await x.settle();
+    assert.deepEqual(x.calls,[{reset:'markus@example.at'}]);
+    assert.match(x.q('#auth-message').textContent,/Falls ein Konto/);
+    x.q('#auth-switch').click();assert.equal(x.q('#auth-reset').hidden,true);
+  }finally{x.dom.window.close();}
+});
+test('Firebase auth state updates from another tab connect each account only once',async()=>{
+ const x=await setup();try{
+  const calls=[];x.w.SetwerkCloud={user:null,connect:async user=>{calls.push(user?.id||null);x.w.SetwerkCloud.user=user;}};
+  x.w.activateUser({id:'alice',email:'alice@example.at'});x.w.activateUser({id:'alice',email:'alice@example.at'});
+  x.w.activateUser(null);x.w.activateUser(null);
+  assert.deepEqual(calls,['alice',null]);
+ }finally{x.dom.window.close();}
 });
