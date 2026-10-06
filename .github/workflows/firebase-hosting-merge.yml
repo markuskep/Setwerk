@@ -1,0 +1,40 @@
+name: Deploy Setwerk to Firebase Hosting
+
+on:
+  push:
+    branches:
+      - firebase-migration
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: setwerk-firebase-live
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/firebase-migration'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the website
+        uses: actions/checkout@v4
+
+      - name: Check Firebase deployment credentials
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SETWERK_CB1E0 }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "::error::Missing GitHub Actions secret FIREBASE_SERVICE_ACCOUNT_SETWERK_CB1E0. Run firebase init hosting:github --project setwerk-cb1e0 for markuskep/Setwerk."
+            exit 1
+          fi
+
+      - name: Publish Setwerk to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SETWERK_CB1E0 }}
+          projectId: setwerk-cb1e0
+          channelId: live
+          entryPoint: .
