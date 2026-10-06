@@ -4,6 +4,7 @@ const gate = document.getElementById('auth-gate');
 const panel = document.getElementById('auth-panel');
 const message = document.getElementById('auth-message');
 gate.hidden = true;
+let authReturnFocus = null;
 
 function setMessage(text, error=false) {
   message.textContent = text || '';
@@ -15,6 +16,8 @@ function showLogin() {
   document.getElementById('auth-submit').textContent = 'Anmelden';
   document.getElementById('auth-switch').textContent = 'Noch kein Konto? Registrieren';
   document.getElementById('auth-name-wrap').hidden = true;
+  document.querySelector('#auth-form input[name="name"]').disabled = true;
+  document.querySelector('#auth-form input[name="password"]').autocomplete = 'current-password';
   setMessage('');
 }
 function showSignup() {
@@ -23,12 +26,24 @@ function showSignup() {
   document.getElementById('auth-submit').textContent = 'Registrieren';
   document.getElementById('auth-switch').textContent = 'Bereits registriert? Anmelden';
   document.getElementById('auth-name-wrap').hidden = false;
+  document.querySelector('#auth-form input[name="name"]').disabled = false;
+  document.querySelector('#auth-form input[name="password"]').autocomplete = 'new-password';
   setMessage('');
 }
-function closeAuth() { gate.hidden = true; }
-function openAuth() {
+function closeAuth() {
+  gate.hidden = true;
+  document.body.classList.remove('auth-open');
+  document.getElementById('app').inert = false;
+  document.querySelector('#auth-form input[name="password"]').value = '';
+  if (authReturnFocus?.isConnected) authReturnFocus.focus();
+  authReturnFocus = null;
+}
+function openAuth(trigger) {
+  authReturnFocus = trigger || document.activeElement;
   showLogin();
   gate.hidden = false;
+  document.body.classList.add('auth-open');
+  document.getElementById('app').inert = true;
   document.querySelector('#auth-form input[name="email"]')?.focus();
 }
 async function updateAuthButton(user) {
@@ -51,16 +66,28 @@ document.addEventListener('click', async (event) => {
     catch (error) { console.warn('Logout failed', error); }
     return;
   }
-  openAuth();
+  openAuth(button);
 });
 document.getElementById('auth-switch').addEventListener('click', () => {
   panel.dataset.mode === 'signup' ? showLogin() : showSignup();
 });
 gate.addEventListener('click', event => { if (event.target === gate) closeAuth(); });
-document.addEventListener('keydown', event => { if (event.key === 'Escape' && !gate.hidden) closeAuth(); });
+document.addEventListener('keydown', event => {
+  if (gate.hidden) return;
+  if (event.key === 'Escape') { event.preventDefault(); closeAuth(); return; }
+  if (event.key !== 'Tab') return;
+  const controls = [...panel.querySelectorAll('button:not(:disabled), input:not(:disabled)')];
+  const first = controls[0], last = controls.at(-1);
+  if (event.shiftKey && (document.activeElement === first || !panel.contains(document.activeElement))) {
+    event.preventDefault(); last?.focus();
+  } else if (!event.shiftKey && (document.activeElement === last || !panel.contains(document.activeElement))) {
+    event.preventDefault(); first?.focus();
+  }
+});
 document.getElementById('auth-form').addEventListener('submit', async event => {
   event.preventDefault();
-  const form = new FormData(event.currentTarget);
+  const formElement = event.currentTarget;
+  const form = new FormData(formElement);
   const email = String(form.get('email') || '').trim();
   const password = String(form.get('password') || '');
   const name = String(form.get('name') || '').trim();
@@ -77,7 +104,7 @@ document.getElementById('auth-form').addEventListener('submit', async event => {
       await updateAuthButton(user);
       closeAuth();
     }
-    event.currentTarget.reset();
+    formElement.reset();
   } catch (error) {
     setMessage(error?.message || 'Das hat nicht geklappt. Bitte versuche es erneut.', true);
   } finally {
@@ -95,3 +122,4 @@ document.getElementById('auth-form').addEventListener('submit', async event => {
     await updateAuthButton(null);
   }
 })();
+
