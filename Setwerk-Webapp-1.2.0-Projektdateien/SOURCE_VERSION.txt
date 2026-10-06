@@ -1,0 +1,4 @@
+Setwerk Web-App 1.2.0
+Source commit: 896e31545ffea1a13254a01da77fa49527ffade6
+Exported: 2026-10-06
+Application files under dist are unchanged from this commit.

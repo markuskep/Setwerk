@@ -1,0 +1,14 @@
+{
+  "name": "setwerk",
+  "version": "1.2.0",
+  "private": true,
+  "description": "Lokale Gym-App für Android mit Browser-Vorschau",
+  "scripts": {
+    "test": "node --test tests/*.test.cjs",
+    "check": "node --check dist/transfer.js && node --check dist/core.js && node --check dist/app.js && node --check dist/i18n.js && node --check dist/exercises-en.js && node --check dist/sw.js",
+    "catalog": "python3 scripts/make-exercises.py && python3 scripts/make-english.py"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0"
+  }
+}
