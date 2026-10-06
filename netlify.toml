@@ -1,0 +1,11 @@
+# Netlify configuration for Setwerk
+# The app is a static site; no build step is required.
+
+[build]
+  publish = "Setwerk-Webapp-1.2.0-Projektdateien/dist"
+
+# Setwerk is a client-side web app. Route unknown paths back to the app entry point.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
