@@ -3,7 +3,7 @@ import { signup, login, logout, getUser, handleAuthCallback } from 'https://esm.
 const gate = document.getElementById('auth-gate');
 const panel = document.getElementById('auth-panel');
 const message = document.getElementById('auth-message');
-const account = document.getElementById('auth-account');
+gate.hidden = true;
 
 function setMessage(text, error=false) {
   message.textContent = text || '';
@@ -25,25 +25,40 @@ function showSignup() {
   document.getElementById('auth-name-wrap').hidden = false;
   setMessage('');
 }
-function openApp(user) {
-  gate.hidden = true;
-  document.body.classList.remove('auth-locked');
-  account.hidden = false;
-  document.getElementById('auth-email').textContent = user.email || '';
-}
-function lockApp() {
+function closeAuth() { gate.hidden = true; }
+function openAuth() {
+  showLogin();
   gate.hidden = false;
-  account.hidden = true;
-  document.body.classList.add('auth-locked');
+  document.querySelector('#auth-form input[name="email"]')?.focus();
 }
-async function refreshUser() {
-  const user = await getUser();
-  if (user) openApp(user); else lockApp();
+async function updateAuthButton(user) {
+  const button = document.querySelector('[data-auth-open]');
+  if (!button) return;
+  if (user) {
+    button.textContent = (user.email || 'Angemeldet') + ' · Abmelden';
+    button.dataset.authState = 'signed-in';
+  } else {
+    button.textContent = 'Login / Sign up';
+    delete button.dataset.authState;
+  }
 }
+document.addEventListener('click', async (event) => {
+  if (event.target.closest('[data-auth-close]')) { closeAuth(); return; }
+  const button = event.target.closest('[data-auth-open]');
+  if (!button) return;
+  if (button.dataset.authState === 'signed-in') {
+    try { await logout(); await updateAuthButton(null); }
+    catch (error) { console.warn('Logout failed', error); }
+    return;
+  }
+  openAuth();
+});
 document.getElementById('auth-switch').addEventListener('click', () => {
   panel.dataset.mode === 'signup' ? showLogin() : showSignup();
 });
-document.getElementById('auth-form').addEventListener('submit', async (event) => {
+gate.addEventListener('click', event => { if (event.target === gate) closeAuth(); });
+document.addEventListener('keydown', event => { if (event.key === 'Escape' && !gate.hidden) closeAuth(); });
+document.getElementById('auth-form').addEventListener('submit', async event => {
   event.preventDefault();
   const form = new FormData(event.currentTarget);
   const email = String(form.get('email') || '').trim();
@@ -55,12 +70,12 @@ document.getElementById('auth-form').addEventListener('submit', async (event) =>
   try {
     if (panel.dataset.mode === 'signup') {
       await signup(email, password, name ? { full_name: name } : {});
-      setMessage('Konto erstellt. Bitte bestätige deine E-Mail und melde dich danach an.');
       showLogin();
       setMessage('Konto erstellt. Bitte bestätige deine E-Mail und melde dich danach an.');
     } else {
       const user = await login(email, password);
-      openApp(user);
+      await updateAuthButton(user);
+      closeAuth();
     }
     event.currentTarget.reset();
   } catch (error) {
@@ -69,23 +84,14 @@ document.getElementById('auth-form').addEventListener('submit', async (event) =>
     submit.disabled = false;
   }
 });
-document.getElementById('auth-logout').addEventListener('click', async () => {
-  await logout();
-  showLogin();
-  lockApp();
-});
 (async () => {
-  lockApp();
   try {
     const callback = await handleAuthCallback();
-    if (callback?.user) {
-      openApp(callback.user);
-      history.replaceState(null, '', location.pathname + location.search);
-      return;
-    }
-    await refreshUser();
+    const user = callback?.user || await getUser();
+    await updateAuthButton(user);
+    if (callback?.user) history.replaceState(null, '', location.pathname + location.search);
   } catch (error) {
-    setMessage(error?.message || 'Anmeldung konnte nicht geprüft werden.', true);
-    lockApp();
+    console.warn('Identity unavailable; Setwerk continues without login.', error);
+    await updateAuthButton(null);
   }
 })();
