@@ -170,6 +170,12 @@ window.SetwerkI18n=(()=>{
  "Die Datei oder der Code ist zu groß (maximal 1 MB).": "The file or code is too large (maximum 1 MB).",
  "Dieses Workout ist zu groß zum Teilen.": "This workout is too large to share."
 });
+ Object.assign(EN,{
+ 'Cardio-Trainingsform':'Cardio training style','Klassisches Cardio':'Classic cardio','Intervalltraining':'Interval training','Sonstiges':'Other','Name der Trainingsform':'Training style name','z. B. Fahrtspiel':'e.g. Fartlek','z. B. Lauftraining':'e.g. Running workout','Sportart':'Sport',
+ 'Anzahl Intervalle':'Number of intervals','Belastung je Intervall (Sekunden)':'Work per interval (seconds)','Pause zwischen Intervallen (Sekunden)':'Rest between intervals (seconds)','Distanz je Intervall (m, optional)':'Distance per interval (m, optional)','Distanz (km, optional)':'Distance (km, optional)','Erreichte Distanz (km, optional)':'Actual distance (km, optional)',
+ 'Die geplante Dauer ergibt sich aus Belastungen und Pausen. Du kannst sie für Aufwärmen und Abkühlen anpassen.':'Planned duration includes work and rest. You can adjust it for warming up and cooling down.','INTERVALLE':'INTERVALS','Geplant:':'Planned:','m / Intervall':'m / interval','Dein Training läuft lokal. Nach dem Abschluss werden die Daten gespeichert.':'Your workout runs locally. Your data is saved after you finish.','Training abschließen':'Finish workout','Weiter zum Trainingsgefühl':'Continue to workout feedback',
+ 'Bitte eine Sportart eintragen.':'Please enter a sport.','Bitte eine Cardio-Trainingsform auswählen.':'Please choose a cardio training style.','Bitte einen Namen für die Trainingsform eintragen.':'Please name the training style.','Bitte gültige Intervalle, Belastungszeiten und Pausen eingeben.':'Please enter valid intervals, work durations and rests.','Bitte eine gültige Intervall-Distanz eingeben.':'Please enter a valid interval distance.'
+ });
  const escapeRx=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
  const keys=Object.keys(EN).sort((a,b)=>b.length-a.length);
  const pattern=new RegExp('(?<![\\p{L}\\p{N}_])(?:'+keys.map(escapeRx).join('|')+')(?![\\p{L}\\p{N}_])','gu');

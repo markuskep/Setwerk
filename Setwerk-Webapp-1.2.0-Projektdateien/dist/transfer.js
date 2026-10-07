@@ -16,11 +16,13 @@ function normalize(input){
   const sets=it.sets.map(s=>{if(!object(s)||!['normal','warmup','drop'].includes(s.type))fail();const set={reps:number(s.reps,0,100000,true),weight:number(s.weight,0,100000),seconds:number(s.seconds,0,31536000),distance:number(s.distance,0,100000000),type:s.type,rpe:s.rpe===''?'':number(s.rpe,1,10),rir:s.rir===''?'':number(s.rir,0,10)};G.validateSet(set,e.kind);return set;});
   workout.items.push({exercise,rest:number(it.rest,0,3600),notes:string(it.notes,10000,true),sets});
  }
- if(input.kind==='template'&&!workout.items.length)fail();
+ if(w.cardio!=null){if(workout.category!=='Ausdauer'||!object(w.cardio))fail();const c=w.cardio;workout.cardio={type:string(c.type,100),other:string(c.other,100,true),distanceMeters:c.distanceMeters===null?null:number(c.distanceMeters,0,100000000),elevationMeters:c.elevationMeters===null?null:number(c.elevationMeters,0,1000000)};if(c.mode!==undefined){workout.cardio.mode=string(c.mode,20);if(c.mode==='other')workout.cardio.modeName=string(c.modeName,100);if(c.mode==='interval'){if(!object(c.intervals))fail();const i=c.intervals;workout.cardio.intervals={count:number(i.count,1,1000,true),workSeconds:number(i.workSeconds,1,86400),restSeconds:number(i.restSeconds,0,3600),distanceMeters:i.distanceMeters===null?null:number(i.distanceMeters,0,100000000)};}}G.validateCardio(workout.cardio);if(c.type==='Seilspringen')workout.cardio.distanceMeters=null;}
+ if(w.sport!=null){if(workout.category!=='Ballsport')fail();workout.sport=string(w.sport,100);}
+ if(input.kind==='template'&&G.isActivity(workout)){workout.durationMinutes=number(w.durationMinutes,0.1,525600);G.validateActivity(workout);}
+ if(input.kind==='template'&&!workout.items.length&&!G.isActivity(workout))fail();
  if(input.kind==='session'){
   const date=string(w.date,10);if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(Date.parse(date+'T12:00:00Z'))||new Date(date+'T12:00:00Z').toISOString().slice(0,10)!==date||date>G.localDate())fail();
   workout.date=date;workout.duration=number(w.duration,1,31536000);
-  if(w.cardio!=null){if(workout.category!=='Ausdauer'||!object(w.cardio))fail();const c=w.cardio;workout.cardio={type:string(c.type,100),other:string(c.other,100,true),distanceMeters:c.distanceMeters===null?null:number(c.distanceMeters,0,100000000),elevationMeters:c.elevationMeters===null?null:number(c.elevationMeters,0,1000000)};G.validateCardio(workout.cardio);if(c.type==='Seilspringen')workout.cardio.distanceMeters=null;}
   if(w.feedback!=null){if(!object(w.feedback))fail();workout.feedback={mood:w.feedback.mood===null?null:number(w.feedback.mood,1,5,true),effort:w.feedback.effort===null?null:number(w.feedback.effort,1,5,true),note:string(w.feedback.note,2000,true)};G.validateFeedback(workout.feedback);}
  }
  return{format:'setwerk-workout',version:1,kind:input.kind,workout};
@@ -30,7 +32,8 @@ function pack(record,kind,catalog,personal=false){
   const e=catalog.find(e=>e.id===it.exerciseId)||{id:it.exerciseId,name:it.exerciseName,kind:it.kind,muscle:'Ganzkörper',equipment:'Keines',instructions:[],custom:true};
   return{exercise:{id:e.id,name:e.name,kind:e.kind,muscle:e.muscle,equipment:e.equipment,instructions:e.instructions||[],custom:!!e.custom},rest:Number(it.rest),notes:personal?it.notes||'':'',sets:it.sets.filter(s=>kind==='template'||s.done).map(s=>({reps:+s.reps,weight:+s.weight,seconds:+s.seconds,distance:+s.distance,type:s.type,rpe:personal?s.rpe:'',rir:personal?s.rir:''}))};
  }).filter(it=>it.sets.length)};
- if(kind==='session'){workout.date=record.date;workout.duration=record.duration;if(record.cardio)workout.cardio=record.cardio;if(personal&&record.feedback)workout.feedback=record.feedback;}
+ if(record.cardio)workout.cardio=record.cardio;if(record.sport)workout.sport=record.sport;if(kind==='template'&&G.isActivity(record))workout.durationMinutes=record.durationMinutes;
+ if(kind==='session'){workout.date=record.date;workout.duration=record.duration;if(personal&&record.feedback)workout.feedback=record.feedback;}
  return normalize({format:'setwerk-workout',version:1,kind,workout});
 }
 function json(bundle){const text=JSON.stringify(normalize(bundle));if(encodeURIComponent(text).replace(/%[0-9A-F]{2}/gi,'x').length>MAX_BYTES)throw Error('Dieses Workout ist zu groß zum Teilen.');return text;}
@@ -42,13 +45,14 @@ function parse(text){
 }
 function prepareImport(input,target,catalog,now=Date.now()){
  const bundle=normalize(input),w=bundle.workout;
- if(!['template','session'].includes(target)||target==='session'&&bundle.kind!=='session'||target==='template'&&(!w.items.length||w.cardio))fail();
+ if(!['template','session'].includes(target)||target==='session'&&bundle.kind!=='session'||target==='template'&&bundle.kind!=='template'&&(!w.items.length||w.cardio))fail();
  const additions=[],mapping=new Map(),record={id:G.uid(),name:w.name,category:w.category,notes:w.notes,items:[]};
  for(const it of w.items){const e=it.exercise;let ex=mapping.get(e.id);
   if(!ex){const existing=catalog.find(x=>x.id===e.id&&!x.custom&&!e.custom&&x.name===e.name&&x.kind===e.kind)||[...catalog,...additions].find(x=>x.custom&&x.name===e.name&&x.kind===e.kind&&x.muscle===e.muscle&&x.equipment===e.equipment&&JSON.stringify(x.instructions)===JSON.stringify(e.instructions));ex=existing||{...G.clone(e),id:G.uid(),custom:true};if(!existing)additions.push(ex);mapping.set(e.id,ex);}else if(ex.name!==e.name||ex.kind!==e.kind)fail();
   const item=G.item(ex,it.sets.length,it.rest);item.notes=it.notes;item.sets=it.sets.map(s=>({...G.setDefaults(ex.kind),...s,done:target==='session',skipped:false}));record.items.push(item);
  }
- if(target==='session'){record.date=w.date;record.duration=w.duration;record.startedAt=new Date(w.date+'T12:00:00').getTime();record.endedAt=record.startedAt+w.duration*1000;record.recordedAt=now;record.manual=true;record.imported=true;if(w.cardio)record.cardio=G.clone(w.cardio);if(w.feedback)record.feedback=G.clone(w.feedback);}
+ if(w.cardio)record.cardio=G.clone(w.cardio);if(w.sport)record.sport=w.sport;if(target==='template'&&G.isActivity(w))record.durationMinutes=w.durationMinutes;
+ if(target==='session'){record.date=w.date;record.duration=w.duration;record.startedAt=new Date(w.date+'T12:00:00').getTime();record.endedAt=record.startedAt+w.duration*1000;record.recordedAt=now;record.manual=true;record.imported=true;if(w.feedback)record.feedback=G.clone(w.feedback);}
  return{record,customExercises:additions};
 }
 return{MAX_BYTES,normalize,pack,json,code,parse,prepareImport};

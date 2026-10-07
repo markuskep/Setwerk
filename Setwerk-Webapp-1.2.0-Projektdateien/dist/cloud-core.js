@@ -35,6 +35,8 @@
               if(key==='sessions'&&set.done!==true)throw Error('Unfinished session');
             }
           }
+          if(key==='templates'&&record.cardio)G.validateActivity(record);
+          if(key==='templates'&&record.category==='Ballsport'&&!record.items.length)G.validateActivity(record);
           if(key==='sessions'){
             if(typeof record.date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(record.date)||!Number.isFinite(record.duration)||record.duration<0)throw Error('Invalid session');
             if(record.feedback)G.validateFeedback(record.feedback);
