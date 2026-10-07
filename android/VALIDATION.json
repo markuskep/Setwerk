@@ -2,8 +2,8 @@
   "version": "1.4.0",
   "webCommit": "8d4c3570d6f4d5b3b8faf50529fa8e4627171ba3",
   "automatedTests": {
-    "total": 79,
-    "passed": 79,
+    "total": 81,
+    "passed": 81,
     "failed": 0
   },
   "liveFirebase": {
@@ -18,7 +18,8 @@
       "password reauthentication and change",
       "token refresh",
       "deletion marker and restore",
-      "credential deletion"
+      "credential deletion",
+      "repeated deletion marker before credential cleanup"
     ]
   },
   "apk": {
@@ -29,11 +30,26 @@
     "minSdk": 26,
     "targetSdk": 35,
     "previousCertificateMatched": true,
-    "certificateSha256": "30e9fec2689fb103630a494a9a8c04a74548050db0ac27de508f5e7fc426d026"
+    "certificateSha256": "30e9fec2689fb103630a494a9a8c04a74548050db0ac27de508f5e7fc426d026",
+    "sha256": "9e9d37307afa34cd4e74d6ff4c0b62df943ef19d4395e096407304ba6aadc447",
+    "bundledAssetsMatch": true
   },
   "browser": {
-    "status": "pending CI",
-    "localBrowserUnavailable": "Browser sockets unavailable in execution environment"
+    "status": "passed",
+    "browser": "Chromium",
+    "mobileViewportWidth": 390,
+    "nativeBridgeMocked": true,
+    "run": "https://github.com/markuskep/Setwerk/actions/runs/37612298809",
+    "sourceCommit": "740ebc5e6815438662e2602fdbe91edda0631ff4",
+    "checks": [
+      "calendar import removed",
+      "sport-specific cardio and ballsport editors",
+      "completion and cloud upload",
+      "file import and export",
+      "profile name and photo",
+      "offline restart and reconnection"
+    ],
+    "pageErrors": []
   },
   "realAndroidDevice": {
     "tested": false,

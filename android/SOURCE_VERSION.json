@@ -38,7 +38,7 @@
     },
     "firebase-service.js": {
       "web_sha256": "bc80bcfbbef239c9e309fbde26875f4f3a5a2dfaaefe13a50348e94f0e5aa0ed",
-      "android_sha256": "cec2bb331c5d6463dca8535eede838024a07d2d0e713644a3beb6397545c06a9",
+      "android_sha256": "edb8cabf2fbf59806a581b50f81961296d8d7204a512ce1863e437538089e305",
       "android_adapter": true
     },
     "exercises.js": {
