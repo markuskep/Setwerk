@@ -53,7 +53,9 @@ jobs:
       - name: Check desktop and mobile account settings in Chromium
         env:
           NODE_PATH: ${{ github.workspace }}/.firebase-test/node_modules
-        run: node scripts/account-browser-check.cjs
+        run: |
+          node scripts/account-browser-check.cjs
+          node scripts/cache-update-browser-check.cjs
 
       - name: Keep account settings screenshots
         if: always()
