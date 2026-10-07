@@ -78,6 +78,7 @@ public final class FirebaseLiveTest {
       invoke(client,"cloud-restore",new JSONObject().put("owner",owner).put("revision",erased.getLong("revision")+1).put("data",erased.getJSONObject("data")),200);
       check(invoke(client,"cloud-read",own,200).getJSONObject("data").getJSONArray("templates").length()==1,"Deletion rollback preserved data");
       invoke(client,"cloud-erase",own,200);
+      check(invoke(client,"cloud-erase",own,200).getJSONObject("previous").getJSONObject("data").getBoolean("deleted"),"Repeated deletion marker is accepted");
       invoke(client,"identity-delete",own,200);
       check(invoke(client,"identity-user",new JSONObject(),200).isNull("user"),"Deleted session cleared");
       invoke(client,"identity-login",new JSONObject().put("email",email).put("password",password),400);

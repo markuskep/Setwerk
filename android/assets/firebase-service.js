@@ -8,7 +8,13 @@ export async function signup(email,password,name){return emit(await native.ident
 export async function logout(){await native.identity('logout');emit(null);}
 export async function subscribeAuth(listener){
   listeners.add(listener);
-  listener(await getUser());
+  try{listener(await getUser());}catch(error){
+    if(!current||!(error.code==='auth/network-request-failed'||error.status===502))throw error;
+    listener(current);
+    await window.SetwerkCloud?.sync();
+  }
+  const cloud=window.SetwerkCloud;
+  if(current&&cloud?.user?.id===current.id&&['loading','pending'].includes(cloud.mode))await cloud.sync();
   return()=>listeners.delete(listener);
 }
 export async function resetPassword(email){await native.identity('reset',{email});}

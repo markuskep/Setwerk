@@ -157,7 +157,7 @@ final class FirebaseClient {
           value=ready();owner(value,body.getString("owner"));auth("delete",new JSONObject().put("idToken",value.getString("access")));sessions.write(null);return ok(new JSONObject());
         case "cloud-read":case "cloud-write":case "cloud-erase":case "cloud-restore":
           value=ready();String owner=body.getString("owner");JSONObject document=document(value,owner);
-          JSONObject current=decode(document,operation.equals("cloud-restore"));long revision=current.getLong("revision");
+          JSONObject current=decode(document,operation.equals("cloud-restore")||operation.equals("cloud-erase"));long revision=current.getLong("revision");
           if(operation.equals("cloud-read"))return ok(current);
           if(operation.equals("cloud-erase")){
             if(document==null)return ok(new JSONObject().put("previous",JSONObject.NULL));

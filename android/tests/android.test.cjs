@@ -63,6 +63,14 @@ test('Android Firebase login opens the full account menu without persisting pass
  x.w.document.querySelector('[data-auth-open]').click();const menu=x.w.document.querySelector('#account-menu');assert.match(menu.textContent,/Kontodaten/);menu.querySelector('button').click();assert.ok(x.w.document.querySelector('#account-details').open);assert.ok(x.w.document.querySelector('#profile-form'));assert.ok(x.w.document.querySelector('#password-form'));assert.ok(x.w.document.querySelector('#delete-account-form'));
  }finally{x.dom.window.close();}
 });
+test('restored Android account checks for web changes during initial authentication',async()=>{
+ const x=setup();let y;try{await x.cloud.connect({id:'alice'});y=setup(x.persisted);assert.equal(y.cloud.mode,'loading');const data=G.fresh();data.sessions=[finished('web-change')];y.setRemote({revision:1,data:y.w.SetwerkCloudCore.project(data)});y.loadAuth();await settle();assert.equal(y.cloud.mode,'synced');assert.equal(y.account('alice').state.sessions[0].id,'web-change');
+ }finally{x.dom.window.close();y?.dom.window.close();}
+});
+test('offline authentication retains cached account and resumes synchronization after reconnection',async()=>{
+ const x=setup();let y;try{await x.cloud.connect({id:'alice'});const state=x.account('alice').state;state.sessions=[finished('cached-phone')];x.cloud.saveLocal(state);await x.cloud.sync();y=setup(x.persisted);y.setOffline(true);y.loadAuth();await settle();assert.equal(y.cloud.mode,'offline');assert.equal(y.cloud.user.id,'alice');assert.equal(y.account('alice').state.sessions[0].id,'cached-phone');y.setRemote(x.remote());y.setOffline(false);y.w.dispatchEvent(new y.w.Event('setwerk:resume'));await settle();assert.equal(y.cloud.mode,'synced');assert.equal(y.account('alice').state.sessions[0].id,'cached-phone');
+ }finally{x.dom.window.close();y?.dom.window.close();}
+});
 test('native resume pulls web changes and retains active Android workouts',async()=>{
  const x=setup();try{await x.cloud.connect({id:'alice'});x.calls.length=0;x.w.dispatchEvent(new x.w.Event('setwerk:resume'));await settle();assert.ok(x.calls.some(c=>c.operation==='cloud-read'));const state=x.account('alice').state;state.active=G.spontaneous();x.cloud.saveLocal(state);x.calls.length=0;x.w.dispatchEvent(new x.w.Event('setwerk:resume'));await settle();assert.equal(x.calls.filter(c=>c.operation.startsWith('cloud-')).length,0);
  }finally{x.dom.window.close();}
