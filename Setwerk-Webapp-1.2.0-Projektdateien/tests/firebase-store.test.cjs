@@ -35,3 +35,14 @@ test('permission and configuration errors map to recoverable cloud states',()=>{
  assert.equal(Store.normalizeError({code:'not-found'}).status,503);
  assert.equal(Store.normalizeError({code:'resource-exhausted'}).status,429);
 });
+test('account deletion erases all payload data and prevents a stale client from restoring it',async()=>{
+ const x=setup(),data=C.project(G.fresh());data.profile={name:'Private name',photo:''};
+ await x.store.write('alice',0,data);const previous=await x.store.erase('alice');
+ assert.deepEqual(previous,{revision:1,data});assert.equal(x.getStored().payload,'{"deleted":true}');assert.equal(x.getStored().revision,2);
+ await assert.rejects(x.store.read('alice'),e=>e.status===410);await assert.rejects(x.store.write('alice',2,data),e=>e.status===410);
+ await x.store.restore('alice',2,previous.data);assert.deepEqual((await x.store.read('alice')).data,data);assert.equal(x.getStored().revision,3);
+ await assert.rejects(x.store.restore('alice',3,data),e=>e.status===409);
+});
+test('deletion never writes another account and handles an account with no cloud data',async()=>{
+ const x=setup();await assert.rejects(x.store.erase('bob'),e=>e.status===401);assert.equal(await x.store.erase('alice'),null);assert.equal(x.writes.length,0);
+});

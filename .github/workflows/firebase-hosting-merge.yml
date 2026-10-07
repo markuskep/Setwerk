@@ -40,12 +40,28 @@ jobs:
           java-version: '21'
 
       - name: Install Firebase test tools
-        run: npm install --prefix .firebase-test --no-package-lock --ignore-scripts firebase@12.4.0 @firebase/rules-unit-testing@5.0.0 firebase-tools@14.20.0
+        run: npm install --prefix .firebase-test --no-package-lock --ignore-scripts firebase@12.4.0 @firebase/rules-unit-testing@5.0.0 firebase-tools@14.20.0 playwright@1.62.1
 
       - name: Test Firebase authentication and private database rules
         env:
           NODE_PATH: ${{ github.workspace }}/.firebase-test/node_modules
         run: .firebase-test/node_modules/.bin/firebase emulators:exec --only firestore,auth --project demo-setwerk "node --test --test-concurrency=1 firebase/tests/*.test.cjs"
+
+      - name: Install browser for UI checks
+        run: .firebase-test/node_modules/.bin/playwright install --with-deps chromium
+
+      - name: Check desktop and mobile account settings in Chromium
+        env:
+          NODE_PATH: ${{ github.workspace }}/.firebase-test/node_modules
+        run: node scripts/account-browser-check.cjs
+
+      - name: Keep account settings screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: setwerk-account-ui
+          path: ${{ runner.temp }}/setwerk-ui
+          if-no-files-found: ignore
 
       - name: Check Firebase deployment credentials
         env:
@@ -72,3 +88,4 @@ jobs:
           projectId: setwerk-cb1e0
           channelId: live
           entryPoint: .
+

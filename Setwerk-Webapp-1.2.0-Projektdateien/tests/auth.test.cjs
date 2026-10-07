@@ -10,14 +10,16 @@ async function setup(loginError) {
     url: 'https://setwerk.test/', runScripts: 'outside-only', pretendToBeVisual: true,
   });
   const w = dom.window, calls = [];
+  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
   w.document.getElementById('app').innerHTML = '<button data-auth-open>Login / Sign up</button><button id="background">Training starten</button>';
   w.__firebase = {
     async login(email, password) { calls.push({ email, password }); if (loginError) throw Error(loginError); return { id:'alice', email }; },
     async signup(email, password, name) { calls.push({ email, password, name }); return {id:'alice',email}; },
     async logout() {}, async getUser() { return null; }, async subscribeAuth(listener) { listener(null); }, async resetPassword(email) {calls.push({reset:email});},
   };
-  const source = fs.readFileSync(path.join(root, 'auth.js'), 'utf8').replace(/^import[^\n]+\n/, 'const { signup, login, logout, getUser, subscribeAuth, resetPassword } = window.__firebase;\n');
-  w.eval(source);
+  w.eval(fs.readFileSync(path.join(root,'account-ui.js'),'utf8').replace('export function createAccountUI','window.createAccountUI = function createAccountUI'));
+  const source = fs.readFileSync(path.join(root, 'auth.js'), 'utf8').replace(/^import[^\n]+\n/gm,'');
+  w.eval('const { signup, login, logout, getUser, subscribeAuth, resetPassword, updateUserProfile, changePassword, removeAccount } = window.__firebase;\n'+source);
   await new Promise(resolve => setImmediate(resolve));
   return { dom, w, calls, q: selector => w.document.querySelector(selector), settle: () => new Promise(resolve => setImmediate(resolve)) };
 }
@@ -113,5 +115,28 @@ test('Firebase auth state updates from another tab connect each account only onc
   x.w.activateUser({id:'alice',email:'alice@example.at'});x.w.activateUser({id:'alice',email:'alice@example.at'});
   x.w.activateUser(null);x.w.activateUser(null);
   assert.deepEqual(calls,['alice',null]);
+ }finally{x.dom.window.close();}
+});
+
+
+
+test('account menu uses requested order, username and default avatar; closes outside and via Escape',async()=>{
+ const x=await setup();try{
+  x.w.activateUser({id:'alice',email:'private@example.at',name:'Markus'});
+  const button=x.q('[data-auth-open]');assert.match(button.textContent,/Markus/);assert.doesNotMatch(button.textContent,/@/);assert.match(button.querySelector('img').src,/avatar-default.svg$/);
+  button.click();assert.deepEqual([...x.q('#account-menu').children].map(n=>n.textContent),['Kontodaten','Abmelden','Konto löschen']);assert.equal(x.q('#account-menu').lastElementChild.className,'account-danger');
+  x.w.document.dispatchEvent(new x.w.KeyboardEvent('keydown',{key:'End',bubbles:true}));assert.equal(x.w.document.activeElement,x.q('#account-menu').lastElementChild);
+  x.w.document.dispatchEvent(new x.w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert.equal(x.q('#account-menu'),null);assert.equal(x.w.document.activeElement,button);
+  button.click();x.q('#background').click();assert.equal(x.q('#account-menu'),null);
+ }finally{x.dom.window.close();}
+});
+test('account details display email safely and require confirmation before deletion',async()=>{
+ const x=await setup();try{
+  let removed=0;x.w.__firebase.removeAccount=async()=>{removed++;};
+  x.w.activateUser({id:'alice',email:'private@example.at',name:'<img src=x onerror=alert(1)>'});x.q('[data-auth-open]').click();x.q('#account-menu button').click();
+  assert.equal(x.q('#account-details').open,true);assert.equal(x.q('#account-details input[type=email]').value,'private@example.at');assert.equal(x.q('[name=profileName]').value,'<img src=x onerror=alert(1)>');assert.equal(x.q('#account-details img').getAttribute('onerror'),null);
+  assert.equal(x.q('#account-delete-section').hidden,true);x.q('[data-account-action=delete]').click();assert.equal(x.q('#account-delete-section').hidden,false);
+  assert.equal(x.q('#delete-account-form').checkValidity(),false);assert.equal(removed,0);
+  x.q('#delete-password').value='do-not-store';x.q('[data-account-action=close]').click();assert.equal(x.q('#delete-password').value,'');
  }finally{x.dom.window.close();}
 });

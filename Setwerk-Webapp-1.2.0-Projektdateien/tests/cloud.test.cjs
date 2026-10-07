@@ -125,3 +125,27 @@ test('Firebase permission errors keep completed workouts pending in local storag
   await x.cloud.sync();assert.equal(x.cloud.mode,'permissions');assert.equal(x.account().pending,true);assert.equal(x.account().state.sessions.length,1);
  }finally{x.dom.window.close();}
 });
+
+
+
+test('profile sync is backward compatible and merges with independent workout edits',()=>{
+ const old=C.project(G.fresh());assert.equal(old.profile,undefined);C.validate(old);
+ const local=C.clone(old),remote=C.clone(old);local.profile={name:'Markus',photo:'data:image/jpeg;base64,/9j/AA=='};remote.sessions.push(session('another-device'));
+ const merged=C.merge(old,local,remote);assert.deepEqual(merged.conflicts,[]);assert.deepEqual(merged.data.profile,local.profile);assert.equal(merged.data.sessions.length,1);C.validate(merged.data);
+ assert.throws(()=>C.validate({...old,profile:{name:'Markus',photo:'javascript:alert(1)'}}),/Invalid profile/);
+ assert.throws(()=>C.validate({...old,profile:{name:'x',photo:'',password:'secret'}}),/Invalid profile/);
+});
+test('profile changes persist for the current account and clear on account switch',async()=>{
+ const x=setup();try{
+  await x.cloud.connect({id:'alice'});x.cloud.setProfile({name:'Markus',photo:''});await x.cloud.sync();assert.equal(x.remote().data.profile.name,'Markus');
+  x.w.fetch=async()=>({ok:true,json:async()=>({revision:0,data:null})});await x.cloud.connect({id:'bob'});assert.equal(x.cloud.profile,null);assert.equal(JSON.parse(x.w.localStorage.getItem('setwerk.firebase.account.v1.alice')).state.profile.name,'Markus');
+ }finally{x.dom.window.close();}
+});
+test('deletion pauses uploads and removes only the selected account cache and backups',async()=>{
+ const x=setup();try{
+  await x.cloud.connect({id:'alice'});const state=G.fresh();state.sessions.push(session());x.cloud.saveLocal(state);
+  x.w.localStorage.setItem('setwerk.firebase.account.v1.alice.conflict-backup','alice');x.w.localStorage.setItem('setwerk.firebase.account.v1.bob','bob');x.w.localStorage.setItem('setwerk.v1','guest');
+  const resume=await x.cloud.beginAccountDeletion('alice');x.calls.length=0;await x.cloud.sync();assert.equal(x.calls.length,0);assert.throws(()=>x.cloud.saveLocal(state),/lösch|deletion/);
+  x.cloud.forgetAccount('alice');assert.equal(x.w.localStorage.getItem('setwerk.firebase.account.v1.alice'),null);assert.equal(x.w.localStorage.getItem('setwerk.firebase.account.v1.alice.conflict-backup'),null);assert.equal(x.w.localStorage.getItem('setwerk.firebase.account.v1.bob'),'bob');assert.equal(x.w.localStorage.getItem('setwerk.v1'),'guest');resume();
+ }finally{x.dom.window.close();}
+});

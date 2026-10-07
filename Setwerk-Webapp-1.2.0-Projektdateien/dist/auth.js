@@ -1,4 +1,5 @@
-import { signup, login, logout, getUser, subscribeAuth, resetPassword } from './firebase-service.js';
+import { createAccountUI } from './account-ui.js';
+import { signup, login, logout, getUser, subscribeAuth, resetPassword, updateUserProfile, changePassword, removeAccount } from './firebase-service.js';
 
 const gate = document.getElementById('auth-gate');
 const panel = document.getElementById('auth-panel');
@@ -7,6 +8,7 @@ gate.hidden = true;
 let authReturnFocus = null;
 let currentUser = window.SetwerkCloud?.user || null;
 const text = (de, en) => document.documentElement.lang === 'en' ? en : de;
+const accountUI=createAccountUI({logout,updateUserProfile,changePassword,removeAccount,activateUser,authError});
 
 function setMessage(text, error=false) {
   message.textContent = text || '';
@@ -50,21 +52,7 @@ function openAuth(trigger) {
   document.getElementById('app').inert = true;
   document.querySelector('#auth-form input[name="email"]')?.focus();
 }
-function updateAuthButton(user = currentUser) {
-  for (const button of document.querySelectorAll('[data-auth-open]')) {
-  if (user) {
-    button.textContent = button.hasAttribute('data-auth-compact') ? text('Konto', 'Account') : (user.email || text('Konto', 'Account'));
-    button.title = window.SetwerkCloud?.description() || text('Konto', 'Account');
-    button.dataset.authState = 'signed-in';
-    button.dataset.syncState = window.SetwerkCloud?.mode || '';
-  } else {
-    button.textContent = text('Anmelden', 'Sign in');
-    button.title = button.textContent;
-    delete button.dataset.authState;
-    delete button.dataset.syncState;
-  }
-  }
-}
+function updateAuthButton(user=currentUser){accountUI.refresh(user);}
 function activateUser(user) {
   const unchanged=currentUser?.id===user?.id && window.SetwerkCloud?.user?.id===user?.id;
   currentUser = user;
@@ -78,9 +66,7 @@ document.addEventListener('click', async (event) => {
   const button = event.target.closest('[data-auth-open]');
   if (!button) return;
   if (button.dataset.authState === 'signed-in') {
-    const signOut = async () => { await logout(); activateUser(null); };
-    if (window.SetwerkCloud && !window.AndroidGym) window.SetwerkCloud.openPanel(signOut);
-    else try { await signOut(); } catch (error) { console.warn('Logout failed', error); }
+    accountUI.toggleMenu(button);
     return;
   }
   openAuth(button);
@@ -142,6 +128,10 @@ function authError(error) {
     'auth/too-many-requests':text('Zu viele Versuche. Bitte warte kurz und versuche es erneut.','Too many attempts. Please wait and try again.'),
     'auth/network-request-failed':text('Keine Verbindung. Deine Trainings bleiben auf diesem Gerät gespeichert.','Connection unavailable. Your workouts remain saved on this device.'),
     'auth/user-disabled':text('Dieses Konto wurde deaktiviert.','This account has been disabled.'),
+    'auth/requires-recent-login':text('Bitte erneut anmelden und die Änderung nochmals versuchen.','Please sign in again and retry the change.'),
+    'firestore/permission-denied':text('Die Kontodaten konnten nicht gespeichert werden. Bitte erneut versuchen.','Account data could not be saved. Please try again.'),
+    'permission-denied':text('Die Kontodaten konnten nicht gespeichert werden. Bitte erneut versuchen.','Account data could not be saved. Please try again.'),
+    'setwerk/delete-partial':text('Die Online-Daten wurden gelöscht, das Konto konnte jedoch nicht gelöscht werden. Bitte die Kontolöschung erneut versuchen.','Online data was removed, but the account could not be deleted. Please retry account deletion.'),
     'setwerk/config':text('Die Anmeldung ist noch nicht eingerichtet. Bitte versuche es später erneut.','Sign-in is not configured yet. Please try again later.')
   };
   return labels[error?.code] || (error?.code ? text('Die Anmeldung konnte nicht abgeschlossen werden. Bitte versuche es erneut.','Could not complete sign-in. Please try again.') : error?.message) || text('Keine Verbindung. Bitte versuche es erneut.','Connection unavailable. Please try again.');
@@ -163,3 +153,5 @@ window.addEventListener('online',async()=>{
   try{activateUser(await getUser());}catch{updateAuthButton();}
 });
 updateAuthButton();
+window.addEventListener('setwerk:deleted-account',async event=>{if(currentUser?.id!==event.detail.id)return;try{await logout();}finally{activateUser(null);}});
+

@@ -8,9 +8,13 @@
     const keys=Object.keys(a);
     return keys.length===Object.keys(b).length&&keys.every(key=>Object.prototype.hasOwnProperty.call(b,key)&&equal(a[key],b[key]));
   }
-  function project(state){return clone({version:1,language:state.language||'de',templates:state.templates||[],sessions:state.sessions||[],customExercises:state.customExercises||[],goals:state.goals||{weekly:3,days:[],time:'18:00',reminders:false}});}
+  function project(state){return clone({version:1,language:state.language||'de',templates:state.templates||[],sessions:state.sessions||[],customExercises:state.customExercises||[],goals:state.goals||{weekly:3,days:[],time:'18:00',reminders:false},...(state.profile?{profile:state.profile}:{})});}
   function validate(value){
-    if(!value||value.version!==1||!['de','en'].includes(value.language)||Object.keys(value).some(k=>!['version','language','templates','sessions','customExercises','goals'].includes(k)))throw Error('Invalid state');
+    if(!value||value.version!==1||!['de','en'].includes(value.language)||Object.keys(value).some(k=>!['version','language','templates','sessions','customExercises','goals','profile'].includes(k)))throw Error('Invalid state');
+    if(value.profile){
+      const p=value.profile;
+      if(typeof p!=='object'||Object.keys(p).some(k=>!['name','photo'].includes(k))||typeof p.name!=='string'||p.name.length>80||typeof p.photo!=='string'||p.photo.length>100000||(p.photo&&!/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(p.photo)))throw Error('Invalid profile');
+    }
     for(const key of collections){
       if(!Array.isArray(value[key])||value[key].length>10000)throw Error('Invalid collection');
       const ids=new Set();
@@ -45,7 +49,7 @@
   }
   function merge(base,local,remote){
     const result={version:1},conflicts=[];
-    for(const key of ['language','goals']){
+    for(const key of ['language','goals','profile']){
       const b=base[key],l=local[key],r=remote[key];
       if(equal(l,b))result[key]=r;
       else if(equal(r,b)||equal(l,r))result[key]=l;

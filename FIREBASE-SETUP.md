@@ -36,3 +36,11 @@ NODE_PATH=.firebase-test/node_modules .firebase-test/node_modules/.bin/firebase 
 
 For future manual deployment of rules and indexes as the project owner:
 firebase deploy --only firestore --project setwerk-cb1e0
+## Account settings
+
+The top-right DE/EN switch replaces the sidebar language selector. Account opens an anchored menu with Account details, Sign out and Delete account. Profiles use the optional `profile` field in the existing private snapshot (`name`, a cropped 192-pixel JPEG as a data URL capped at 100,000 characters). Older snapshots without a profile remain valid. The display name is also updated in Firebase Authentication; passwords are never saved in the application snapshot or local storage.
+
+Password changes and account deletion reauthenticate with the current password. Deletion waits for local synchronization requests to finish, replaces the cloud payload with a data-free `{"deleted":true}` marker using the existing private rules, deletes the Firebase Authentication user, and removes this account's cache and conflict backups on the current device. The technical Firestore document retains only its UID path, revision, timestamp and deletion marker; it contains no workouts, name, email or picture. Other clients recognize the marker and do not restore cached workouts. If Authentication deletion fails, the previous payload is restored when possible and the local cache is retained. Guest workouts and other accounts remain untouched. Downloaded backups and offline copies on other devices cannot be erased remotely.
+
+CI also exercises the desktop/mobile account menu, real image resizing, profile updates, language switching, password form validation and deletion confirmation in Chromium with a local Firebase transport fixture. Firebase emulator tests separately exercise the real Authentication SDK and Firestore rules for profile retrieval, password changes and deletion.
+

@@ -2,7 +2,7 @@
 'use strict';
 window.SetwerkCloud=(()=>{
   const C=SetwerkCloudCore,G=GymCore,guestKey='setwerk.v1',prefix='setwerk.firebase.account.v1.',lastUserKey='setwerk.firebase.last-account.v1';
-  let user=null,meta=null,current=G.fresh(),mode='guest',timer=null,inflight=null,epoch=0,remoteConflict=null,storageError=false,corruptRaw=null;
+  let user=null,meta=null,current=G.fresh(),mode='guest',timer=null,inflight=null,epoch=0,remoteConflict=null,storageError=false,corruptRaw=null,deleting=false;
   const t=(de,en)=>document.documentElement.lang==='en'?en:de;
   const key=()=>user?prefix+user.id:guestKey;
   function readState(){if(storageError)throw Error('Local storage cannot be read');return user?JSON.stringify(current):localStorage.getItem(guestKey);}
@@ -10,6 +10,7 @@ window.SetwerkCloud=(()=>{
   function emitState(accountChanged=false){window.dispatchEvent(new CustomEvent('setwerk:account-state',{detail:{state:C.clone(current),accountChanged,storageError}}));}
   function status(next=mode){mode=next;const info=document.querySelector('#cloud-account .cloud-description');if(info)info.textContent=description();window.dispatchEvent(new CustomEvent('setwerk:cloud-status'));}
   function saveLocal(state){
+    if(deleting)throw Error(t('Das Konto wird gelöscht.','Account deletion is in progress.'));
     if(storageError)throw Error('Local storage cannot be read');
     const before=user?C.project(current):null,previous=current;
     current=C.clone(state);
@@ -24,7 +25,7 @@ window.SetwerkCloud=(()=>{
   }
   function schedule(){
     clearTimeout(timer);
-    if(storageError||!user||!meta.pending||current.active||remoteConflict||navigator.onLine===false)return;
+    if(deleting||storageError||!user||!meta.pending||current.active||remoteConflict||navigator.onLine===false)return;
     timer=setTimeout(()=>sync(),900);
   }
   async function request(method,body){
@@ -38,11 +39,12 @@ window.SetwerkCloud=(()=>{
   function applyRemote(data){
     // Running workout and drafts remain local, including after a reload.
     current={...current,...C.clone(data)};
+    if(!data.profile)delete current.profile;
     meta.state=current;
     persist();emitState();
   }
   async function connect(nextUser){
-    ++epoch;clearTimeout(timer);inflight=null;remoteConflict=null;storageError=false;corruptRaw=null;user=nextUser?.id?{id:nextUser.id,email:nextUser.email}:null;
+    ++epoch;clearTimeout(timer);inflight=null;remoteConflict=null;storageError=false;corruptRaw=null;deleting=false;user=nextUser?.id?{id:nextUser.id,email:nextUser.email,name:nextUser.name||''}:null;
     meta=null;
     try{
       if(user)localStorage.setItem(lastUserKey,JSON.stringify(user));else localStorage.removeItem(lastUserKey);
@@ -56,6 +58,7 @@ window.SetwerkCloud=(()=>{
     if(!current.active)await sync();else status(meta.pending?'pending':'local');
   }
   async function sync(){
+    if(deleting)return;
     if(storageError){status('storage-error');return;}
     if(!user||current.active){if(user)status('local');return;}
     if(navigator.onLine===false){status('offline');return;}
@@ -84,6 +87,7 @@ window.SetwerkCloud=(()=>{
         applyRemote(after.data);status(current.active?'local':meta.pending?'pending':'synced');
       }catch(error){
         if(token!==epoch)return;
+        if(error.status===410){forgetAccount(owner);await connect(null);window.dispatchEvent(new CustomEvent('setwerk:deleted-account',{detail:{id:owner}}));return;}
         status(error.storage?'storage-error':error.status===503?'unconfigured':error.status===401?'sign-in':error.status===403?'permissions':error.status===429?'quota':error.status===422?'invalid-cloud':error.status===409?'pending':error.status===413?'too-large':'offline');
       }
     })();
@@ -93,6 +97,24 @@ window.SetwerkCloud=(()=>{
   function description(){
     const labels={guest:t('Auf diesem Gerät','On this device'),loading:t('Online-Daten werden geladen …','Loading cloud data …'),syncing:t('Wird synchronisiert …','Syncing …'),synced:t('Online gespeichert','Saved online'),pending:t('Lokal gespeichert · Upload ausstehend','Saved locally · upload pending'),offline:t('Lokal gespeichert · Verbindung fehlt','Saved locally · connection unavailable'),unconfigured:t('Online-Speicher noch nicht eingerichtet','Cloud storage is not configured yet'),local:t('Training läuft lokal','Workout is running locally'),conflict:t('Änderungen auf zwei Geräten · Auswahl erforderlich','Changes on two devices · choose a version'), 'sign-in':t('Lokal gespeichert · bitte erneut anmelden','Saved locally · please sign in again'),permissions:t('Online-Speicher ist noch nicht freigeschaltet. Deine Daten bleiben lokal gespeichert.','Cloud storage is not enabled yet. Your data remains saved locally.'),quota:t('Online-Speicher ist vorübergehend ausgelastet. Deine Daten bleiben lokal gespeichert.','Cloud storage quota reached. Your data remains saved locally.'),'invalid-cloud':t('Online-Daten konnten nicht gelesen werden. Deine lokalen Daten bleiben erhalten.','Cloud data could not be read. Your local data is preserved.'),'too-large':t('Lokal gespeichert · Online-Speichergrenze erreicht','Saved locally · cloud storage limit reached')};
     return mode==='storage-error'?t('Lokaler Speicher konnte nicht gelesen oder geschrieben werden.','Local storage could not be read or written.'):labels[mode]||labels.pending;
+  }
+  function setProfile(profile){
+    if(!user)throw Error(t('Bitte zuerst anmelden.','Please sign in first.'));
+    const next=C.clone(current);next.profile=C.clone(profile);C.validate(C.project(next));
+    saveLocal(next);emitState();
+  }
+  async function beginAccountDeletion(owner){
+    if(user?.id!==owner)throw Error(t('Bitte erneut anmelden.','Please sign in again.'));
+    if(current.active)throw Error(t('Bitte das laufende Training zuerst abschließen.','Please finish the current workout first.'));
+    deleting=true;++epoch;clearTimeout(timer);
+    const previous=inflight;if(previous)await previous;
+    if(user?.id!==owner){deleting=false;throw Error(t('Das Konto wurde gewechselt.','The account has changed.'));}
+    return()=>{deleting=false;schedule();};
+  }
+  function forgetAccount(owner){
+    const ownKey=prefix+owner;
+    for(const suffix of ['', '.conflict-backup','.cloud-conflict-backup'])localStorage.removeItem(ownKey+suffix);
+    try{if(JSON.parse(localStorage.getItem(lastUserKey)||'null')?.id===owner)localStorage.removeItem(lastUserKey);}catch{}
   }
   function downloadBackup(data=current){
     const blob=new Blob([corruptRaw||JSON.stringify({format:'setwerk-backup-v1',data},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');
@@ -185,5 +207,5 @@ window.SetwerkCloud=(()=>{
       current=G.migrateState(meta.state);C.validate(C.project(current));C.validate(meta.base);corruptRaw=null;status(current.active?'local':meta.pending?'pending':'loading');
     }
   }catch{storageError=true;current=G.fresh();status('storage-error');}
-  return {readState,saveLocal,connect,sync,description,openPanel,downloadBackup,importGuest,useCloudVersion,useLocalVersion,restoreBackup,get user(){return user;},get mode(){return mode;},get storageError(){return storageError;}};
+  return {readState,saveLocal,connect,sync,description,openPanel,downloadBackup,importGuest,useCloudVersion,useLocalVersion,restoreBackup,setProfile,beginAccountDeletion,forgetAccount,get profile(){return current.profile||null;},get user(){return user;},get mode(){return mode;},get storageError(){return storageError;}};
 })();

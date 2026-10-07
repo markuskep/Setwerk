@@ -1,6 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const {initializeApp,deleteApp}=require('firebase/app');
-const {getAuth,connectAuthEmulator,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,updateProfile}=require('firebase/auth');
+const {getAuth,connectAuthEmulator,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,updateProfile,reauthenticateWithCredential,EmailAuthProvider,updatePassword,deleteUser}=require('firebase/auth');
 const {getFirestore,connectFirestoreEmulator}=require('firebase/firestore');
 const Store=require('../../Setwerk-Webapp-1.2.0-Projektdateien/dist/firebase-store.js');
 const G=require('../../Setwerk-Webapp-1.2.0-Projektdateien/dist/core.js'),C=require('../../Setwerk-Webapp-1.2.0-Projektdateien/dist/cloud-core.js');
@@ -11,11 +11,16 @@ test('register, persist workout in Firestore, sign out and recover it on a secon
   const email='workout-'+Date.now()+'@example.test',password='test-password';
   const created=await createUserWithEmailAndPassword(devices[0].auth,email,password);
   await updateProfile(created.user,{displayName:'Markus'});const uid=created.user.uid;
-  const data=C.project(G.fresh());data.sessions.push({id:'completed',name:'Training',category:'Kraft',date:'2026-10-06',duration:600,items:[]});
+  const data=C.project(G.fresh());data.profile={name:'Markus',photo:'data:image/jpeg;base64,/9j/AA=='};data.sessions.push({id:'completed',name:'Training',category:'Kraft',date:'2026-10-06',duration:600,items:[]});
   await devices[0].store.write(uid,0,data);await signOut(devices[0].auth);
   await assert.rejects(devices[0].store.read(uid),e=>e.status===401);
   const signed=await signInWithEmailAndPassword(devices[1].auth,email,password);assert.equal(signed.user.uid,uid);
   const loaded=await devices[1].store.read(uid);assert.equal(loaded.revision,1);assert.deepEqual(loaded.data,data);
   await assert.rejects(signInWithEmailAndPassword(devices[1].auth,email,'incorrect-password'));
+  await reauthenticateWithCredential(signed.user,EmailAuthProvider.credential(email,password));await updatePassword(signed.user,'new-test-password');await signOut(devices[1].auth);
+  await assert.rejects(signInWithEmailAndPassword(devices[0].auth,email,password));
+  const changed=await signInWithEmailAndPassword(devices[0].auth,email,'new-test-password');assert.equal(changed.user.displayName,'Markus');
+  await devices[0].store.erase(uid);await assert.rejects(devices[0].store.read(uid),e=>e.status===410);
+  await deleteUser(changed.user);await assert.rejects(signInWithEmailAndPassword(devices[1].auth,email,'new-test-password'));
  }finally{await Promise.all(apps.map(deleteApp));}
 });

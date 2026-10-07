@@ -35,6 +35,34 @@ export async function signup(email,password,name){
   return account(result.user);
 }
 export async function logout(){const {auth,authSDK}=await resources();await authSDK.signOut(auth);}
+function signedUser(auth){if(!auth.currentUser)throw Object.assign(Error('Please sign in again'),{code:'auth/requires-recent-login'});return auth.currentUser;}
+export async function updateUserProfile(name){
+  const {auth,authSDK}=await resources(),user=signedUser(auth);
+  await authSDK.updateProfile(user,{displayName:name});return account(user);
+}
+async function confirmPassword(auth,authSDK,password){
+  const user=signedUser(auth);
+  await authSDK.reauthenticateWithCredential(user,authSDK.EmailAuthProvider.credential(user.email,password));
+  if(auth.currentUser?.uid!==user.uid)throw Object.assign(Error('Please sign in again'),{code:'auth/requires-recent-login'});
+  return user;
+}
+export async function changePassword(currentPassword,newPassword){
+  const {auth,authSDK}=await resources();
+  const user=await confirmPassword(auth,authSDK,currentPassword);await authSDK.updatePassword(user,newPassword);
+}
+export async function removeAccount(currentPassword){
+  const {auth,authSDK,store}=await resources(),user=await confirmPassword(auth,authSDK,currentPassword);
+  const resume=await window.SetwerkCloud.beginAccountDeletion(user.uid);
+  let previous;
+  try{
+    previous=await store.erase(user.uid);
+    try{await authSDK.deleteUser(user);}catch(error){
+      if(previous)try{await store.restore(user.uid,previous.revision+1,previous.data);}catch{error.code='setwerk/delete-partial';}
+      throw error;
+    }
+    window.SetwerkCloud.forgetAccount(user.uid);
+  }finally{resume();}
+}
 export async function resetPassword(email){
   const {auth,authSDK}=await resources();
   try{await authSDK.sendPasswordResetEmail(auth,email);}catch(error){if(error.code!=='auth/user-not-found')throw error;}
