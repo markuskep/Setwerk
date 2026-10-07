@@ -1,0 +1,43 @@
+name: Check Setwerk Android parity
+
+on:
+  push:
+    branches: [android-web-parity]
+  pull_request:
+    paths: ['android/**', '.github/workflows/android-parity.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: android/package-lock.json
+      - name: Install test dependencies
+        run: npm ci
+      - name: Check Android storage, accounts and current workout features
+        run: npm test
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Check mobile Android interface and native bridge
+        run: npm run test:browser
+      - name: Retain mobile screenshots and results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: setwerk-android-1.4.0-validation
+          path: |
+            android/validation-screenshots
+            android/browser-results.json
+          if-no-files-found: ignore

@@ -1,0 +1,95 @@
+{
+  "androidVersion": "1.4.0",
+  "versionCode": 5,
+  "webRepository": "markuskep/Setwerk",
+  "webBranch": "firebase-migration",
+  "webCommit": "8d4c3570d6f4d5b3b8faf50529fa8e4627171ba3",
+  "firebaseProject": "setwerk-cb1e0",
+  "files": {
+    "core.js": {
+      "web_sha256": "12b71d4143c74f1b4c948fa35182d01175897f8a9a035e525ffe2be83db644f5",
+      "android_sha256": "12b71d4143c74f1b4c948fa35182d01175897f8a9a035e525ffe2be83db644f5",
+      "android_adapter": false
+    },
+    "styles.css": {
+      "web_sha256": "4b17424721d21410c24288d9883046cbdf09dde162e7990965e7dfc432be7008",
+      "android_sha256": "4b17424721d21410c24288d9883046cbdf09dde162e7990965e7dfc432be7008",
+      "android_adapter": false
+    },
+    "firebase-store.js": {
+      "web_sha256": "248eb3da0b78a4fc043f8ba198ab9ff9108fb243ffd055f2ab508db0d8d5c790",
+      "android_sha256": "248eb3da0b78a4fc043f8ba198ab9ff9108fb243ffd055f2ab508db0d8d5c790",
+      "android_adapter": false
+    },
+    "cloud-core.js": {
+      "web_sha256": "463b53052aa30408d02debf0f382b1ac0fe1c03198cc87a76e2bcc8e9ada9729",
+      "android_sha256": "463b53052aa30408d02debf0f382b1ac0fe1c03198cc87a76e2bcc8e9ada9729",
+      "android_adapter": false
+    },
+    "i18n.js": {
+      "web_sha256": "e36a8ed15c3680a6cd0c21de728b3099feb320a74a1c1a32c57c4bcc0de58e04",
+      "android_sha256": "e36a8ed15c3680a6cd0c21de728b3099feb320a74a1c1a32c57c4bcc0de58e04",
+      "android_adapter": false
+    },
+    "cloud.js": {
+      "web_sha256": "cd1337100c646ddef43c685436caae52eb9e291e3e804cceda3de419032236f7",
+      "android_sha256": "cd1337100c646ddef43c685436caae52eb9e291e3e804cceda3de419032236f7",
+      "android_adapter": false
+    },
+    "firebase-service.js": {
+      "web_sha256": "bc80bcfbbef239c9e309fbde26875f4f3a5a2dfaaefe13a50348e94f0e5aa0ed",
+      "android_sha256": "cec2bb331c5d6463dca8535eede838024a07d2d0e713644a3beb6397545c06a9",
+      "android_adapter": true
+    },
+    "exercises.js": {
+      "web_sha256": "ced415026e3be01d7fcb8da56e8ef4f0c3a965a45db296437d1e480d7386c9fc",
+      "android_sha256": "ced415026e3be01d7fcb8da56e8ef4f0c3a965a45db296437d1e480d7386c9fc",
+      "android_adapter": false
+    },
+    "auth.js": {
+      "web_sha256": "2c7d236c05cc4a7a34dbb8bc184a862e8313042d993862ea0d39eca3b88e4deb",
+      "android_sha256": "5a4a3c2aa07f8bfedcc721a50fcd28187832d1806a8e414eb8002a4f4aed3078",
+      "android_adapter": true
+    },
+    "transfer.js": {
+      "web_sha256": "c5c163c21a1681e0bda07759557dcb08c896f9f9d85d2648c8a477cc5e7863ca",
+      "android_sha256": "c5c163c21a1681e0bda07759557dcb08c896f9f9d85d2648c8a477cc5e7863ca",
+      "android_adapter": false
+    },
+    "avatar-default.svg": {
+      "web_sha256": "1dd800451707e36474b1370c43fbd72c5e562a584c0be32e6b250475f24e8f3b",
+      "android_sha256": "1dd800451707e36474b1370c43fbd72c5e562a584c0be32e6b250475f24e8f3b",
+      "android_adapter": false
+    },
+    "index.html": {
+      "web_sha256": "5018118b67e4689664ac48c4e9eb7529f5a394955bce8cc1e4bfe5d7013cc431",
+      "android_sha256": "a14bf094ed37688a91c1a50513182526292c7c59ddc343cfa95b896d005ed12c",
+      "android_adapter": true
+    },
+    "exercises-en.js": {
+      "web_sha256": "542d533ee0f57013e717b9036e3272eb70ed4c8ae09f54facaa4423df82b044f",
+      "android_sha256": "542d533ee0f57013e717b9036e3272eb70ed4c8ae09f54facaa4423df82b044f",
+      "android_adapter": false
+    },
+    "sw.js": {
+      "web_sha256": "daf8fc70826c1d60c51823cabb21d5e26c0e7bb8ca75b9bad2e2e6460ab3ef02",
+      "android_sha256": "daf8fc70826c1d60c51823cabb21d5e26c0e7bb8ca75b9bad2e2e6460ab3ef02",
+      "android_adapter": false
+    },
+    "manifest.webmanifest": {
+      "web_sha256": "23619207d90884f701cfc8c3c35125695ecaec64ad48af6bb6971670ed947b7b",
+      "android_sha256": "23619207d90884f701cfc8c3c35125695ecaec64ad48af6bb6971670ed947b7b",
+      "android_adapter": false
+    },
+    "app.js": {
+      "web_sha256": "503aa7e253b86cd6da969c7fa7fecc7a04b00aeb3419bfa76f80d6abafe88916",
+      "android_sha256": "18d3198fe1dd87db698425d23436375699164ec9ae870208c0e2d3fc65ed5aae",
+      "android_adapter": true
+    },
+    "account-ui.js": {
+      "web_sha256": "4e15f428f375ba8711dbc96aae4f59fbc53dd0ff514c8001f49c367d27170bc0",
+      "android_sha256": "4e15f428f375ba8711dbc96aae4f59fbc53dd0ff514c8001f49c367d27170bc0",
+      "android_adapter": false
+    }
+  }
+}

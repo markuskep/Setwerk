@@ -1,0 +1,46 @@
+{
+  "version": "1.4.0",
+  "webCommit": "8d4c3570d6f4d5b3b8faf50529fa8e4627171ba3",
+  "automatedTests": {
+    "total": 79,
+    "passed": 79,
+    "failed": 0
+  },
+  "liveFirebase": {
+    "passed": true,
+    "temporaryAccountRemoved": true,
+    "checks": [
+      "signup and lookup",
+      "same snapshot read/write as web",
+      "revision conflict and concurrent commit",
+      "owner checks and deployed Firestore rules",
+      "profile name",
+      "password reauthentication and change",
+      "token refresh",
+      "deletion marker and restore",
+      "credential deletion"
+    ]
+  },
+  "apk": {
+    "built": true,
+    "verified": true,
+    "versionCode": 5,
+    "package": "at.setwerk.app.v2",
+    "minSdk": 26,
+    "targetSdk": 35,
+    "previousCertificateMatched": true,
+    "certificateSha256": "30e9fec2689fb103630a494a9a8c04a74548050db0ac27de508f5e7fc426d026"
+  },
+  "browser": {
+    "status": "pending CI",
+    "localBrowserUnavailable": "Browser sockets unavailable in execution environment"
+  },
+  "realAndroidDevice": {
+    "tested": false,
+    "outstanding": [
+      "installation and native document picker",
+      "Android Keystore persistence across updates",
+      "background notifications"
+    ]
+  }
+}
