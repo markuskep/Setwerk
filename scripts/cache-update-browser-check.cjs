@@ -19,15 +19,15 @@ const server=http.createServer((req,res)=>{
   await page.evaluate(async()=>{await navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'});await navigator.serviceWorker.ready;localStorage.setItem('setwerk.v1','unchanged-workouts');await caches.open('other-application-cache');});
   await page.waitForFunction(()=>!!navigator.serviceWorker.controller);await page.reload();assert.equal(await page.locator('#version').textContent(),'old');
   version='new';assert.match(await page.evaluate(()=>fetch('/app.js').then(r=>r.text())),/"old"/);await page.evaluate(async()=>{const registration=await navigator.serviceWorker.getRegistration();await registration.update();});
-  await page.waitForFunction(async(name)=>{const registration=await navigator.serviceWorker.getRegistration(),names=await caches.keys();return registration.active?.state==='activated'&&!registration.waiting&&names.includes(name)&&!names.includes('setwerk-test-old');},newCache);
+  await page.waitForFunction(async(name)=>{const registration=await navigator.serviceWorker.getRegistration(),names=await caches.keys();return registration.active?.state==='activated'&&!registration.installing&&!registration.waiting&&names.includes(name)&&!names.includes('setwerk-test-old');},newCache);
   assert.match(await page.evaluate(()=>fetch('/app.js').then(r=>r.text())),/"new"/);
   // A normal reload now gets the new UI without clearing account/workout storage.
-  await page.reload();assert.equal(await page.locator('#version').textContent(),'new');assert.equal(await page.evaluate(()=>localStorage.getItem('setwerk.v1')),'unchanged-workouts');
+  await page.reload();await page.waitForFunction(()=>document.querySelector('#version')?.textContent==='new');assert.equal(await page.locator('#version').textContent(),'new');assert.equal(await page.evaluate(()=>localStorage.getItem('setwerk.v1')),'unchanged-workouts');
   assert.ok((await page.evaluate(()=>caches.keys())).includes('other-application-cache'));
   await page.evaluate(()=>Promise.all([fetch('/__/firebase/init.json'),fetch('/.netlify/private')]));
   const cached=await page.evaluate(async(name)=>{const cache=await caches.open(name);return(await cache.keys()).map(r=>new URL(r.url).pathname);},newCache);
   assert.equal(cached.some(p=>p.startsWith('/__/')||p.startsWith('/.netlify/')),false);
-  await context.setOffline(true);await page.reload();assert.equal(await page.locator('#version').textContent(),'new');assert.equal(await page.evaluate(()=>localStorage.getItem('setwerk.v1')),'unchanged-workouts');
+  await context.setOffline(true);await page.reload();await page.waitForFunction(()=>document.querySelector('#version')?.textContent==='new');assert.equal(await page.locator('#version').textContent(),'new');assert.equal(await page.evaluate(()=>localStorage.getItem('setwerk.v1')),'unchanged-workouts');
   console.log(JSON.stringify({cacheUpdateChecks:'passed',openTabUpgrade:true,freshAssets:true,offlineReload:true,workoutsPreserved:true,privateEndpointsExcluded:true}));
  }finally{await browser?.close();server.close();}
 })().catch(error=>{console.error(error);server.close();process.exitCode=1;});
