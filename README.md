@@ -1,31 +1,41 @@
 # Setwerk
 
-Workout-Webapp für Netlify mit Trainingsvorlagen, Focus Mode, Kalender und optionalem Online-Speicher in einer privaten Google-Tabelle.
+Trainings-App für Web und Android mit Vorlagen, Spontantraining, Focus Mode, Übungskatalog, Kalender, Cardio- und Ballsportaufzeichnung sowie Workout-Import und -Export.
 
-## Google-Sheets-Anbindung aktivieren
+## Aktueller Stand
 
-Die vorhandene Anmeldung verwendet Netlify Identity. Abgeschlossene Einheiten, Vorlagen, eigene Übungen und Einstellungen können geräteübergreifend synchronisiert werden. Laufende Workouts und Entwürfe bleiben lokal.
+- Webapp: https://setwerk-cb1e0.web.app
+- Anmeldung: Firebase Authentication mit E-Mail und Passwort.
+- Datenspeicher: Cloud Firestore im Projekt `setwerk-cb1e0`.
+- Android: Version 1.4.0; vollständiger Quellcode und Bauanleitung unter [android/](android/README.md).
+- Web-Quellcode: `Setwerk-Webapp-1.2.0-Projektdateien/dist`. Der Ordnername bleibt für bestehende Konfigurationen erhalten; sein Inhalt ist die aktuelle Firebase-Version.
 
-**Die Verbindung ist erst nach der Kontokonfiguration aktiv.** Folge [GOOGLE-SHEETS-SETUP.md](GOOGLE-SHEETS-SETUP.md): private Tabelle erstellen, [Apps Script](google-sheets/Code.gs) bereitstellen, `SETWERK_SHEETS_URL` und `SETWERK_SHEETS_SECRET` in Netlify setzen, neu deployen. Bestehende lokale Trainings können anschließend im Konto-Menü ausdrücklich übernommen werden.
+Abgeschlossene Trainings, Vorlagen, eigene Übungen, Einstellungen und Profile werden pro Konto synchronisiert. Laufende Trainings und Entwürfe bleiben lokal. Ohne Verbindung bleiben Änderungen gespeichert und werden später übertragen. Gastnutzung ist weiterhin möglich.
 
-## Netlify-Deployment
+## Firebase und Veröffentlichung
 
-`netlify.toml` in der Repository-Wurzel konfiguriert den GitHub-Deploy:
+Die Einrichtung und das Datenmodell stehen in [FIREBASE-SETUP.md](FIREBASE-SETUP.md). `firebase.json`, `firestore.rules` und `firestore.indexes.json` enthalten die Hosting- und Datenbankkonfiguration.
 
-- Produktionsbranch: `main`
-- Basisverzeichnis: Repository-Wurzel
-- Build-Befehl: `node --check netlify/functions/workout-store.mjs`
-- Publish-Verzeichnis: `Setwerk-Webapp-1.2.0-Projektdateien/dist`
-- Functions-Verzeichnis: `netlify/functions`
-- Node.js 22; Function-Abhängigkeiten aus dem Root-`package.json`
+GitHub Actions veröffentlicht den Branch `firebase-migration` nach erfolgreichen Anwendungs-, Emulator- und Browserprüfungen auf Firebase Hosting. `main` und `android-web-parity` enthalten ebenfalls den konsolidierten aktuellen Projektstand. Private Dienstkontoschlüssel gehören ausschließlich in die vorgesehenen GitHub-Secrets; Android-Signaturschlüssel werden separat gesichert.
 
-Für diese Version den GitHub-Deploy verwenden. Ein reiner `dist`-ZIP-Upload enthält keine Server-Function und aktiviert den Online-Speicher nicht.
+## Prüfungen
 
-## Tests
+Mit Node.js 22 oder neuer:
 
-```bash
+```sh
 npm ci
 npm test
 ```
 
-Die Tests prüfen Trainingsabläufe, Import/Export, Anmeldung, lokale Kontospeicher, Offline-Uploads, Versionskonflikte und die Server-/Sheets-Speicherlogik. Google und Netlify werden dabei simuliert; nach Einrichtung ist der Live-Test aus der Anleitung erforderlich.
+Android-Prüfungen:
+
+```sh
+npm ci --prefix android
+npm run test:android
+```
+
+Die Firebase-Emulatorprüfungen und mobilen Browserprüfungen sind in den GitHub-Workflows hinterlegt. Anleitungen zum Android-Build und den verbleibenden Gerätetests stehen in `android/README.md`.
+
+## Vorhandene Trainingsdaten
+
+Gastdaten können im Konto unter Synchronisierung und Datensicherung ausdrücklich übernommen werden. Android unterstützt zusätzlich die Übernahme gespeicherter Daten früherer Konten. Diese Wiederherstellung benötigt keine Verbindung zum alten Backend. Bestehende lokale Trainingsdaten und Android-Signaturschlüssel bleiben erhalten.

@@ -22,9 +22,9 @@ The JSON payload is limited to 800,000 UTF-8 bytes to stay below Firestore's doc
 
 ## Existing data and accounts
 
-Netlify accounts and Google Sheets data are not automatically migrated. Firebase accounts must be created separately. Local guest workouts can be imported explicitly through Account > Import guest workouts. Account backup files can also be imported. Never import another person's account data. The Android APK still uses the previous backend until a separate Android update is installed.
+Accounts and cloud data from the former backend are not automatically migrated. Firebase accounts must be created separately. Local guest workouts can be imported explicitly through Account > Import guest workouts. Account backup files can also be imported. Never import another person's account data. Android 1.4.0 uses the same Firebase project and snapshot format as the webapp. Its account backup panel also offers explicit recovery of local records from older Android accounts.
 
-Firebase local account keys use setwerk.firebase.account.v1.{uid}; guest storage remains setwerk.v1. Existing Netlify account caches are preserved.
+Firebase local account keys use setwerk.firebase.account.v1.{uid}; guest storage remains setwerk.v1. Existing legacy account caches are preserved for data recovery.
 
 ## Verification
 

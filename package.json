@@ -3,9 +3,9 @@
   "version": "1.3.0",
   "private": true,
   "scripts": {
-    "test": "node --test Setwerk-Webapp-1.2.0-Projektdateien/tests/*.test.cjs netlify/tests/*.test.cjs"
+    "test": "node --test Setwerk-Webapp-1.2.0-Projektdateien/tests/*.test.cjs",
+    "test:android": "npm --prefix android test"
   },
-  "dependencies": { "@netlify/identity": "2.0.0" },
   "devDependencies": { "jsdom": "26.1.0" },
   "engines": { "node": ">=22" }
 }
