@@ -99,6 +99,7 @@ window.SetwerkI18n=(()=>{
  'Mindestens ein Satz muss erhalten bleiben.':'At least one set must remain.',
  'Übung nicht gefunden.':'Exercise not found.',
  'Bitte eine Sprache auswählen.':'Please choose a language.',
+ 'Sprache konnte nicht gespeichert werden.':'Language could not be saved.',
  'Android-Erinnerungen sind aktiviert.':'Android reminders are enabled.',
  'Benachrichtigungen sind deaktiviert. Du kannst sie in den Android-Einstellungen erlauben.':'Notifications are disabled. You can allow them in Android settings.',
  'GUT, DASS DU DA BIST':'GOOD TO SEE YOU', 'DEIN TRAINING':'YOUR TRAINING','DEINE WOCHE':'YOUR WEEK','TRAININGSPLAN':'WORKOUT PLAN','MANUELLE AUFZEICHNUNG':'MANUAL ENTRY','ÜBUNGSDATENBANK':'EXERCISE LIBRARY','TRAININGSVERLAUF':'WORKOUT HISTORY','DEINE ENTWICKLUNG':'YOUR PROGRESS','DEIN PLAN IST GESCHAFFT':'PLAN COMPLETED','SPONTANTRAINING':'FREESTYLE WORKOUT','DEINE EINHEIT':'YOUR WORKOUT','BESTER SATZ':'BEST SET','LÄNGSTE DAUER':'LONGEST DURATION','WEITESTE STRECKE':'LONGEST DISTANCE','ZULETZT TRAINIERT':'LAST PERFORMED','WIEDERHOLUNGEN':'REPETITIONS','DAUER · MIN:SEK':'DURATION · MIN:SEC','KILOGRAMM':'KILOGRAMS','METER':'METERS','DURCHATMEN.':'TAKE A BREATH.','ÜBUNG':'EXERCISE','SÄTZE':'SETS','DAUER':'DURATION',

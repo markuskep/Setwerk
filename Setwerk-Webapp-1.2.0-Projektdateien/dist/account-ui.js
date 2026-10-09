@@ -9,6 +9,7 @@ export function createAccountUI(api){
   function refresh(next=user){
     const changed=user?.id!==next?.id;user=next;
     if(changed){closeMenu(false);if(dialog?.open)dialog.close();++imageJob;}
+    if(user)document.querySelectorAll('[data-action="toggle-language"]').forEach(button=>button.remove());
     for(const button of document.querySelectorAll('[data-auth-open]')){
       button.replaceChildren();
       if(user){
@@ -81,7 +82,7 @@ export function createAccountUI(api){
       if(action==='delete'){dialog.querySelector('#account-delete-section').hidden=false;dialog.querySelector('#delete-password').focus();dialog.querySelector('#account-delete-section').scrollIntoView?.({block:'nearest',behavior:'smooth'});}
       if(action==='sync-panel'){dialog.close();cloud()?.openPanel(()=>signOut());}
     });
-    dialog.addEventListener('change',event=>{if(event.target.id==='profile-photo')choosePhoto(event.target);});
+    dialog.addEventListener('change',event=>{if(event.target.id==='profile-photo')choosePhoto(event.target);else if(event.target.id==='account-language')changeLanguage(event.target);});
     dialog.addEventListener('submit',event=>{event.preventDefault();if(!busy)submit(event.target);});
   }
   function openDetails(deletion=false){
@@ -89,12 +90,23 @@ export function createAccountUI(api){
     ensureDialog();const p=profile();pendingPhoto=p.photo||'';++imageJob;
     dialog.innerHTML=`<div class="modal-head"><h2 id="account-title">${t('Kontodaten','Account details')}</h2><button type="button" class="icon-btn" data-account-action="close" aria-label="${t('Schließen','Close')}">×</button></div><div class="modal-body account-sections">
       <form id="profile-form" class="account-form"><div class="profile-photo-row"><img id="profile-preview" class="profile-preview" src="${escape(photo(pendingPhoto))}" alt="${t('Profilbild','Profile picture')}"><div class="profile-photo-controls"><label class="btn outline photo-picker">${t('Profilbild auswählen','Choose profile picture')}<input id="profile-photo" type="file" accept="image/jpeg,image/png,image/webp" aria-label="${t('Profilbild auswählen','Choose profile picture')}"></label><button type="button" class="btn ghost" data-account-action="remove-photo">${t('Bild entfernen','Remove picture')}</button></div></div><label>${t('E-Mail-Adresse','Email address')}<input type="email" value="${escape(user.email)}" readonly autocomplete="email"></label><label>${t('Nutzername','Username')}<input name="profileName" value="${escape(p.name)}" required maxlength="80" autocomplete="nickname" placeholder="${t('Dein Name','Your name')}"></label><button type="submit" class="btn accent">${t('Profil speichern','Save profile')}</button></form>
+      <section class="account-section"><h3>${t('Sprache','Language')}</h3><label>${t('App-Sprache','App language')}<select id="account-language"><option value="de" ${document.documentElement.lang==='en'?'':'selected'}>Deutsch</option><option value="en" ${document.documentElement.lang==='en'?'selected':''}>English</option></select></label></section>
       <section class="account-section"><h3>${t('Passwort ändern','Change password')}</h3><form id="password-form" class="account-form"><input type="text" name="username" value="${escape(user.email)}" autocomplete="username" hidden><label>${t('Aktuelles Passwort','Current password')}<input name="currentPassword" type="password" required autocomplete="current-password"></label><label>${t('Neues Passwort','New password')}<input name="newPassword" type="password" required minlength="6" autocomplete="new-password"></label><label>${t('Neues Passwort wiederholen','Repeat new password')}<input name="repeatPassword" type="password" required minlength="6" autocomplete="new-password"></label><button type="submit" class="btn outline">${t('Passwort ändern','Change password')}</button></form></section>
       <section class="account-section"><h3>${t('Synchronisierung','Synchronization')}</h3><p class="account-sync-status muted">${escape(cloud()?.description()||'')}</p><button type="button" class="btn outline" data-account-action="sync-panel">${t('Synchronisierung & Datensicherung','Sync & backups')}</button></section>
       <section class="account-section"><button type="button" class="btn danger" data-account-action="delete">${t('Konto löschen','Delete account')}</button><div id="account-delete-section" ${deletion?'':'hidden'}><p class="account-delete-note">${t('Dein Konto, dein Profil und alle online gespeicherten Trainings und Vorlagen werden endgültig gelöscht. Erstelle bei Bedarf vorher eine Datensicherung.','Your account, profile and all workouts and templates saved online will be permanently deleted. Download a backup first if needed.')}</p><form id="delete-account-form" class="account-form"><input type="text" name="username" value="${escape(user.email)}" autocomplete="username" hidden><label>${t('Aktuelles Passwort','Current password')}<input id="delete-password" name="deletePassword" type="password" required autocomplete="current-password"></label><label class="inline-check"><input type="checkbox" name="confirmDeletion" required>${t('Ich möchte mein Konto endgültig löschen.','I want to permanently delete my account.')}</label><button type="submit" class="btn danger">${t('Konto endgültig löschen','Permanently delete account')}</button></form></div></section>
       <p id="account-message" class="auth-message" role="status" aria-live="polite"></p></div>`;
     if(!dialog.open)dialog.showModal();
     (deletion?dialog.querySelector('#delete-password'):dialog.querySelector('[name="profileName"]')).focus();
+  }
+  function changeLanguage(select){
+    if(!user||busy)return;
+    const previous=document.documentElement.lang==='en'?'en':'de',draftPhoto=pendingPhoto,deletion=!dialog.querySelector('#account-delete-section').hidden;
+    const values=[...dialog.querySelectorAll('input:not([type="file"])')].map(input=>({value:input.value,checked:input.checked}));
+    try{
+      api.setLanguage(select.value);openDetails(deletion);pendingPhoto=draftPhoto;dialog.querySelector('#profile-preview').src=photo(pendingPhoto);
+      [...dialog.querySelectorAll('input:not([type="file"])')].forEach((input,index)=>{input.value=values[index].value;input.checked=values[index].checked;});
+      dialog.querySelector('#account-language').focus();showMessage(t('Sprache gespeichert.','Language saved.'));
+    }catch(error){select.value=previous;showMessage(api.authError(error),true);}
   }
   async function choosePhoto(input){
     const file=input.files?.[0],job=++imageJob;if(!file)return;
@@ -111,7 +123,7 @@ export function createAccountUI(api){
       pendingPhoto=data;dialog.querySelector('#profile-preview').src=data;showMessage(t('Zum Übernehmen „Profil speichern“ auswählen.','Choose “Save profile” to apply the picture.'));
     }catch(error){showMessage(error.message,true);}finally{if(url)URL.revokeObjectURL(url);busy=false;lock(false);input.value='';}
   }
-  function lock(value){dialog.querySelectorAll('button,input').forEach(node=>{node.disabled=value;});}
+  function lock(value){dialog.querySelectorAll('button,input,select').forEach(node=>{node.disabled=value;});}
   async function submit(form){
     if(!form.reportValidity())return;
     const data=new FormData(form),owner=user?.id;if(!owner)return;

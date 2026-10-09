@@ -8,7 +8,7 @@ gate.hidden = true;
 let authReturnFocus = null;
 let currentUser = window.SetwerkCloud?.user || null;
 const text = (de, en) => document.documentElement.lang === 'en' ? en : de;
-const accountUI=createAccountUI({logout,updateUserProfile,changePassword,removeAccount,activateUser,authError});
+const accountUI=createAccountUI({logout,updateUserProfile,changePassword,removeAccount,activateUser,authError,setLanguage:language=>window.SetwerkLanguage.set(language)});
 
 function setMessage(text, error=false) {
   message.textContent = text || '';
