@@ -57,11 +57,9 @@
 
 .account-menu{animation:none}
 
-/* Focus Mode is a subpage inside the shared app navigation. */
-.focus-breadcrumb{display:flex;align-items:center;gap:8px;margin-bottom:20px;color:var(--muted);font-size:.85rem}.focus-breadcrumb .btn{padding:8px 0;color:var(--ink)}
-.focus-page .focus-shell{position:relative;min-height:calc(100dvh - 190px);border-radius:24px;overflow:hidden}.focus-page .focus-top .btn{padding:10px 14px}.focus-page .focus-main{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center}.focus-page .focus-main>div,.focus-page .focus-main>.next-card{width:100%}.focus-page .focus-main .finish-icon{width:65px;flex-shrink:0}.focus-page .focus-main .focus-values{display:flex}
+/* Active workouts can be resumed from other pages; Focus Mode fills the viewport. */
 .nav .focus-nav{margin:4px 0 10px 16px;font-size:.85rem;padding:12px}.active-workout-banner{display:flex;align-items:center;justify-content:space-between;gap:16px;background:var(--tone-e5f6c7);border:1px solid var(--line);border-radius:16px;padding:14px 18px;margin-bottom:24px}.active-workout-banner>span{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}.active-workout-banner strong{overflow-wrap:anywhere}.active-workout-banner>span>span{font-size:.8rem;color:var(--muted)}.active-workout-banner .btn{flex-shrink:0}
 .training-end-actions{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:10px;margin-top:28px}.training-end-actions .btn{width:auto;min-height:44px}
-@media(max-width:700px){.focus-page{padding-top:20px}.focus-page .focus-shell{min-height:calc(100dvh - 210px);padding:18px 16px;border-radius:20px}.focus-page .focus-main{padding:30px 0 16px}.focus-breadcrumb{margin-bottom:14px}.active-workout-banner{align-items:flex-start;padding:14px;flex-direction:column;gap:12px}.active-workout-banner .btn{align-self:flex-end}.training-end-actions{gap:8px}.training-end-actions .btn{padding:12px;font-size:.85rem}}
+@media(max-width:700px){.active-workout-banner{align-items:flex-start;padding:14px;flex-direction:column;gap:12px}.active-workout-banner .btn{align-self:flex-end}.training-end-actions{gap:8px}.training-end-actions .btn{padding:12px;font-size:.85rem}}
 
-.focus-page .rest-overlay{position:absolute;border-radius:inherit}
+body.focus-mode{background:var(--tone-101b14)}body.focus-mode #toast{bottom:calc(24px + env(safe-area-inset-bottom))}
