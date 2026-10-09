@@ -52,7 +52,7 @@ function openAuth(trigger) {
   document.getElementById('app').inert = true;
   document.querySelector('#auth-form input[name="email"]')?.focus();
 }
-function updateAuthButton(user=currentUser){accountUI.refresh(user);}
+function updateAuthButton(user=currentUser){accountUI.refresh(user);window.SetwerkGreeting?.connect(user);}
 function activateUser(user) {
   const unchanged=currentUser?.id===user?.id && window.SetwerkCloud?.user?.id===user?.id;
   currentUser = user;

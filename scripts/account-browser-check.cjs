@@ -1,7 +1,7 @@
 const {chromium}=require('playwright'),http=require('node:http'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const root=path.join(__dirname,'../Setwerk-Webapp-1.2.0-Projektdateien/dist');
 const screenshots=path.join(process.env.RUNNER_TEMP||require('node:os').tmpdir(),'setwerk-ui');fs.mkdirSync(screenshots,{recursive:true});
-const mock=`let user={id:'visual-user',email:'markus@example.test',name:'Markus'},listener;const stores={},appearance={};
+const mock=`let user={id:'visual-user',email:'markusk302@gmail.com',name:'Markus'},listener;const stores={},appearance={};
 export async function getUser(){return user;}export async function subscribeAuth(fn){listener=fn;fn(user);}
 export async function signup(email,password,name){return user={id:'visual-user',email,name};}export async function login(email,password){return user={id:'visual-user',email,name:'Markus'};}export async function logout(){user=null;listener(null);}
 export async function resetPassword(){}export async function updateUserProfile(name){user={...user,name};return user;}export async function changePassword(current,password){if(current!=='test-password')throw Object.assign(Error('wrong'),{code:'auth/invalid-credential'});window.__passwordChanged=password;}
@@ -13,6 +13,17 @@ const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://loc
 let browser;try{
 browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
 await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>document.querySelector('[data-auth-state="signed-in"]')&&window.SetwerkCloud.mode==='synced');
+assert.match(await page.locator('[data-welcome-greeting]').textContent(),/Markus/);
+const realDate=await page.locator('.home-welcome p').textContent();
+const greetingCases=[['04:00','Guten Morgen Markus','Der frühe Vogel fängt den Wurm'],['07:00','Guten Morgen Markus','Perfekter Zeitpunkt für ein Workout'],['09:00','Hallo Markus','Wünsche einen schönen Vormittag'],['11:00','Hallo Markus','Schon Mittaggegessen?'],['13:00','Schönen Nachmittag Markus','Vergiss nicht, auch mal Pausen einzulegen'],['17:00','Schönen Abend Markus','Wie war dein Tag heute?'],['20:00','Schönen Abend Markus','Spätes Workout oder früh ins Bett gehen?'],['22:00','Gute Nacht Markus','Morgen nichts vor oder schlaflose Nacht?'],['00:30','Gute Nacht Markus','Morgen nichts vor oder schlaflose Nacht?'],['01:00','Hi Markus','Es gibt keinen schlechten Zeitpunkt für Sport']];
+for(const [clock,small,large] of greetingCases){
+ await page.locator('[data-greeting-clock]').click();await page.locator('[name=greetingTime]').fill(clock);await page.getByRole('button',{name:'Vorschau anzeigen',exact:true}).click();
+ assert.equal(await page.locator('[data-welcome-greeting]').textContent(),small);assert.equal(await page.locator('[data-welcome-message]').textContent(),large);
+ assert.equal(await page.locator('.home-welcome p').textContent(),realDate);
+}
+await page.locator('[data-greeting-clock]').click();await page.locator('[name=greetingTime]').fill('13:30');await page.getByRole('button',{name:'Vorschau anzeigen',exact:true}).click();
+await page.screenshot({path:path.join(screenshots,'desktop-personal-welcome.png')});
+await page.locator('[data-greeting-clock]').click();await page.getByRole('button',{name:'Echte Uhrzeit verwenden',exact:true}).click();assert.equal(await page.locator('[data-greeting-clock]').getAttribute('aria-pressed'),'false');
 await page.locator('.sidebar-auth-button').click();assert.deepEqual(await page.locator('#account-menu button').allTextContents(),['Kontodaten','Farben','Abmelden','Konto löschen']);
 await page.screenshot({path:path.join(screenshots,'desktop-menu.png')});
 await page.getByRole('menuitem',{name:'Farben',exact:true}).click();
@@ -28,9 +39,13 @@ await page.locator('[name=profileName]').fill('Markus K.');await page.locator('#
 await page.waitForFunction(()=>document.querySelector('#profile-preview').src.startsWith('data:image/jpeg')&&!document.querySelector('#profile-photo').disabled);
 await page.locator('#profile-form button[type=submit]').click();await page.waitForFunction(()=>document.querySelector('#account-message').textContent.includes('Profil gespeichert')&&!document.querySelector('#profile-photo').disabled);
 assert.equal(await page.evaluate(()=>SetwerkCloud.profile.name),'Markus K.');assert.ok((await page.evaluate(()=>SetwerkCloud.profile.photo)).length<100000);
-await page.screenshot({path:path.join(screenshots,'account-details.png')});await page.locator('[data-account-action=close]').click();assert.match(await page.locator('.sidebar-auth-button').textContent(),/Markus K/);
-await page.getByRole('switch').click();assert.equal(await page.locator('html').getAttribute('lang'),'en');assert.equal(await page.getByRole('switch').getAttribute('aria-checked'),'true');await page.getByRole('switch').click();
-await page.setViewportSize({width:390,height:844});await page.locator('.mobile-account [data-auth-open]').click();await page.screenshot({path:path.join(screenshots,'mobile-menu.png')});
+await page.screenshot({path:path.join(screenshots,'account-details.png')});await page.locator('[data-account-action=close]').click();assert.match(await page.locator('.sidebar-auth-button').textContent(),/Markus K/);assert.match(await page.locator('[data-welcome-greeting]').textContent(),/Markus K\./);
+await page.getByRole('switch').click();assert.equal(await page.locator('html').getAttribute('lang'),'en');assert.equal(await page.locator('[data-greeting-clock]').textContent(),'Test greeting time');assert.equal(await page.getByRole('switch').getAttribute('aria-checked'),'true');await page.getByRole('switch').click();
+await page.setViewportSize({width:390,height:844});
+await page.locator('[data-greeting-clock]').click();await page.locator('[name=greetingTime]').fill('20:30');await page.getByRole('button',{name:'Vorschau anzeigen',exact:true}).click();
+assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false);await page.screenshot({path:path.join(screenshots,'mobile-personal-welcome.png')});
+await page.locator('[data-greeting-clock]').click();await page.getByRole('button',{name:'Echte Uhrzeit verwenden',exact:true}).click();
+await page.locator('.mobile-account [data-auth-open]').click();await page.screenshot({path:path.join(screenshots,'mobile-menu.png')});
 assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false);const bounds=await page.locator('#account-menu').boundingBox();assert.ok(bounds.x>=0&&bounds.x+bounds.width<=390);
 await page.getByRole('menuitem',{name:'Farben',exact:true}).click();await page.locator('[data-theme-choice=light-blue]').click();await page.waitForFunction(()=>window.SetwerkAppearance.mode==='synced');
 assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false);await page.screenshot({path:path.join(screenshots,'mobile-theme-light-blue.png')});
@@ -40,7 +55,7 @@ await page.locator('[name=currentPassword]').fill('wrong-password');await page.l
 await page.locator('[name=repeatPassword]').fill('new-password');await page.locator('#password-form button').click();await page.waitForFunction(()=>document.querySelector('#account-message').textContent.includes('stimmt nicht'));assert.equal(await page.locator('[name=currentPassword]').inputValue(),'');
 await page.locator('[name=currentPassword]').fill('test-password');await page.locator('[name=newPassword]').fill('new-password');await page.locator('[name=repeatPassword]').fill('new-password');await page.locator('#password-form button').click();await page.waitForFunction(()=>window.__passwordChanged==='new-password');
 await page.locator('[data-account-action=delete]').click();await page.locator('#delete-password').fill('test-password');await page.locator('#delete-account-form button').click();assert.equal(await page.evaluate(()=>!!window.__accountRemoved),false);
-await page.locator('[name=confirmDeletion]').check();await page.locator('#delete-account-form button').click();await page.waitForFunction(()=>window.__accountRemoved);
-assert.deepEqual(errors,[]);console.log(JSON.stringify({browserChecks:'passed',colorThemes:5,mobileColorPicker:true,desktop:1440,mobile:390,imageUpload:'192px JPEG',profileSaved:true,passwordChanged:true,deletionRequiresConfirmation:true,pageErrors:errors}));
+await page.locator('[name=confirmDeletion]').check();await page.locator('#delete-account-form button').click();await page.waitForFunction(()=>window.__accountRemoved);assert.equal(await page.locator('[data-greeting-clock]').count(),0);assert.doesNotMatch(await page.locator('[data-welcome-greeting]').textContent(),/Markus/);
+assert.deepEqual(errors,[]);console.log(JSON.stringify({browserChecks:'passed',colorThemes:5,personalGreetings:9,midnightGreeting:true,accountOnlyClockPreview:true,mobileColorPicker:true,desktop:1440,mobile:390,imageUpload:'192px JPEG',profileSaved:true,passwordChanged:true,deletionRequiresConfirmation:true,pageErrors:errors}));
 }finally{await browser?.close();server.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});
