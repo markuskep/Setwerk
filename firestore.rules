@@ -21,6 +21,15 @@ service cloud.firestore {
       allow update: if owns(userId) && validSnapshot()
         && request.resource.data.revision == resource.data.revision + 1;
     }
+    match /users/{userId}/preferences/appearance {
+      allow get: if owns(userId);
+      allow create, update: if owns(userId)
+        && request.resource.data.keys().hasAll(['theme', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['theme', 'updatedAt'])
+        && request.resource.data.theme in ['standard', 'cherry', 'orange', 'black-white']
+        && request.resource.data.updatedAt == request.time;
+      allow list, delete: if false;
+    }
     match /{document=**} {
       allow read, write: if false;
     }
