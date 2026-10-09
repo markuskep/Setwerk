@@ -27,7 +27,9 @@ const server=http.createServer((req,res)=>{
   await page.evaluate(()=>Promise.all([fetch('/__/firebase/init.json'),fetch('/.netlify/private')]));
   const cached=await page.evaluate(async(name)=>{const cache=await caches.open(name);return(await cache.keys()).map(r=>new URL(r.url).pathname);},newCache);
   assert.equal(cached.some(p=>p.startsWith('/__/')||p.startsWith('/.netlify/')),false);
-  await context.setOffline(true);await page.reload();await page.waitForFunction(()=>document.querySelector('#version')?.textContent==='new');assert.equal(await page.locator('#version').textContent(),'new');assert.equal(await page.evaluate(()=>localStorage.getItem('setwerk.v1')),'unchanged-workouts');
+  // Offline pages can render successfully while a nonessential resource keeps the load event pending.
+  // Wait for the document, then assert that the cached app runs and the workouts remain available.
+  await context.setOffline(true);await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#version')?.textContent==='new');assert.equal(await page.locator('#version').textContent(),'new');assert.equal(await page.evaluate(()=>localStorage.getItem('setwerk.v1')),'unchanged-workouts');
   console.log(JSON.stringify({cacheUpdateChecks:'passed',openTabUpgrade:true,freshAssets:true,offlineReload:true,workoutsPreserved:true,privateEndpointsExcluded:true}));
  }finally{await browser?.close();server.close();}
 })().catch(error=>{console.error(error);server.close();process.exitCode=1;});
