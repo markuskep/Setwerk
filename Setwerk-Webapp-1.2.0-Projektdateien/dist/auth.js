@@ -17,10 +17,13 @@ function setMessage(text, error=false) {
 function showLogin() {
   panel.dataset.mode = 'login';
   document.getElementById('auth-title').textContent = text('Willkommen zurück.', 'Welcome back.');
+  document.getElementById('auth-description').textContent = text('Melde dich mit deiner E-Mail und deinem Passwort an oder erstelle ein Konto. Setwerk funktioniert auch ohne Anmeldung.', 'Sign in with your email and password or create an account. Setwerk also works without signing in.');
   document.getElementById('auth-submit').textContent = text('Anmelden', 'Sign in');
   document.getElementById('auth-switch').textContent = text('Noch kein Konto? Registrieren', 'New here? Sign up');
   document.getElementById('auth-name-wrap').hidden = true;
   document.querySelector('#auth-form input[name="name"]').disabled = true;
+  document.querySelector('#auth-form input[name="password"]').closest('label').hidden = false;
+  document.querySelector('#auth-form input[name="password"]').disabled = false;
   document.querySelector('#auth-form input[name="password"]').autocomplete = 'current-password';
   document.getElementById('auth-reset').hidden = false;
   setMessage('');
@@ -32,9 +35,27 @@ function showSignup() {
   document.getElementById('auth-switch').textContent = text('Bereits registriert? Anmelden', 'Already registered? Sign in');
   document.getElementById('auth-name-wrap').hidden = false;
   document.querySelector('#auth-form input[name="name"]').disabled = false;
+  document.querySelector('#auth-form input[name="password"]').closest('label').hidden = false;
+  document.querySelector('#auth-form input[name="password"]').disabled = false;
   document.querySelector('#auth-form input[name="password"]').autocomplete = 'new-password';
   document.getElementById('auth-reset').hidden = true;
   setMessage('');
+}
+function showReset() {
+  panel.dataset.mode = 'reset';
+  document.getElementById('auth-title').textContent = text('Passwort zurücksetzen.', 'Reset your password.');
+  document.getElementById('auth-description').textContent = text('Gib deine E-Mail-Adresse ein. Wir senden dir einen Link zum Zurücksetzen deines Passworts.', 'Enter your email address. We will send you a link to reset your password.');
+  document.getElementById('auth-submit').textContent = text('Absenden', 'Send');
+  document.getElementById('auth-switch').textContent = text('Zurück zur Anmeldung', 'Back to sign in');
+  document.getElementById('auth-name-wrap').hidden = true;
+  document.querySelector('#auth-form input[name="name"]').disabled = true;
+  const password = document.querySelector('#auth-form input[name="password"]');
+  password.value = '';
+  password.closest('label').hidden = true;
+  password.disabled = true;
+  document.getElementById('auth-reset').hidden = true;
+  setMessage('');
+  document.querySelector('#auth-form input[name="email"]').focus();
 }
 function closeAuth() {
   gate.hidden = true;
@@ -74,7 +95,7 @@ document.addEventListener('click', async (event) => {
   openAuth(button);
 });
 document.getElementById('auth-switch').addEventListener('click', () => {
-  panel.dataset.mode === 'signup' ? showLogin() : showSignup();
+  panel.dataset.mode === 'login' ? showSignup() : showLogin();
 });
 gate.addEventListener('click', event => { if (event.target === gate) closeAuth(); });
 document.addEventListener('keydown', event => {
@@ -92,15 +113,22 @@ document.addEventListener('keydown', event => {
 document.getElementById('auth-form').addEventListener('submit', async event => {
   event.preventDefault();
   const formElement = event.currentTarget;
+  const submit = document.getElementById('auth-submit');
+  if (submit.disabled || !formElement.reportValidity()) return;
+  const mode = panel.dataset.mode;
   const form = new FormData(formElement);
   const email = String(form.get('email') || '').trim();
   const password = String(form.get('password') || '');
   const name = String(form.get('name') || '').trim();
-  const submit = document.getElementById('auth-submit');
   submit.disabled = true;
   setMessage('');
   try {
-    if (panel.dataset.mode === 'signup') {
+    if (mode === 'reset') {
+      await resetPassword(email);
+      if (panel.dataset.mode === mode && !gate.hidden) setMessage(text('Falls ein Konto zu dieser E-Mail existiert, erhältst du einen Link zum Zurücksetzen deines Passworts.', 'If an account exists for this email, you will receive a password reset link.'));
+      return;
+    }
+    if (mode === 'signup') {
       const user = await signup(email, password, name);
       closeAuth();
       activateUser(user);
@@ -111,7 +139,7 @@ document.getElementById('auth-form').addEventListener('submit', async event => {
     }
     formElement.reset();
   } catch (error) {
-    setMessage(authError(error), true);
+    if (panel.dataset.mode === mode && !gate.hidden) setMessage(authError(error), true);
   } finally {
     submit.disabled = false;
   }
@@ -138,15 +166,7 @@ function authError(error) {
   };
   return labels[error?.code] || (error?.code ? text('Die Anmeldung konnte nicht abgeschlossen werden. Bitte versuche es erneut.','Could not complete sign-in. Please try again.') : error?.message) || text('Keine Verbindung. Bitte versuche es erneut.','Connection unavailable. Please try again.');
 }
-document.getElementById('auth-reset').addEventListener('click',async()=>{
-  const input=document.querySelector('#auth-form input[name="email"]');
-  if(!input.value.trim()||!input.checkValidity()){input.reportValidity();input.focus();return;}
-  const button=document.getElementById('auth-reset');button.disabled=true;
-  try{
-    await resetPassword(input.value.trim());
-    setMessage(text('Falls ein Konto zu dieser E-Mail existiert, erhältst du einen Link zum Zurücksetzen deines Passworts.','If an account exists for this email, you will receive a password reset link.'));
-  }catch(error){setMessage(authError(error),true);}finally{button.disabled=false;}
-});
+document.getElementById('auth-reset').addEventListener('click', showReset);
 subscribeAuth(activateUser).catch(error=>{
   console.warn('Firebase unavailable; local workouts remain available.',error.code||'network');
   updateAuthButton();

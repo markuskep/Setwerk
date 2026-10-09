@@ -5,7 +5,7 @@ const path = require('node:path');
 const { JSDOM } = require(process.env.JSDOM_PATH || 'jsdom');
 const root = path.join(__dirname, '../dist');
 
-async function setup(loginError, cloud=null) {
+async function setup(loginError, cloud=null, resetHandler=async()=>{}) {
   const dom = new JSDOM(fs.readFileSync(path.join(root, 'index.html'), 'utf8'), {
     url: 'https://setwerk.test/', runScripts: 'outside-only', pretendToBeVisual: true,
   });
@@ -16,7 +16,7 @@ async function setup(loginError, cloud=null) {
   w.__firebase = {
     async login(email, password) { calls.push({ email, password }); if (loginError) throw Error(loginError); return { id:'alice', email }; },
     async signup(email, password, name) { calls.push({ email, password, name }); return {id:'alice',email}; },
-    async logout() {}, async getUser() { return cloud?.user||null; }, async subscribeAuth(listener) { listener(cloud?.user||null); }, async resetPassword(email) {calls.push({reset:email});},
+    async logout() {}, async getUser() { return cloud?.user||null; }, async subscribeAuth(listener) { listener(cloud?.user||null); }, async resetPassword(email) {calls.push({reset:email});await resetHandler(email);},
   };
   w.eval(fs.readFileSync(path.join(root,'account-ui.js'),'utf8').replace('export function createAccountUI','window.createAccountUI = function createAccountUI'));
   const source = fs.readFileSync(path.join(root, 'auth.js'), 'utf8').replace(/^import[^\n]+\n/gm,'');
@@ -101,13 +101,67 @@ test('Firebase signup signs in immediately and never asks for a Netlify confirma
     assert.equal(x.q('[name="password"]').value,'');
   }finally{x.dom.window.close();}
 });
-test('password reset uses the entered email without requiring a password', async () => {
+test('forgot password opens an email-only form and sends only after submitting', async () => {
   const x=await setup();try{
-    x.q('[data-auth-open]').click();x.q('[name="email"]').value='markus@example.at';
+    x.q('[data-auth-open]').click();x.q('[name="password"]').value='private-password';
     x.q('#auth-reset').click();await x.settle();
+    assert.deepEqual(x.calls,[]);
+    assert.equal(x.q('#auth-panel').dataset.mode,'reset');
+    assert.equal(x.q('#auth-title').textContent,'Passwort zurücksetzen.');
+    assert.equal(x.q('#auth-submit').textContent,'Absenden');
+    assert.equal(x.w.document.activeElement,x.q('[name="email"]'));
+    assert.equal(x.q('[name="password"]').value,'');
+    assert.equal(x.q('[name="password"]').closest('label').hidden,true);
+    assert.deepEqual([...x.q('#auth-form').elements].filter(e=>e.tagName==='INPUT'&&!e.disabled).map(e=>e.name),['email']);
+    x.q('[name="email"]').value=' markus@example.at ';
+    x.q('#auth-submit').click();await x.settle();
     assert.deepEqual(x.calls,[{reset:'markus@example.at'}]);
+    assert.equal(x.q('#auth-gate').hidden,false);
     assert.match(x.q('#auth-message').textContent,/Falls ein Konto/);
+    assert.equal(x.q('#auth-submit').disabled,false);
+    x.q('#auth-switch').click();
+    assert.equal(x.q('#auth-panel').dataset.mode,'login');
+    assert.equal(x.q('[name="password"]').closest('label').hidden,false);
+    assert.equal(x.q('[name="password"]').disabled,false);
+    assert.equal(x.q('#auth-form').checkValidity(),false);
+    assert.match(x.q('#auth-description').textContent,/Melde dich/);
     x.q('#auth-switch').click();assert.equal(x.q('#auth-reset').hidden,true);
+  }finally{x.dom.window.close();}
+});
+test('password reset rejects empty or invalid emails without contacting Firebase',async()=>{
+  const x=await setup();try{
+    x.q('[data-auth-open]').click();x.q('#auth-reset').click();
+    for(const email of ['', 'keine-email']){
+      x.q('[name="email"]').value=email;x.q('#auth-submit').click();
+      x.q('#auth-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));
+      await x.settle();assert.deepEqual(x.calls,[]);assert.equal(x.q('#auth-submit').disabled,false);
+    }
+  }finally{x.dom.window.close();}
+});
+test('password reset shows errors and allows retry while blocking duplicate pending submissions',async()=>{
+  let finish;
+  const x=await setup(undefined,null,()=>new Promise((resolve,reject)=>{finish={resolve,reject};}));try{
+    x.q('[data-auth-open]').click();x.q('#auth-reset').click();x.q('[name="email"]').value='markus@example.at';
+    x.q('#auth-submit').click();assert.equal(x.q('#auth-submit').disabled,true);
+    x.q('#auth-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));
+    assert.equal(x.calls.length,1);
+    finish.reject(Object.assign(Error('offline'),{code:'auth/network-request-failed'}));await x.settle();
+    assert.equal(x.q('#auth-gate').hidden,false);assert.equal(x.q('#auth-submit').disabled,false);
+    assert.match(x.q('#auth-message').textContent,/Keine Verbindung/);assert.equal(x.q('#auth-message').classList.contains('error'),true);
+    assert.equal(x.q('[name="email"]').value,'markus@example.at');
+    x.q('#auth-submit').click();finish.resolve();await x.settle();
+    assert.equal(x.calls.length,2);assert.match(x.q('#auth-message').textContent,/Falls ein Konto/);
+    assert.equal(x.q('#auth-message').classList.contains('error'),false);
+  }finally{x.dom.window.close();}
+});
+test('reset form supports English and closing restores the regular login form',async()=>{
+  const x=await setup();try{
+    x.w.document.documentElement.lang='en';x.q('[data-auth-open]').click();x.q('#auth-reset').click();
+    assert.equal(x.q('#auth-title').textContent,'Reset your password.');assert.equal(x.q('#auth-submit').textContent,'Send');
+    assert.match(x.q('#auth-description').textContent,/Enter your email address/);
+    x.q('[data-auth-close]').click();x.q('[data-auth-open]').click();
+    assert.equal(x.q('#auth-panel').dataset.mode,'login');assert.equal(x.q('[name="password"]').disabled,false);
+    assert.equal(x.q('[name="password"]').closest('label').hidden,false);assert.equal(x.q('#auth-submit').textContent,'Sign in');
   }finally{x.dom.window.close();}
 });
 test('Firebase auth state updates from another tab connect each account only once',async()=>{
