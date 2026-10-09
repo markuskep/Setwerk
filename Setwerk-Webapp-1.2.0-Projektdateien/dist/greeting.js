@@ -26,15 +26,17 @@ window.SetwerkGreeting=(()=>{
   }
   function update(){
     const header=document.querySelector('[data-welcome]');if(!header)return;
-    const greeting=words();header.querySelector('[data-welcome-greeting]').textContent=greeting.small;
-    header.querySelector('[data-welcome-message]').textContent=greeting.large;
+    const greeting=words(),small=header.querySelector('[data-welcome-greeting]'),large=header.querySelector('[data-welcome-message]');
+    if(small.textContent!==greeting.small)small.textContent=greeting.small;
+    if(large.textContent!==greeting.large)large.textContent=greeting.large;
     let button=header.querySelector('[data-greeting-clock]');
     if(!allowed()){button?.remove();return;}
     if(!button){
       button=document.createElement('button');button.type='button';button.className='btn outline greeting-clock-button';button.dataset.greetingClock='';
       button.addEventListener('click',openClock);header.querySelector('.head-actions').append(button);
     }
-    button.textContent=previewMinutes===null?t('Grußzeit testen','Test greeting time'):t('Grußzeit: ','Greeting time: ')+clockText(previewMinutes);
+    const label=previewMinutes===null?t('Grußzeit testen','Test greeting time'):t('Grußzeit: ','Greeting time: ')+clockText(previewMinutes);
+    if(button.textContent!==label)button.textContent=label;
     button.setAttribute('aria-pressed',String(previewMinutes!==null));
   }
   function connect(next){
