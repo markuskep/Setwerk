@@ -34,7 +34,7 @@ window.SetwerkI18n=(()=>{
  'Jede Einheit zählt.':'Every workout counts.',
  'Hier erscheinen deine Einheiten für diesen Tag.':'Your workouts for this day will appear here.',
  'Dein Trainingsverlauf ist noch leer.':'Your workout history is empty.',
- 'Die letzten 30 Einheiten werden angezeigt. Ältere Einheiten findest du über den Kalender.':'Showing your last 30 workouts. Find older workouts in the calendar.',
+ 'Die letzten 5 Einheiten werden angezeigt. Ältere Einheiten findest du über den Kalender.':'Showing your last 5 workouts. Find older workouts in the calendar.',
  'Was du aufzeichnest, wird sichtbar.':'See the progress you record.',
  'Gewicht × Wiederholungen · ohne Aufwärmsätze':'Weight × repetitions · excluding warm-up sets',
  'Deine letzten zwölf Trainingseinheiten':'Your last twelve workouts',
