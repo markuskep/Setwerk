@@ -9,7 +9,7 @@ const state=revision=>({revision,payload:'{"version":1}',updatedAt:serverTimesta
 const ref=uid=>doc(env.authenticatedContext(uid).firestore(),'users',uid,'state','main');
 test('appearance preferences accept only owner access, supported themes and server timestamps',async()=>{
  const db=env.authenticatedContext('alice').firestore(),own=doc(db,'users','alice','preferences','appearance');
- for(const theme of ['standard','cherry','orange','black-white'])await assertSucceeds(setDoc(own,{theme,updatedAt:serverTimestamp()}));
+ for(const theme of ['standard','cherry','orange','light-blue','black-white'])await assertSucceeds(setDoc(own,{theme,updatedAt:serverTimestamp()}));
  await assertSucceeds(getDoc(own));
  for(const other of [env.authenticatedContext('bob').firestore(),env.unauthenticatedContext().firestore()]){
   const foreign=doc(other,'users','alice','preferences','appearance');await assertFails(getDoc(foreign));await assertFails(setDoc(foreign,{theme:'cherry',updatedAt:serverTimestamp()}));

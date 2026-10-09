@@ -1,11 +1,11 @@
 /* Account appearance is separate from workout snapshots for older app compatibility. */
 window.SetwerkAppearance=(()=>{
-  const themes=['standard','cherry','orange','black-white'],prefix='setwerk.firebase.appearance.v1.';
+  const themes=['standard','cherry','orange','light-blue','black-white'],prefix='setwerk.firebase.appearance.v1.';
   let user=null,theme='standard',pending=false,mode='guest',epoch=0,flight=null;
   function emit(){window.dispatchEvent(new CustomEvent('setwerk:appearance-state'));}
   function apply(value){
     theme=themes.includes(value)?value:'standard';document.documentElement.dataset.theme=theme;
-    const colors={standard:['#111714','#d2f96a'],cherry:['#29121d','#ff9eb8'],orange:['#281a0e','#ffc078'],'black-white':['#151515','#ffffff']}[theme];
+    const colors={standard:['#111714','#d2f96a'],cherry:['#29121d','#ff9eb8'],orange:['#281a0e','#ffc078'],'light-blue':['#111b22','#9bdcff'],'black-white':['#151515','#ffffff']}[theme];
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content',colors[0]);
     document.querySelector('link[rel="icon"]')?.setAttribute('href','data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="${colors[0]}"/><path d="M18 19v26m28-26v26M12 25v14m40-14v14M18 32h28" stroke="${colors[1]}" stroke-width="6" stroke-linecap="round"/></svg>`));
   }

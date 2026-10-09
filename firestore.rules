@@ -26,7 +26,7 @@ service cloud.firestore {
       allow create, update: if owns(userId)
         && request.resource.data.keys().hasAll(['theme', 'updatedAt'])
         && request.resource.data.keys().hasOnly(['theme', 'updatedAt'])
-        && request.resource.data.theme in ['standard', 'cherry', 'orange', 'black-white']
+        && request.resource.data.theme in ['standard', 'cherry', 'orange', 'light-blue', 'black-white']
         && request.resource.data.updatedAt == request.time;
       allow list, delete: if false;
     }

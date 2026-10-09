@@ -47,4 +47,4 @@ CI also exercises the desktop/mobile account menu, real image resizing, profile 
 
 ## Account colors
 
-The signed-in profile menu includes Colors: Default, Cherry, Orange and Black & White. Appearance is stored separately at `users/{uid}/preferences/appearance` with `theme` and a server timestamp. Rules permit only the owner to read or write one of the four supported values. Workout snapshots keep their existing format, so Android 1.4.0 remains compatible. The webapp caches appearance per account, applies choices immediately, and retries pending selections after reconnection. Guests use Default.
+The signed-in profile menu includes Colors: Default, Cherry, Orange, Light Blue and Black & White. Appearance is stored separately at `users/{uid}/preferences/appearance` with `theme` and a server timestamp. Rules permit only the owner to read or write one of the five supported values. Workout snapshots keep their existing format, so Android 1.4.0 remains compatible. The webapp caches appearance per account, applies choices immediately, and retries pending selections after reconnection. Guests use Default.

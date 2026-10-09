@@ -10,8 +10,8 @@ function setup({cached={},read,write}={}){
  w.eval(fs.readFileSync(path.join(root,'appearance.js'),'utf8'));
  return{dom,w,remote,writes,appearance:w.SetwerkAppearance};
 }
-test('all four themes persist per account, reload from cache and reset for guests',async()=>{
- const x=setup();try{x.appearance.connect({id:'alice'});await settle();for(const theme of ['cherry','orange','black-white','standard']){x.appearance.select(theme);await settle();assert.equal(x.w.document.documentElement.dataset.theme,theme);assert.equal(x.remote.get('alice'),theme);assert.equal(JSON.parse(x.w.localStorage.getItem('setwerk.firebase.appearance.v1.alice')).pending,false)}
+test('all five themes persist per account, reload from cache and reset for guests',async()=>{
+ const x=setup();try{x.appearance.connect({id:'alice'});await settle();for(const theme of ['cherry','orange','light-blue','black-white','standard']){x.appearance.select(theme);await settle();assert.equal(x.w.document.documentElement.dataset.theme,theme);assert.equal(x.remote.get('alice'),theme);assert.equal(JSON.parse(x.w.localStorage.getItem('setwerk.firebase.appearance.v1.alice')).pending,false)}
  x.appearance.select('cherry');await settle();x.appearance.connect({id:'bob'});await settle();assert.equal(x.appearance.theme,'standard');x.appearance.connect({id:'alice'});assert.equal(x.appearance.theme,'cherry');x.appearance.connect(null);assert.equal(x.appearance.theme,'standard');assert.throws(()=>x.appearance.select('orange'));
  }finally{x.dom.window.close()}
 });
@@ -28,7 +28,7 @@ test('late account responses cannot replace another account or a newer local sel
 test('signed-in profile menu opens accessible color choices and updates selection immediately',async()=>{
  const x=setup();try{x.appearance.connect({id:'alice'});await settle();x.w.document.querySelector('#app').innerHTML='<div class="account-control"><button data-auth-open></button></div>';
  x.w.eval(fs.readFileSync(path.join(root,'account-ui.js'),'utf8').replace('export function createAccountUI','window.createAccountUI=function createAccountUI'));const ui=x.w.createAccountUI({}),button=x.w.document.querySelector('[data-auth-open]');ui.refresh({id:'alice',email:'alice@example.test',name:'Alice'});ui.toggleMenu(button);const menu=x.w.document.querySelector('#account-menu');assert.deepEqual([...menu.children].map(n=>n.textContent),['Kontodaten','Farben','Abmelden','Konto löschen']);menu.children[1].click();
- const choices=[...x.w.document.querySelectorAll('[data-theme-choice]')];assert.equal(choices.length,4);choices[1].click();assert.equal(choices[1].getAttribute('aria-pressed'),'true');assert.equal(x.w.document.documentElement.dataset.theme,'cherry');await settle();assert.match(x.w.document.querySelector('#appearance-status').textContent,/Im Konto gespeichert/);
+ const choices=[...x.w.document.querySelectorAll('[data-theme-choice]')];assert.equal(choices.length,5);choices[1].click();assert.equal(choices[1].getAttribute('aria-pressed'),'true');assert.equal(x.w.document.documentElement.dataset.theme,'cherry');await settle();assert.match(x.w.document.querySelector('#appearance-status').textContent,/Im Konto gespeichert/);
  ui.refresh(null);assert.equal(x.w.document.querySelector('#account-details').open,false);ui.toggleMenu(button);assert.equal(x.w.document.querySelector('#account-menu'),null);
  }finally{x.dom.window.close()}
 });

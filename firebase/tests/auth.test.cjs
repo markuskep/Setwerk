@@ -12,11 +12,11 @@ test('register, persist workout in Firestore, sign out and recover it on a secon
   const created=await createUserWithEmailAndPassword(devices[0].auth,email,password);
   await updateProfile(created.user,{displayName:'Markus'});const uid=created.user.uid;
   const data=C.project(G.fresh());data.profile={name:'Markus',photo:'data:image/jpeg;base64,/9j/AA=='};data.sessions.push({id:'completed',name:'Training',category:'Kraft',date:'2026-10-06',duration:600,items:[]});
-  await setDoc(doc(devices[0].db,'users',uid,'preferences','appearance'),{theme:'cherry',updatedAt:serverTimestamp()});
+  await setDoc(doc(devices[0].db,'users',uid,'preferences','appearance'),{theme:'light-blue',updatedAt:serverTimestamp()});
   await devices[0].store.write(uid,0,data);await signOut(devices[0].auth);
   await assert.rejects(devices[0].store.read(uid),e=>e.status===401);
   const signed=await signInWithEmailAndPassword(devices[1].auth,email,password);assert.equal(signed.user.uid,uid);
-  assert.equal((await getDoc(doc(devices[1].db,'users',uid,'preferences','appearance'))).data().theme,'cherry');
+  assert.equal((await getDoc(doc(devices[1].db,'users',uid,'preferences','appearance'))).data().theme,'light-blue');
   const loaded=await devices[1].store.read(uid);assert.equal(loaded.revision,1);assert.deepEqual(loaded.data,data);
   await assert.rejects(signInWithEmailAndPassword(devices[1].auth,email,'incorrect-password'));
   await reauthenticateWithCredential(signed.user,EmailAuthProvider.credential(email,password));await updatePassword(signed.user,'new-test-password');await signOut(devices[1].auth);

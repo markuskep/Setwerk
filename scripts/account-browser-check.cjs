@@ -16,7 +16,7 @@ await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFun
 await page.locator('.sidebar-auth-button').click();assert.deepEqual(await page.locator('#account-menu button').allTextContents(),['Kontodaten','Farben','Abmelden','Konto löschen']);
 await page.screenshot({path:path.join(screenshots,'desktop-menu.png')});
 await page.getByRole('menuitem',{name:'Farben',exact:true}).click();
-for(const theme of ['cherry','orange','black-white','standard']){
+for(const theme of ['cherry','orange','light-blue','black-white','standard']){
  await page.locator('[data-theme-choice="'+theme+'"]').click();await page.waitForFunction(value=>document.documentElement.dataset.theme===value&&window.SetwerkAppearance.mode==='synced',theme);
  assert.equal(await page.locator('[data-theme-choice="'+theme+'"]').getAttribute('aria-pressed'),'true');
  await page.screenshot({path:path.join(screenshots,'theme-'+theme+'.png')});
@@ -32,8 +32,8 @@ await page.screenshot({path:path.join(screenshots,'account-details.png')});await
 await page.getByRole('switch').click();assert.equal(await page.locator('html').getAttribute('lang'),'en');assert.equal(await page.getByRole('switch').getAttribute('aria-checked'),'true');await page.getByRole('switch').click();
 await page.setViewportSize({width:390,height:844});await page.locator('.mobile-account [data-auth-open]').click();await page.screenshot({path:path.join(screenshots,'mobile-menu.png')});
 assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false);const bounds=await page.locator('#account-menu').boundingBox();assert.ok(bounds.x>=0&&bounds.x+bounds.width<=390);
-await page.getByRole('menuitem',{name:'Farben',exact:true}).click();await page.locator('[data-theme-choice=cherry]').click();await page.waitForFunction(()=>window.SetwerkAppearance.mode==='synced');
-assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false);await page.screenshot({path:path.join(screenshots,'mobile-theme-cherry.png')});
+await page.getByRole('menuitem',{name:'Farben',exact:true}).click();await page.locator('[data-theme-choice=light-blue]').click();await page.waitForFunction(()=>window.SetwerkAppearance.mode==='synced');
+assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false);await page.screenshot({path:path.join(screenshots,'mobile-theme-light-blue.png')});
 await page.locator('[data-theme-choice=standard]').click();await page.locator('[data-account-action=close]').click();await page.locator('.mobile-account [data-auth-open]').click();
 await page.getByRole('menuitem',{name:'Kontodaten'}).click();await page.screenshot({path:path.join(screenshots,'mobile-details.png')});
 await page.locator('[name=currentPassword]').fill('wrong-password');await page.locator('[name=newPassword]').fill('new-password');await page.locator('[name=repeatPassword]').fill('different-password');await page.locator('#password-form button').click();assert.match(await page.locator('#account-message').textContent(),/stimmen nicht/);
@@ -41,6 +41,6 @@ await page.locator('[name=repeatPassword]').fill('new-password');await page.loca
 await page.locator('[name=currentPassword]').fill('test-password');await page.locator('[name=newPassword]').fill('new-password');await page.locator('[name=repeatPassword]').fill('new-password');await page.locator('#password-form button').click();await page.waitForFunction(()=>window.__passwordChanged==='new-password');
 await page.locator('[data-account-action=delete]').click();await page.locator('#delete-password').fill('test-password');await page.locator('#delete-account-form button').click();assert.equal(await page.evaluate(()=>!!window.__accountRemoved),false);
 await page.locator('[name=confirmDeletion]').check();await page.locator('#delete-account-form button').click();await page.waitForFunction(()=>window.__accountRemoved);
-assert.deepEqual(errors,[]);console.log(JSON.stringify({browserChecks:'passed',colorThemes:4,mobileColorPicker:true,desktop:1440,mobile:390,imageUpload:'192px JPEG',profileSaved:true,passwordChanged:true,deletionRequiresConfirmation:true,pageErrors:errors}));
+assert.deepEqual(errors,[]);console.log(JSON.stringify({browserChecks:'passed',colorThemes:5,mobileColorPicker:true,desktop:1440,mobile:390,imageUpload:'192px JPEG',profileSaved:true,passwordChanged:true,deletionRequiresConfirmation:true,pageErrors:errors}));
 }finally{await browser?.close();server.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

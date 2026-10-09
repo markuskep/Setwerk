@@ -84,7 +84,7 @@ export async function readAppearance(owner){
   return snapshot.exists()?snapshot.data().theme:'standard';
 }
 export async function writeAppearance(owner,theme){
-  if(!['standard','cherry','orange','black-white'].includes(theme))throw Error('Invalid color scheme');
+  if(!['standard','cherry','orange','light-blue','black-white'].includes(theme))throw Error('Invalid color scheme');
   const {auth,db,storeSDK}=await resources();
   if(auth.currentUser?.uid!==owner)throw Object.assign(Error('Please sign in again'),{code:'auth/requires-recent-login'});
   await storeSDK.setDoc(storeSDK.doc(db,'users',owner,'preferences','appearance'),{theme,updatedAt:storeSDK.serverTimestamp()});
