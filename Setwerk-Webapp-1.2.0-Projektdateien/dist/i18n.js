@@ -37,6 +37,7 @@ window.SetwerkI18n=(()=>{
  'Die letzten 5 Einheiten werden angezeigt. Ältere Einheiten findest du über den Kalender.':'Showing your last 5 workouts. Find older workouts in the calendar.',
  'Was du aufzeichnest, wird sichtbar.':'See the progress you record.',
  'Gewicht × Wiederholungen · ohne Aufwärmsätze':'Weight × repetitions · excluding warm-up sets',
+ 'Gewicht × Wiederholungen · pro Tag summiert · ohne Aufwärmsätze':'Weight × repetitions · summed per day · excluding warm-up sets',
  'Deine letzten zwölf Trainingseinheiten':'Your last twelve workouts',
  'Deine Rekorde warten auf dich.':'Your personal records are waiting.',
  'Abgeschlossene Arbeitssätze werden automatisch ausgewertet.':'Completed working sets are analyzed automatically.',
