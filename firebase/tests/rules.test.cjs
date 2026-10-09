@@ -7,6 +7,15 @@ test.after(async()=>{await env?.cleanup();});
 test.beforeEach(async()=>{await env.clearFirestore();});
 const state=revision=>({revision,payload:'{"version":1}',updatedAt:serverTimestamp()});
 const ref=uid=>doc(env.authenticatedContext(uid).firestore(),'users',uid,'state','main');
+test('appearance preferences accept only owner access, supported themes and server timestamps',async()=>{
+ const db=env.authenticatedContext('alice').firestore(),own=doc(db,'users','alice','preferences','appearance');
+ for(const theme of ['standard','cherry','orange','black-white'])await assertSucceeds(setDoc(own,{theme,updatedAt:serverTimestamp()}));
+ await assertSucceeds(getDoc(own));
+ for(const other of [env.authenticatedContext('bob').firestore(),env.unauthenticatedContext().firestore()]){
+  const foreign=doc(other,'users','alice','preferences','appearance');await assertFails(getDoc(foreign));await assertFails(setDoc(foreign,{theme:'cherry',updatedAt:serverTimestamp()}));
+ }
+ await assertFails(setDoc(own,{theme:'custom',updatedAt:serverTimestamp()}));await assertFails(setDoc(own,{theme:'orange',updatedAt:new Date(0)}));await assertFails(setDoc(own,{theme:'orange',updatedAt:serverTimestamp(),extra:true}));await assertFails(deleteDoc(own));
+});
 test('owner can create, read and update their snapshot',async()=>{
  const own=ref('alice');await assertSucceeds(setDoc(own,state(1)));await assertSucceeds(getDoc(own));await assertSucceeds(setDoc(own,state(2)));
 });

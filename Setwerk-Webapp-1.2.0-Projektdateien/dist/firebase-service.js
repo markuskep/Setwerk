@@ -18,7 +18,7 @@ async function resources(){
     await auth.authStateReady();
     const db=storeSDK.getFirestore(app);
     const store=window.SetwerkFirebaseStore.create({...storeSDK,auth,db});
-    return{auth,authSDK,store};
+    return{auth,authSDK,store,db,storeSDK};
   })().catch(error=>{initialized=null;throw error;});
   return initialized;
 }
@@ -77,4 +77,16 @@ export async function readStore(owner){
 export async function writeStore(owner,revision,data){
   try{const {store}=await resources();return await store.write(owner,revision,data);}catch(error){throw window.SetwerkFirebaseStore.normalizeError(error);}
 }
-window.SetwerkFirebase={readStore,writeStore};
+export async function readAppearance(owner){
+  const {auth,db,storeSDK}=await resources();
+  if(auth.currentUser?.uid!==owner)throw Object.assign(Error('Please sign in again'),{code:'auth/requires-recent-login'});
+  const snapshot=await storeSDK.getDocFromServer(storeSDK.doc(db,'users',owner,'preferences','appearance'));
+  return snapshot.exists()?snapshot.data().theme:'standard';
+}
+export async function writeAppearance(owner,theme){
+  if(!['standard','cherry','orange','black-white'].includes(theme))throw Error('Invalid color scheme');
+  const {auth,db,storeSDK}=await resources();
+  if(auth.currentUser?.uid!==owner)throw Object.assign(Error('Please sign in again'),{code:'auth/requires-recent-login'});
+  await storeSDK.setDoc(storeSDK.doc(db,'users',owner,'preferences','appearance'),{theme,updatedAt:storeSDK.serverTimestamp()});
+}
+window.SetwerkFirebase={readStore,writeStore,readAppearance,writeAppearance};

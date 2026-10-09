@@ -39,11 +39,26 @@ export function createAccountUI(api){
     if(menu&&trigger===button){closeMenu();return;}
     closeMenu(false);trigger=button;
     menu=document.createElement('div');menu.className='account-menu';menu.id='account-menu';menu.setAttribute('role','menu');menu.setAttribute('aria-label',t('Konto','Account'));
-    const options=[[t('Kontodaten','Account details'),()=>openDetails()], [t('Abmelden','Sign out'),()=>signOut()], [t('Konto löschen','Delete account'),()=>openDetails(true),'account-danger']];
+    const options=[[t('Kontodaten','Account details'),()=>openDetails()], [t('Farben','Colors'),()=>openAppearance()], [t('Abmelden','Sign out'),()=>signOut()], [t('Konto löschen','Delete account'),()=>openDetails(true),'account-danger']];
     for(const [label,action,cls] of options){const item=document.createElement('button');item.type='button';item.textContent=label;item.className=cls||'';item.setAttribute('role','menuitem');item.tabIndex=-1;item.onclick=()=>{closeMenu(false);action();};menu.append(item);}
     (button.closest('.account-control')||button.parentElement).append(menu);
     button.setAttribute('aria-expanded','true');button.setAttribute('aria-controls',menu.id);menu.querySelector('button').focus();
   }
+  function refreshAppearance(){
+    const appearance=window.SetwerkAppearance;if(!appearance||!dialog?.querySelector('#appearance-options'))return;
+    for(const button of dialog.querySelectorAll('[data-theme-choice]'))button.setAttribute('aria-pressed',String(button.dataset.themeChoice===appearance.theme));
+    const messages={synced:t('Im Konto gespeichert.','Saved to your account.'),offline:t('Lokal gespeichert. Wird bei Verbindung mit deinem Konto synchronisiert.','Saved locally. Will sync with your account when connected.'),pending:t('Lokal gespeichert …','Saved locally …'),syncing:t('Wird im Konto gespeichert …','Saving to your account …'),loading:t('Farbauswahl wird geladen …','Loading color scheme …')};
+    dialog.querySelector('#appearance-status').textContent=messages[appearance.mode]||'';
+  }
+  function openAppearance(){
+    if(!user||!window.SetwerkAppearance)return;
+    ensureDialog();
+    const options=[['standard',t('Standard','Default')],['cherry','Cherry'],['orange',t('Orange','Orange')],['black-white','Black & White']];
+    dialog.innerHTML=`<div class="modal-head"><h2 id="account-title">${t('Farben','Colors')}</h2><button type="button" class="icon-btn" data-account-action="close" aria-label="${t('Schließen','Close')}">×</button></div><div class="modal-body"><p class="muted">${t('Wähle dein Farbschema. Die Vorschau wird sofort übernommen.','Choose your color scheme. The preview is applied immediately.')}</p><div id="appearance-options" class="theme-grid">${options.map(([id,label])=>`<button type="button" class="theme-choice" data-theme-choice="${id}" aria-pressed="false"><span class="theme-preview" data-preview="${id}" aria-hidden="true"><i></i><span><b></b><em></em><em></em></span></span><span class="theme-choice-label">${label}<span class="theme-selected" aria-hidden="true">✓</span></span></button>`).join('')}</div><p id="appearance-status" class="muted theme-status" role="status" aria-live="polite"></p></div>`;
+    for(const button of dialog.querySelectorAll('[data-theme-choice]'))button.onclick=()=>{try{window.SetwerkAppearance.select(button.dataset.themeChoice);}catch{dialog.querySelector('#appearance-status').textContent=t('Die Auswahl konnte nicht gespeichert werden. Bitte erneut versuchen.','The selection could not be saved. Please try again.');}};
+    refreshAppearance();if(!dialog.open)dialog.showModal();dialog.querySelector('[aria-pressed="true"]')?.focus();
+  }
+  window.addEventListener('setwerk:appearance-state',refreshAppearance);
   async function signOut(){
     if(busy)return;
     try{

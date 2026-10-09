@@ -5,17 +5,18 @@ const path = require('node:path');
 const { JSDOM } = require(process.env.JSDOM_PATH || 'jsdom');
 const root = path.join(__dirname, '../dist');
 
-async function setup(loginError) {
+async function setup(loginError, cloud=null) {
   const dom = new JSDOM(fs.readFileSync(path.join(root, 'index.html'), 'utf8'), {
     url: 'https://setwerk.test/', runScripts: 'outside-only', pretendToBeVisual: true,
   });
   const w = dom.window, calls = [];
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
   w.document.getElementById('app').innerHTML = '<button data-auth-open>Login / Sign up</button><button id="background">Training starten</button>';
+  if(cloud)w.SetwerkCloud=cloud;
   w.__firebase = {
     async login(email, password) { calls.push({ email, password }); if (loginError) throw Error(loginError); return { id:'alice', email }; },
     async signup(email, password, name) { calls.push({ email, password, name }); return {id:'alice',email}; },
-    async logout() {}, async getUser() { return null; }, async subscribeAuth(listener) { listener(null); }, async resetPassword(email) {calls.push({reset:email});},
+    async logout() {}, async getUser() { return cloud?.user||null; }, async subscribeAuth(listener) { listener(cloud?.user||null); }, async resetPassword(email) {calls.push({reset:email});},
   };
   w.eval(fs.readFileSync(path.join(root,'account-ui.js'),'utf8').replace('export function createAccountUI','window.createAccountUI = function createAccountUI'));
   const source = fs.readFileSync(path.join(root, 'auth.js'), 'utf8').replace(/^import[^\n]+\n/gm,'');
@@ -124,7 +125,7 @@ test('account menu uses requested order, username and default avatar; closes out
  const x=await setup();try{
   x.w.activateUser({id:'alice',email:'private@example.at',name:'Markus'});
   const button=x.q('[data-auth-open]');assert.match(button.textContent,/Markus/);assert.doesNotMatch(button.textContent,/@/);assert.match(button.querySelector('img').src,/avatar-default.svg$/);
-  button.click();assert.deepEqual([...x.q('#account-menu').children].map(n=>n.textContent),['Kontodaten','Abmelden','Konto löschen']);assert.equal(x.q('#account-menu').lastElementChild.className,'account-danger');
+  button.click();assert.deepEqual([...x.q('#account-menu').children].map(n=>n.textContent),['Kontodaten','Farben','Abmelden','Konto löschen']);assert.equal(x.q('#account-menu').lastElementChild.className,'account-danger');
   x.w.document.dispatchEvent(new x.w.KeyboardEvent('keydown',{key:'End',bubbles:true}));assert.equal(x.w.document.activeElement,x.q('#account-menu').lastElementChild);
   x.w.document.dispatchEvent(new x.w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert.equal(x.q('#account-menu'),null);assert.equal(x.w.document.activeElement,button);
   button.click();x.q('#background').click();assert.equal(x.q('#account-menu'),null);
@@ -139,4 +140,9 @@ test('account details display email safely and require confirmation before delet
   assert.equal(x.q('#delete-account-form').checkValidity(),false);assert.equal(removed,0);
   x.q('#delete-password').value='do-not-store';x.q('[data-account-action=close]').click();assert.equal(x.q('#delete-password').value,'');
  }finally{x.dom.window.close();}
+});
+
+test('restored signed-in accounts synchronize during initial authentication without reconnecting',async()=>{
+ let reads=0,reconnections=0;const cloud={user:{id:'alice',email:'alice@example.test',name:'Alice'},mode:'loading',description:()=>'',sync:async()=>{reads++;cloud.mode='synced'},connect:async()=>{reconnections++}};
+ const x=await setup(undefined,cloud);try{assert.equal(reads,1);assert.equal(reconnections,0);assert.equal(cloud.mode,'synced');x.w.activateUser(cloud.user);assert.equal(reads,1)}finally{x.dom.window.close()}
 });

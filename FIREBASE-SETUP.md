@@ -44,3 +44,7 @@ Password changes and account deletion reauthenticate with the current password. 
 
 CI also exercises the desktop/mobile account menu, real image resizing, profile updates, language switching, password form validation and deletion confirmation in Chromium with a local Firebase transport fixture. Firebase emulator tests separately exercise the real Authentication SDK and Firestore rules for profile retrieval, password changes and deletion.
 
+
+## Account colors
+
+The signed-in profile menu includes Colors: Default, Cherry, Orange and Black & White. Appearance is stored separately at `users/{uid}/preferences/appearance` with `theme` and a server timestamp. Rules permit only the owner to read or write one of the four supported values. Workout snapshots keep their existing format, so Android 1.4.0 remains compatible. The webapp caches appearance per account, applies choices immediately, and retries pending selections after reconnection. Guests use Default.

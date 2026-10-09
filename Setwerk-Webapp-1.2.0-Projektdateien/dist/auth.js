@@ -57,6 +57,8 @@ function activateUser(user) {
   const unchanged=currentUser?.id===user?.id && window.SetwerkCloud?.user?.id===user?.id;
   currentUser = user;
   updateAuthButton();
+  window.SetwerkAppearance?.connect(user);
+  if (unchanged && user && ['loading','pending'].includes(window.SetwerkCloud?.mode)) window.SetwerkCloud.sync();
   if (!unchanged && !window.AndroidGym) window.SetwerkCloud?.connect(user).catch(() => updateAuthButton());
 }
 window.addEventListener('setwerk:render', () => updateAuthButton());
