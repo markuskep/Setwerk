@@ -31,8 +31,9 @@ if(database.status===404){
  if(created.ok){note('Firestore database creation started in Frankfurt (europe-west3).');database=await api('https://firestore.googleapis.com/v1/'+base+'/databases/(default)');}
  else{missing('Create the default Cloud Firestore database',created);database=created;}
 }
-if(database.ok){
- note('The default Firestore database is available.');
+if(database.ok||database.status===403){
+ if(database.ok)note('The default Firestore database is available.');
+ else note('Database metadata is restricted; attempting the rules deployment independently.');
  const rulesURL='https://firebaserules.googleapis.com/v1/'+base;
  const rules=await api(rulesURL+'/rulesets','POST',{source:{files:[{name:'firestore.rules',content:await readFile('firestore.rules','utf8')}]}});
  if(rules.ok){
