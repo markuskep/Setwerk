@@ -8,9 +8,14 @@
     const keys=Object.keys(a);
     return keys.length===Object.keys(b).length&&keys.every(key=>Object.prototype.hasOwnProperty.call(b,key)&&equal(a[key],b[key]));
   }
-  function project(state){return clone({version:1,language:state.language||'de',templates:state.templates||[],sessions:state.sessions||[],customExercises:state.customExercises||[],goals:state.goals||{weekly:3,days:[],time:'18:00',reminders:false},...(state.profile?{profile:state.profile}:{})});}
+  function project(state){return clone({version:1,language:state.language||'de',templates:state.templates||[],sessions:state.sessions||[],customExercises:state.customExercises||[],dailySteps:state.dailySteps||{},overviewBlocks:state.overviewBlocks??G.overviewBlocks(),goals:state.goals||{weekly:3,days:[],time:'18:00',reminders:false},...(state.profile?{profile:state.profile}:{})});}
   function validate(value){
-    if(!value||value.version!==1||!['de','en'].includes(value.language)||Object.keys(value).some(k=>!['version','language','templates','sessions','customExercises','goals','profile'].includes(k)))throw Error('Invalid state');
+    if(!value||value.version!==1||!['de','en'].includes(value.language)||Object.keys(value).some(k=>!['version','language','templates','sessions','customExercises','goals','profile','dailySteps','overviewBlocks'].includes(k)))throw Error('Invalid state');
+    if(value.dailySteps!==undefined){
+      if(!value.dailySteps||typeof value.dailySteps!=='object'||Array.isArray(value.dailySteps)||Object.keys(value.dailySteps).length>10000)throw Error('Invalid daily steps');
+      for(const [date,count] of Object.entries(value.dailySteps))if(!G.validDate(date)||typeof count!=='number'||!Number.isSafeInteger(count)||count<0)throw Error('Invalid daily steps');
+    }
+    if(value.overviewBlocks!==undefined&&(!Array.isArray(value.overviewBlocks)||value.overviewBlocks.length>G.OVERVIEW_BLOCKS.length||value.overviewBlocks.some(id=>!G.OVERVIEW_BLOCKS.includes(id))||new Set(value.overviewBlocks).size!==value.overviewBlocks.length))throw Error('Invalid overview blocks');
     if(value.profile){
       const p=value.profile;
       if(typeof p!=='object'||Object.keys(p).some(k=>!['name','photo'].includes(k))||typeof p.name!=='string'||p.name.length>80||typeof p.photo!=='string'||p.photo.length>100000||(p.photo&&!/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(p.photo)))throw Error('Invalid profile');
@@ -51,11 +56,20 @@
   }
   function merge(base,local,remote){
     const result={version:1},conflicts=[];
-    for(const key of ['language','goals','profile']){
-      const b=base[key],l=local[key],r=remote[key];
+    for(const key of ['language','goals','profile','overviewBlocks']){
+      const b=key==='overviewBlocks'?(base[key]??G.overviewBlocks()):base[key],l=key==='overviewBlocks'?(local[key]??G.overviewBlocks()):local[key],r=key==='overviewBlocks'?(remote[key]??G.overviewBlocks()):remote[key];
       if(equal(l,b))result[key]=r;
       else if(equal(r,b)||equal(l,r))result[key]=l;
       else{conflicts.push(key);result[key]=l;}
+    }
+    result.dailySteps={};
+    const steps=[base,local,remote].map(s=>s.dailySteps||{});
+    for(const date of new Set(steps.flatMap(s=>Object.keys(s)))){
+      const [b,l,r]=steps.map(s=>s[date]);let selected;
+      if(equal(l,b))selected=r;
+      else if(equal(r,b)||equal(l,r))selected=l;
+      else{conflicts.push('dailySteps:'+date);selected=l;}
+      if(selected!==undefined)result.dailySteps[date]=selected;
     }
     for(const key of collections){
       const maps=[base,local,remote].map(s=>new Map(s[key].map(r=>[r.id,r])));

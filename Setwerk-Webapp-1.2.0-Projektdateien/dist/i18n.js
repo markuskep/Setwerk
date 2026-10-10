@@ -178,6 +178,12 @@ window.SetwerkI18n=(()=>{
  'Die geplante Dauer ergibt sich aus Belastungen und Pausen. Du kannst sie für Aufwärmen und Abkühlen anpassen.':'Planned duration includes work and rest. You can adjust it for warming up and cooling down.','INTERVALLE':'INTERVALS','Geplant:':'Planned:','m / Intervall':'m / interval','Dein Training läuft lokal. Nach dem Abschluss werden die Daten gespeichert.':'Your workout runs locally. Your data is saved after you finish.','Training abschließen':'Finish workout','Weiter zum Trainingsgefühl':'Continue to workout feedback',
  'Bitte eine Sportart eintragen.':'Please enter a sport.','Bitte eine Cardio-Trainingsform auswählen.':'Please choose a cardio training style.','Bitte einen Namen für die Trainingsform eintragen.':'Please name the training style.','Bitte gültige Intervalle, Belastungszeiten und Pausen eingeben.':'Please enter valid intervals, work durations and rests.','Bitte eine gültige Intervall-Distanz eingeben.':'Please enter a valid interval distance.'
  });
+ Object.assign(EN,{
+ 'Schrittzähler':'Step counter','Tägliche Schritte':'Daily steps','Schritte':'Steps','Schrittzahl eingeben':'Enter step count','Heute':'Today',
+ 'Schritte können bis heute eingetragen werden.':'Steps can be entered for today and earlier dates.','Bitte eine ganze Schrittzahl ab 0 eingeben.':'Please enter a whole step count of 0 or more.','Schritte konnten nicht gespeichert werden.':'Steps could not be saved.','Schritte gespeichert.':'Steps saved.',
+ 'Übersicht bearbeiten':'Edit overview','Block verschieben':'Move block','Block nach oben':'Move block up','Block nach unten':'Move block down','Block entfernen':'Remove block','Blöcke hinzufügen':'Add blocks',
+ 'Blöcke am Griff verschieben oder mit den Pfeilen neu anordnen.':'Drag blocks by the handle or reorder them with the arrows.','Alle Blöcke sind bereits eingeblendet.':'All blocks are already visible.','Übersicht konnte nicht gespeichert werden.':'The overview could not be saved.','Übersicht gespeichert.':'Overview saved.'
+ });
  const escapeRx=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
  const keys=Object.keys(EN).sort((a,b)=>b.length-a.length);
  const pattern=new RegExp('(?<![\\p{L}\\p{N}_])(?:'+keys.map(escapeRx).join('|')+')(?![\\p{L}\\p{N}_])','gu');
