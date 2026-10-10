@@ -12,6 +12,37 @@ function setup(stored=G.fresh(),cloud=false){
  const q=selector=>w.document.querySelector(selector),click=selector=>{assert.ok(q(selector),selector);q(selector).click();},input=(selector,value)=>{q(selector).value=String(value);q(selector).dispatchEvent(new w.Event('input',{bubbles:true}));},submit=()=>q('#steps-form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true})),read=()=>JSON.parse(w.localStorage.getItem('setwerk.v1')),order=()=>[...w.document.querySelectorAll('[data-overview-block]')].map(el=>el.dataset.overviewBlock);
  return{dom,w,q,click,input,submit,read,order,errors,calls};
 }
+test('Tacho bleibt unten offen, zeigt die tatsächlichen Schritte und begrenzt den Zeiger am Tagesziel',()=>{
+ for(const [count,angle] of [[0,-135],[5000,0],[10000,135],[15000,135]]){
+  const state=G.fresh();state.dailySteps[G.localDate()]=count;const x=setup(state);try{
+   assert.equal(x.q('.steps-gauge').dataset.stepGoal,'10000');assert.match(x.q('.steps-track').getAttribute('d'),/A 126 126 0 1 1/);assert.doesNotMatch(x.q('.steps-track').getAttribute('d'),/Z/);
+   assert.equal(x.q('.steps-needle').getAttribute('transform'),`rotate(${angle} 180 145)`);assert.equal(x.q('.steps-count').textContent,count.toLocaleString('de-AT'));assert.equal(x.q('.steps-caption').textContent,'Schritte');assert.equal(x.q('.steps-scale-goal').textContent,(10000).toLocaleString('de-AT'));
+   const children=[...x.q('.steps-gauge').children];assert.ok(children.indexOf(x.q('.steps-center'))>children.indexOf(x.q('.steps-needle')));assert.ok(children.indexOf(x.q('.steps-total'))>children.indexOf(x.q('.steps-center')));
+   x.click(act('nav-calendar'));assert.equal(x.q('.steps-count').textContent,count.toLocaleString('de-AT'));assert.deepEqual(x.errors,[]);
+  }finally{x.dom.window.close();}
+ }
+});
+test('Tägliches Schrittziel lässt sich zusammen mit den bisherigen Trainingszielen speichern und nach Reload nutzen',()=>{
+ const state=G.fresh();state.dailySteps[G.localDate()]=4500;const x=setup(state);try{
+  x.click(act('goals'));assert.equal(x.q('[name="dailySteps"]').value,'10000');x.input('[name="dailySteps"]',9000);x.input('[name="weekly"]',5);x.q('#goals-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));
+  assert.equal(x.read().goals.dailySteps,9000);assert.equal(x.read().goals.weekly,5);assert.equal(x.q('.steps-gauge').dataset.stepGoal,'9000');assert.equal(x.q('.steps-needle').getAttribute('transform'),'rotate(0 180 145)');assert.match(x.q('.steps-scale-goal').textContent,/9.?000/);
+  const y=setup(x.read());try{assert.equal(y.q('.steps-gauge').dataset.stepGoal,'9000');y.click(act('goals'));assert.equal(y.q('[name="dailySteps"]').value,'9000');}finally{y.dom.window.close();}
+  assert.deepEqual(x.errors,[]);
+ }finally{x.dom.window.close();}
+});
+test('Ungültiges Schrittziel und Speicherfehler ändern keine vorhandenen Ziele',()=>{
+ const x=setup();try{
+  x.click(act('goals'));const previous=x.read().goals;
+  for(const value of ['',0,-1,1.5,Number.MAX_SAFE_INTEGER+1]){x.input('[name="dailySteps"]',value);x.q('#goals-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));assert.deepEqual(x.read().goals,previous);}
+  x.w.SetwerkCloud={saveLocal(){throw Error('Full');}};x.input('[name="dailySteps"]',8000);x.q('#goals-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));assert.deepEqual(x.read().goals,previous);assert.equal(x.q('#modal').open,true);x.click(act('close-modal'));x.click(act('goals'));assert.equal(x.q('[name="dailySteps"]').value,'10000');assert.deepEqual(x.errors,[]);
+ }finally{x.dom.window.close();}
+});
+test('Alte Ziele erhalten den Standardwert, neue Schrittziele werden in der Cloud validiert und konfliktfrei migriert',()=>{
+ const old=C.project(G.fresh());delete old.goals.dailySteps;old.goals.weekly=5;C.validate(old);const migrated=G.migrateState(old);assert.equal(migrated.goals.dailySteps,10000);assert.equal(migrated.goals.weekly,5);
+ const local=C.project(migrated),remote=C.clone(old);assert.deepEqual(C.merge(old,local,remote).conflicts,[]);local.goals.dailySteps=8000;assert.equal(C.merge(old,local,remote).data.goals.dailySteps,8000);
+ for(const value of [0,-1,2.5,'8000',Number.MAX_SAFE_INTEGER+1])assert.throws(()=>C.validate({...local,goals:{...local.goals,dailySteps:value}}),/Invalid goals/);
+ C.validate(local);
+});
 test('Manuelle Schritte sind pro Tag in Übersicht und Kalender editierbar und bleiben nach Reload erhalten',()=>{
  const x=setup(),today=G.localDate(),d=new Date();d.setDate(d.getDate()-1);const yesterday=G.localDate(d);
  try{

@@ -8,7 +8,7 @@
     const keys=Object.keys(a);
     return keys.length===Object.keys(b).length&&keys.every(key=>Object.prototype.hasOwnProperty.call(b,key)&&equal(a[key],b[key]));
   }
-  function project(state){return clone({version:1,language:state.language||'de',templates:state.templates||[],sessions:state.sessions||[],customExercises:state.customExercises||[],dailySteps:state.dailySteps||{},overviewBlocks:state.overviewBlocks??G.overviewBlocks(),goals:state.goals||{weekly:3,days:[],time:'18:00',reminders:false},...(state.profile?{profile:state.profile}:{})});}
+  function project(state){return clone({version:1,language:state.language||'de',templates:state.templates||[],sessions:state.sessions||[],customExercises:state.customExercises||[],dailySteps:state.dailySteps||{},overviewBlocks:state.overviewBlocks??G.overviewBlocks(),goals:{...G.fresh().goals,...state.goals},...(state.profile?{profile:state.profile}:{})});}
   function validate(value){
     if(!value||value.version!==1||!['de','en'].includes(value.language)||Object.keys(value).some(k=>!['version','language','templates','sessions','customExercises','goals','profile','dailySteps','overviewBlocks'].includes(k)))throw Error('Invalid state');
     if(value.dailySteps!==undefined){
@@ -51,13 +51,13 @@
       }
     }
     const g=value.goals;
-    if(!g||!Number.isInteger(g.weekly)||g.weekly<1||g.weekly>21||!Array.isArray(g.days)||g.days.some(d=>!Number.isInteger(d)||d<0||d>6)||typeof g.reminders!=='boolean'||typeof g.time!=='string'||!/^([01]\d|2[0-3]):[0-5]\d$/.test(g.time))throw Error('Invalid goals');
+    if(!g||g.dailySteps!==undefined&&(!Number.isSafeInteger(g.dailySteps)||g.dailySteps<1)||!Number.isInteger(g.weekly)||g.weekly<1||g.weekly>21||!Array.isArray(g.days)||g.days.some(d=>!Number.isInteger(d)||d<0||d>6)||typeof g.reminders!=='boolean'||typeof g.time!=='string'||!/^([01]\d|2[0-3]):[0-5]\d$/.test(g.time))throw Error('Invalid goals');
     return value;
   }
   function merge(base,local,remote){
     const result={version:1},conflicts=[];
     for(const key of ['language','goals','profile','overviewBlocks']){
-      const b=key==='overviewBlocks'?(base[key]??G.overviewBlocks()):base[key],l=key==='overviewBlocks'?(local[key]??G.overviewBlocks()):local[key],r=key==='overviewBlocks'?(remote[key]??G.overviewBlocks()):remote[key];
+      const normalize=s=>key==='overviewBlocks'?(s[key]??G.overviewBlocks()):key==='goals'?{...G.fresh().goals,...s[key]}:s[key],b=normalize(base),l=normalize(local),r=normalize(remote);
       if(equal(l,b))result[key]=r;
       else if(equal(r,b)||equal(l,r))result[key]=l;
       else{conflicts.push(key);result[key]=l;}
