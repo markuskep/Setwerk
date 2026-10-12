@@ -3,7 +3,7 @@
   "versionCode": 5,
   "webRepository": "markuskep/Setwerk",
   "webBranch": "firebase-migration",
-  "webCommit": "13be56c768ac6ff1258d3a77b6233316a1606f85",
+  "webCommit": "4d4b6e48bb938b410688efae0b48043a7f091480",
   "firebaseProject": "setwerk-cb1e0",
   "files": {
     "cloud-core.js": {
@@ -37,8 +37,8 @@
       "android_adapter": false
     },
     "app.js": {
-      "web_sha256": "df3f8c9d1fee3ac81c7b74c0633f547c2de1033dc77d42c83eb53475b18a166e",
-      "android_sha256": "83b98006284eb60286e06356161fc55d3264dc5926877f010299eff2eed42fc5",
+      "web_sha256": "ce7e93598951fbb2fb46e15c6b366d8c20eb981370086d1200243e3f18fe8afd",
+      "android_sha256": "805003c83d39b9ed690935e429ebb73be8c65a6785245185c0a2f4f4151c43e5",
       "android_adapter": true
     },
     "account-ui.js": {
@@ -67,8 +67,8 @@
       "android_adapter": false
     },
     "sw.js": {
-      "web_sha256": "6a4aa8ff9bf6817ec2936375d706b989fa16cf6fca606bf7e9f3f6ba78e33f32",
-      "android_sha256": "ecd57fa4c2d9da5771a1027056a8c93d0f1d902a836345ea9403394e462cc6b2",
+      "web_sha256": "6fd46f48ae5c7032b7215f7fb68314b9271d87052b9c78853a71d9ce9f11e501",
+      "android_sha256": "08923a68349f5d685ffd531704fabcea202e8fe3b7ffa1203945d9c058abcf0d",
       "android_adapter": false
     },
     "core.js": {
