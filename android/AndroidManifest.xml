@@ -1,4 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="at.setwerk.app.v2" android:versionCode="6" android:versionName="1.4.1">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="at.setwerk.app.v2" android:versionCode="7" android:versionName="1.4.2">
   <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35"/>
   <uses-permission android:name="android.permission.INTERNET"/>
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -6,6 +6,10 @@
   <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
   <uses-permission android:name="android.permission.VIBRATE"/>
   <uses-permission android:name="android.permission.health.READ_STEPS"/>
+  <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH"/>
+  <uses-feature android:name="android.hardware.sensor.stepcounter" android:required="false"/>
   <application android:label="Setwerk" android:theme="@style/AppTheme" android:icon="@drawable/ic_launcher" android:allowBackup="false" android:fullBackupContent="false" android:usesCleartextTraffic="false" android:supportsRtl="true">
     <activity android:name="at.setwerk.app.MainActivity" android:exported="true" android:windowSoftInputMode="adjustResize" android:configChanges="orientation|screenSize|keyboardHidden">
       <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
@@ -15,6 +19,7 @@
       <intent-filter><action android:name="android.intent.action.VIEW_PERMISSION_USAGE"/><category android:name="android.intent.category.HEALTH_PERMISSIONS"/></intent-filter>
     </activity-alias>
     <receiver android:name="at.setwerk.app.ReminderReceiver" android:exported="false"/>
+    <service android:name="at.setwerk.app.StepCounterService" android:exported="false" android:foregroundServiceType="health"/>
     <receiver android:name="at.setwerk.app.BootReceiver" android:exported="true"><intent-filter><action android:name="android.intent.action.BOOT_COMPLETED"/><action android:name="android.intent.action.MY_PACKAGE_REPLACED"/><action android:name="android.intent.action.TIME_SET"/><action android:name="android.intent.action.TIMEZONE_CHANGED"/></intent-filter></receiver>
   </application>
 </manifest>

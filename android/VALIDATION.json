@@ -1,59 +1,49 @@
 {
-  "version": "1.4.1",
-  "webCommit": "b98d754d89c08638e1c2cb7233eac88bb2d499bf",
+  "version": "1.4.2",
+  "webSourceBaseCommit": "e8bd5ac7e3eb3a2b36ecd603962bfa45ce2b7589",
   "automatedTests": {
-    "total": 119,
-    "passed": 119,
-    "failed": 0,
-    "healthTests": 8,
-    "notes": "118 tests passed initially; after the open-form change, all 8 health tests passed (including the added focus test). Unchanged tests were not repeated."
+    "webPassed": 103,
+    "androidPassed": 125,
+    "targetedStepTestsPassed": 17,
+    "nativeCounterTests": "baseline, increment, duplicate events, reboot/reset, delayed midnight event"
   },
   "apk": {
     "built": true,
     "verified": true,
-    "versionCode": 6,
+    "versionCode": 7,
     "package": "at.setwerk.app.v2",
     "minSdk": 26,
     "targetSdk": 35,
     "previousCertificateMatched": true,
     "certificateSha256": "30e9fec2689fb103630a494a9a8c04a74548050db0ac27de508f5e7fc426d026",
-    "sha256": "1810ea6e470579f50b26aed4dba50615a7add517122f1efc055aa49296344586",
+    "sha256": "6aec15c99dd1803880885fdb4915766046a71a4eaa460068633231caec6fc143",
     "bundledAssetsMatch": true
   },
-  "healthConnect": {
-    "minimumAndroid": 14,
-    "readOnlySteps": true,
-    "days": 7,
-    "foregroundOnly": true,
-    "nativeCompiled": true,
-    "jsBridgeTests": "simulated Health Connect responses",
+  "steps": {
+    "healthConnectMinimumAndroid": 14,
+    "phoneCounterMinimumAndroid": 8,
+    "healthReadOnly": true,
+    "healthDays": 7,
+    "overviewRefreshSeconds": 120,
+    "automaticImports": "visible overview only; on entry and return",
+    "phoneBackgroundService": true,
+    "permissions": "Health READ_STEPS and/or Physical activity after explicit opt-in",
+    "sourcesNeverAdded": true,
+    "settingsLocation": "Account details",
+    "hardwareCounterRequired": true
+  },
+  "deviceTest": {
+    "status": "pending",
     "checks": [
-      "explicit opt-in and Firebase disclosure",
-      "repeat synchronization without addition",
-      "missing health days preserve manual values",
-      "recorded zero is valid",
-      "revoked permissions and unsupported Android",
-      "late response discarded after disconnect or account switch",
-      "storage failure rollback",
-      "open step form and weight edit preserved",
-      "calendar and gauge share daily totals"
+      "real permissions",
+      "phone sensor and background service",
+      "Health Connect values",
+      "reboot and midnight",
+      "OEM battery behaviour"
     ]
   },
   "browser": {
-    "status": "not-run-this-change",
-    "reason": "Browser skill unavailable in managed environment; UI checked using JSDOM."
-  },
-  "liveFirebase": {
-    "status": "not-run-this-change",
-    "reason": "Existing step cloud payload and cloud regression tests cover the unchanged Firebase adapter."
-  },
-  "realAndroidDevice": {
-    "tested": false,
-    "outstanding": [
-      "installation as update",
-      "native Health Connect permission prompt",
-      "actual Samsung Health / Health Connect totals",
-      "permission revocation and system settings"
-    ]
+    "status": "not-run",
+    "reason": "No browser-control skill available; jsdom UI checks passed"
   }
 }

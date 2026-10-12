@@ -1,9 +1,9 @@
 {
-  "androidVersion": "1.4.1",
-  "versionCode": 6,
+  "androidVersion": "1.4.2",
+  "versionCode": 7,
   "webRepository": "markuskep/Setwerk",
   "webBranch": "firebase-migration",
-  "webCommit": "b98d754d89c08638e1c2cb7233eac88bb2d499bf",
+  "webCommit": "e8bd5ac7e3eb3a2b36ecd603962bfa45ce2b7589",
   "firebaseProject": "setwerk-cb1e0",
   "files": {
     "index.html": {
@@ -42,8 +42,8 @@
       "android_adapter": true
     },
     "sw.js": {
-      "web_sha256": "6fd46f48ae5c7032b7215f7fb68314b9271d87052b9c78853a71d9ce9f11e501",
-      "android_sha256": "08923a68349f5d685ffd531704fabcea202e8fe3b7ffa1203945d9c058abcf0d",
+      "web_sha256": "fb90a10ff0382b69a6dd8b06beb40b7cbd2c2de9eef5bf042ea4ac3f81e1db84",
+      "android_sha256": "005b6f44fd3dc4cbbe526ba71b363842e264bf80bf9df0dbe2f60125dea5db1f",
       "android_adapter": false
     },
     "cloud-core.js": {
@@ -87,8 +87,8 @@
       "android_adapter": false
     },
     "account-ui.js": {
-      "web_sha256": "859998994c8e998a6f504213b74155306651a3b948b3c908da21c906c5436178",
-      "android_sha256": "859998994c8e998a6f504213b74155306651a3b948b3c908da21c906c5436178",
+      "web_sha256": "a68662c98d49646156675c072f20ac48f0390362290fc786c8384d46f5e81395",
+      "android_sha256": "a68662c98d49646156675c072f20ac48f0390362290fc786c8384d46f5e81395",
       "android_adapter": false
     },
     "icon-192.png": {
@@ -120,8 +120,9 @@
       "android_adapter": true
     },
     "android-health.js": {
-      "android_sha256": "c24394d37cdc46495863a9948344318ddff417b078c63140f2e69567635b2103",
+      "android_sha256": "03c67cb72fa2ceb68d75403ab3a8e0a9903e696a1aea5d031262977f14c9ee44",
       "android_adapter": true
     }
-  }
+  },
+  "webSourceModified": true
 }

@@ -14,6 +14,7 @@ import java.util.concurrent.*;
 
 public class MainActivity extends Activity {
   private HealthStepsClient health;
+  private HealthStepsClient.Reply stepPermissionReply;
   private WebView web; private SharedPreferences prefs; private CloudClient cloud;
   private final ScheduledExecutorService restSounds=Executors.newSingleThreadScheduledExecutor();
   private final List<ScheduledFuture<?>> restSoundJobs=new ArrayList<>();
@@ -88,6 +89,26 @@ public class MainActivity extends Activity {
     @JavascriptInterface public String getSite(){return cloud.site();}
     @JavascriptInterface public void request(String id,String operation,String body){
       if(!id.matches("[0-9]{1,12}")||body.length()>2*1024*1024)return;
+      if(operation.startsWith("steps-")){
+        runOnUiThread(()->{
+          HealthStepsClient.Reply reply=(status,raw)->deliver(id,new FirebaseClient.Result(status,raw));
+          try{
+            JSONObject input=new JSONObject(body);
+            if(operation.equals("steps-status"))reply.send(200,StepCounterService.status(MainActivity.this).toString());
+            else if(operation.equals("steps-connect")){
+              if(!StepCounterService.supported(MainActivity.this)){reply.send(503,"{\"code\":\"steps/unavailable\"}");return;}
+              if(StepCounterService.granted(MainActivity.this)){reply.send(200,StepCounterService.status(MainActivity.this).toString());return;}
+              if(stepPermissionReply!=null){reply.send(409,"{\"code\":\"steps/busy\"}");return;}
+              stepPermissionReply=reply;requestPermissions(new String[]{StepCounterService.PERMISSION},84);
+            }else if(operation.equals("steps-start")){
+              StepCounterService.start(MainActivity.this,input.getString("owner"),input.getLong("base"));reply.send(200,"{}");
+            }else if(operation.equals("steps-read"))reply.send(200,StepCounterService.read(MainActivity.this,input.getString("owner")).toString());
+            else if(operation.equals("steps-stop")){StepCounterService.stop(MainActivity.this);reply.send(200,"{}");}
+            else reply.send(400,"{\"code\":\"steps/invalid-operation\"}");
+          }catch(SecurityException e){reply.send(403,"{\"code\":\"steps/permission-denied\"}");}
+          catch(Exception e){reply.send(503,"{\"code\":\"steps/unavailable\"}");}
+        });return;
+      }
       if(operation.startsWith("health-")){
         runOnUiThread(()->{
           if(health==null){deliver(id,new FirebaseClient.Result(200,"{\"supported\":false,\"granted\":false}"));return;}
@@ -115,6 +136,7 @@ public class MainActivity extends Activity {
   private void requestNotifications(){if(Build.VERSION.SDK_INT>=33&&checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=PackageManager.PERMISSION_GRANTED)requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},7);}
   @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] grants){
     super.onRequestPermissionsResult(request,permissions,grants);if(request==83&&health!=null)health.permissionResult();
+    if(request==84&&stepPermissionReply!=null){HealthStepsClient.Reply reply=stepPermissionReply;stepPermissionReply=null;try{reply.send(200,StepCounterService.status(this).toString());}catch(Exception e){reply.send(503,"{\"code\":\"steps/unavailable\"}");}}
   }
   @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);
     if(request==80&&fileCallback!=null){fileCallback.onReceiveValue(result==RESULT_OK&&data!=null?new Uri[]{data.getData()}:null);fileCallback=null;}

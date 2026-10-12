@@ -1,24 +1,22 @@
-# Setwerk Android 1.4.1
+# Setwerk Android 1.4.2
 
 Android auf dem Funktionsstand der Webapp unter https://setwerk-cb1e0.web.app/ (Commit `b98d754d89c08638e1c2cb7233eac88bb2d499bf`). Die Oberfläche und alle 269 Übungen liegen in der APK; Training funktioniert auch ohne Anmeldung und ohne Internet.
 
-## Schritte über Health Connect
+## Automatische Schritte und Health Connect
 
-Diese APK nutzt die native Health-Connect-Schnittstelle ab **Android 14**. Auf Android 8 bis 13 bleiben Training und manuelle Schritte verfügbar; eine Health-Connect-Anbindung über die separate Android-9–13-App ist in dieser Version nicht enthalten.
+Ohne verbundene Health-Quelle kann Setwerk ab Android 8 selbst über `TYPE_STEP_COUNTER` zählen. Ein passender Handysensor ist erforderlich. Ab Android 10 wird nach ausdrücklicher Aktivierung die Berechtigung **Körperliche Aktivität** angefragt. Der sparsame native Vordergrunddienst zählt ab Aktivierung weiter, auch wenn die Oberfläche geschlossen ist, und zeigt eine dauerhafte Android-Benachrichtigung. Er wird bei Neustart und App-Update wieder aufgenommen, sofern aktiviert und erlaubt. Android-Stopp erzwingt eine Unterbrechung bis zum nächsten Öffnen. Die Schritte vor der erstmaligen Aktivierung können nicht rekonstruiert werden; der bereits gespeicherte Tageswert dient als Ausgangswert. Tageswerte werden lokal je Setwerk-Konto geführt.
 
-1. In Samsung Health unter **Einstellungen → Health Connect** das Schreiben von Schritten erlauben. Andere Quellen müssen ihre Schritte ebenfalls an Health Connect übergeben.
-2. Im Setwerk-Schrittzähler **Health verbinden** wählen. Die Erklärung nennt die lokale Speicherung, die Übernahme vorhandener Tageswerte und bei Anmeldung die Synchronisierung mit Firebase.
-3. Verbinden und im Android-Systemdialog ausschließlich das Lesen von Schritten erlauben.
+Health Connect bleibt ab **Android 14** verfügbar. Nach **Health verbinden** und ausdrücklicher Freigabe des Lesens von Schritten sind dessen Tagessummen die Quelle. Der eigene Zähldienst wird gestoppt; beide Quellen werden niemals addiert. Health Connect kann je nach Systemstand selbst Handyschritte sammeln oder Werte aus kompatiblen Apps und Uhren liefern. Bei Trennung oder entzogener Health-Berechtigung kehrt Setwerk zum vorher aktivierten Handyschrittzähler zurück; fehlt dessen Freigabe, bietet die App die Aktivierung an.
 
-Setwerk übernimmt die aggregierten Tagessummen der letzten sieben Tage beim Start, bei der Rückkehr zur App und über **Synchronisieren**. Tagesgrenzen entsprechen der aktuellen Zeitzone des Geräts. Die Aggregate-API berücksichtigt überlappende Quellen; die App addiert keine Rohdaten von Smartphone und Uhr. Erneutes Synchronisieren ersetzt die Tagessumme. Tage ohne Health-Daten behalten ihre vorhandenen manuellen Einträge. Bei einem offenen Schrittformular wird die Übernahme bis zur nächsten Synchronisierung zurückgestellt. Laufende Trainings und offene Gewichtseingaben werden nicht neu gerendert.
+Die sichtbare **Übersicht** übernimmt Werte beim Öffnen bzw. Zurückkehren und danach **alle zwei Minuten**. Beim Wechsel auf eine andere Seite oder in den Hintergrund stoppt dieser Aktualisierungstimer. **Synchronisieren** aktualisiert sofort, auch auf anderen Seiten. Übernommen werden Tagessummen der letzten sieben Tage, keine Addition bereits importierter Schritte. Health-Tage ohne Daten behalten bestehende Werte; eine gemeldete Null ist ein gültiger Wert. Setwerk schreibt keine Werte zurück nach Health Connect. Bei angemeldetem Konto laufen gespeicherte Schrittwerte durch dieselbe Firebase-Synchronisierung wie die anderen Trainingsdaten.
 
-Die Zustimmung gilt pro Setwerk-Konto auf diesem Gerät und wird nicht mit Firebase übertragen. Beim Kontowechsel oder Trennen werden verspätete Antworten verworfen. **Trennen** stoppt die Übernahme; **Health-Einstellungen** öffnet die Systemberechtigungen zum Widerrufen. Bereits importierte Schritte bleiben erhalten. Setwerk fragt keine Schreib-, Hintergrund- oder anderen Gesundheitsberechtigungen an. Der Systemdialog bietet eine offline verfügbare Datenschutzerklärung.
+**Trennen**, **Health-Einstellungen** und **Schrittzählung stoppen** stehen in **Kontodaten → Schritte & Health Connect**. Gäste erreichen diesen lokalen Abschnitt über **Kontodaten** im Schrittzähler. Die Zustimmungen bleiben pro Konto auf diesem Gerät. Kontowechsel, Trennung, Hintergrundwechsel und Seitenwechsel verwerfen unpassende verspätete Antworten. Offene Schritt- und Gewichtseingaben bleiben erhalten.
 
-Automatisierte Prüfungen verwenden simulierte Health-Antworten. Installation, native Berechtigungsdialoge und tatsächliche Schrittdaten müssen noch auf einem Android-Gerät geprüft werden.
+Die automatisierten Prüfungen simulieren Sensor-/Health-Antworten und prüfen die native Zählerdifferenz einschließlich Neustart. Installation, Berechtigungsdialoge, OEM-Hintergrundverhalten und reale Sensorwerte müssen noch auf einem Android-Gerät getestet werden. Bei stark verzögerten Sensorereignissen über Mitternacht kann die Zuordnung des kumulierten Zuwachses zum Tag des Ereignisses ungenau sein.
 
 ## Installation
 
-`Setwerk-1.4.1.apk` als Update über Setwerk 1.1, 1.3.0 oder 1.3.1 installieren. Paketkennung `at.setwerk.app.v2` und Signatur bleiben gleich, der Versionscode steigt auf 6. Die App vorher nicht deinstallieren, damit die lokal gespeicherten Daten erhalten bleiben. Android 8 oder neuer ist erforderlich.
+`Setwerk-1.4.2.apk` als Update über Setwerk 1.1, 1.3.0 oder 1.3.1 installieren. Paketkennung `at.setwerk.app.v2` und Signatur bleiben gleich, der Versionscode steigt auf 7. Die App vorher nicht deinstallieren, damit die lokal gespeicherten Daten erhalten bleiben. Android 8 oder neuer ist erforderlich.
 
 Mit demselben Firebase-Konto wie in der aktuellen Webapp anmelden. Frühere Netlify-Anmeldungen werden nicht als Firebase-Sitzung übernommen. Registrierung und Passwort-Zurücksetzen sind direkt in der App möglich.
 
@@ -64,7 +62,7 @@ Das Skript kopiert gemeinsame Assets, übernimmt die wenigen Android-Anpassungen
 Benötigt: JDK 17, Android SDK Platform 35 und Build Tools 35.0.0. Alternativ zum JDK-Compiler kann Eclipse ECJ 3.38.0 verwendet werden.
 
 ```bash
-python3 build.py --tools /path/to/build-tools/35.0.0 --platform /path/to/android-35/android.jar --signing /private/signing.properties --keystore /private/setwerk-stable-release.jks --output /path/to/Setwerk-1.4.1.apk
+python3 build.py --tools /path/to/build-tools/35.0.0 --platform /path/to/android-35/android.jar --signing /private/signing.properties --keystore /private/setwerk-stable-release.jks --output /path/to/Setwerk-1.4.2.apk
 ```
 
 Bei ECJ zusätzlich `--compiler /path/to/ecj.jar`. Die bestehende private Signatursicherung separat verwenden; sie gehört nicht in den Quellcode. Build-Verzeichnisse können gelöscht werden.
