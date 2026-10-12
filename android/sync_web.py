@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Copy canonical web assets, retaining only the Android platform adapters."""
-import argparse, hashlib, json, pathlib, shutil
+import argparse, hashlib, json, pathlib, shutil, re
 root=pathlib.Path(__file__).resolve().parent
 parser=argparse.ArgumentParser()
 parser.add_argument('--web',required=True,help='Canonical web project directory containing dist/ and tests/')
@@ -17,6 +17,10 @@ for source in (web/'dist').iterdir():
     if source.name=='index.html':
         content=replace_once(content,'<script defer src="exercises.js">','<script defer src="android-bridge.js"></script><script defer src="exercises.js">')
         content=replace_once(content,'<script defer src="app.js"></script>','<script defer src="app.js"></script><script defer src="android-legacy.js"></script>')
+    if source.name=='greeting.js':
+        content=re.sub(r"const previewEmail='[^']*';","const previewEmail='';",content)
+    if source.name=='appearance.js':
+        content=replace_once(content,"if(!user||!window.SetwerkFirebase?.readAppearance||!window.SetwerkFirebase?.writeAppearance)return;","if(!user)return;if(!window.SetwerkFirebase?.readAppearance||!window.SetwerkFirebase?.writeAppearance){mode='offline';emit();return;}")
     if source.name=='auth.js':
         content=replace_once(content,'if (!unchanged && !window.AndroidGym)','if (!unchanged)')
     if source.name=='app.js':
@@ -24,7 +28,7 @@ for source in (web/'dist').iterdir():
         content=replace_once(content,"if(window.AndroidGym){if(!AndroidGym.writeState(raw))throw Error('Speichern fehlgeschlagen');}else if(window.SetwerkCloud)SetwerkCloud.saveLocal(state);","if(window.SetwerkCloud){SetwerkCloud.saveLocal(state);window.AndroidGym?.accountSettings(raw);}else if(window.AndroidGym){if(!AndroidGym.writeState(raw))throw Error('Speichern fehlgeschlagen');}")
         content=replace_once(content,'event=>{if(window.AndroidGym)return;state=G.migrateState(event.detail.state);','event=>{state=G.migrateState(event.detail.state);window.AndroidGym?.accountSettings(JSON.stringify(state));')
         content=replace_once(content,'render();setInterval(tick,250);','if(!storageFault)window.AndroidGym?.accountSettings(JSON.stringify(state));render();setInterval(tick,250);')
-    (assets/source.name).write_text(content)
+    (assets/source.name).write_text(content.rstrip()+'\n')
 tests=root/'regression-tests';tests.mkdir(exist_ok=True)
 for source in (web/'tests').glob('*.test.cjs'):
     if source.name=='account-service.test.cjs': continue # Android service is covered through the native bridge tests.
@@ -33,6 +37,6 @@ files={}
 for source in (web/'dist').iterdir():
     if source.is_file():
         target=assets/source.name
-        files[source.name]={'web_sha256':hashlib.sha256(source.read_bytes()).hexdigest(),'android_sha256':hashlib.sha256(target.read_bytes()).hexdigest(),'android_adapter':source.name in {'index.html','app.js','auth.js','firebase-service.js'}}
+        files[source.name]={'web_sha256':hashlib.sha256(source.read_bytes()).hexdigest(),'android_sha256':hashlib.sha256(target.read_bytes()).hexdigest(),'android_adapter':source.name in {'index.html','app.js','auth.js','firebase-service.js','appearance.js','greeting.js'}}
 (root/'SOURCE_VERSION.json').write_text(json.dumps({'androidVersion':'1.4.0','versionCode':5,'webRepository':'markuskep/Setwerk','webBranch':'firebase-migration','webCommit':args.commit,'firebaseProject':'setwerk-cb1e0','files':files},indent=2)+'\n')
 print('Android assets updated from web commit',args.commit)

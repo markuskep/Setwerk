@@ -2,6 +2,8 @@
  * opaque slots: names, notes, IDs and form values are never translated. */
 window.SetwerkI18n=(()=>{
  const EN={
+ 'Personalisieren':'Personalize','Minimieren':'Minimize','Vergrößern':'Expand','Schritte ändern':'Edit steps','Starkes Workout!':'Great workout!','Training abschließen':'Finish workout','PR im Training anzeigen':'Show personal records during workouts','Farbschema wählen':'Choose color scheme','PR: Noch kein Rekord':'PR: No record yet',
+
  'Deine gespeicherten Daten konnten nicht gelesen werden. Es wird nichts überschrieben. Bitte die App neu öffnen.':'Your saved data could not be read. Nothing will be overwritten. Please reopen the app.',
  'Änderungen konnten nicht dauerhaft gespeichert werden. Bitte die App geöffnet lassen und Speicherplatz prüfen.':'Changes could not be saved. Keep the app open and check the available storage.',
  'Das hat nicht geklappt. Bitte nochmals versuchen.':'That did not work. Please try again.',

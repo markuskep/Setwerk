@@ -51,7 +51,7 @@
       }
     }
     const g=value.goals;
-    if(!g||g.dailySteps!==undefined&&(!Number.isSafeInteger(g.dailySteps)||g.dailySteps<1)||!Number.isInteger(g.weekly)||g.weekly<1||g.weekly>21||!Array.isArray(g.days)||g.days.some(d=>!Number.isInteger(d)||d<0||d>6)||typeof g.reminders!=='boolean'||typeof g.time!=='string'||!/^([01]\d|2[0-3]):[0-5]\d$/.test(g.time))throw Error('Invalid goals');
+    if(!g||g.showPR!==undefined&&typeof g.showPR!=='boolean'||g.dailySteps!==undefined&&(!Number.isSafeInteger(g.dailySteps)||g.dailySteps<1)||!Number.isInteger(g.weekly)||g.weekly<1||g.weekly>21||!Array.isArray(g.days)||g.days.some(d=>!Number.isInteger(d)||d<0||d>6)||typeof g.reminders!=='boolean'||typeof g.time!=='string'||!/^([01]\d|2[0-3]):[0-5]\d$/.test(g.time))throw Error('Invalid goals');
     return value;
   }
   function merge(base,local,remote){

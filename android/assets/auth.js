@@ -8,7 +8,7 @@ gate.hidden = true;
 let authReturnFocus = null;
 let currentUser = window.SetwerkCloud?.user || null;
 const text = (de, en) => document.documentElement.lang === 'en' ? en : de;
-const accountUI=createAccountUI({logout,updateUserProfile,changePassword,removeAccount,activateUser,authError});
+const accountUI=createAccountUI({logout,updateUserProfile,changePassword,removeAccount,activateUser,authError,setLanguage:language=>window.SetwerkLanguage.set(language)});
 
 function setMessage(text, error=false) {
   message.textContent = text || '';
@@ -16,6 +16,8 @@ function setMessage(text, error=false) {
 }
 function showLogin() {
   panel.dataset.mode = 'login';
+  document.getElementById('auth-goals-wrap').hidden=true;
+  document.querySelectorAll('#auth-goals-wrap input').forEach(input=>input.disabled=true);
   document.getElementById('auth-title').textContent = text('Willkommen zurück.', 'Welcome back.');
   document.getElementById('auth-submit').textContent = text('Anmelden', 'Sign in');
   document.getElementById('auth-switch').textContent = text('Noch kein Konto? Registrieren', 'New here? Sign up');
@@ -27,6 +29,8 @@ function showLogin() {
 }
 function showSignup() {
   panel.dataset.mode = 'signup';
+  document.getElementById('auth-goals-wrap').hidden=false;
+  document.querySelectorAll('#auth-goals-wrap input').forEach(input=>input.disabled=false);
   document.getElementById('auth-title').textContent = text('Konto erstellen.', 'Create an account.');
   document.getElementById('auth-submit').textContent = text('Registrieren', 'Sign up');
   document.getElementById('auth-switch').textContent = text('Bereits registriert? Anmelden', 'Already registered? Sign in');
@@ -52,11 +56,13 @@ function openAuth(trigger) {
   document.getElementById('app').inert = true;
   document.querySelector('#auth-form input[name="email"]')?.focus();
 }
-function updateAuthButton(user=currentUser){accountUI.refresh(user);}
+function updateAuthButton(user=currentUser){accountUI.refresh(user);window.SetwerkGreeting?.connect(user);}
 function activateUser(user) {
   const unchanged=currentUser?.id===user?.id && window.SetwerkCloud?.user?.id===user?.id;
   currentUser = user;
   updateAuthButton();
+  window.SetwerkAppearance?.connect(user);
+  if (unchanged && user && ['loading','pending'].includes(window.SetwerkCloud?.mode)) window.SetwerkCloud.sync();
   if (!unchanged) window.SetwerkCloud?.connect(user).catch(() => updateAuthButton());
 }
 window.addEventListener('setwerk:render', () => updateAuthButton());
@@ -99,7 +105,11 @@ document.getElementById('auth-form').addEventListener('submit', async event => {
   setMessage('');
   try {
     if (panel.dataset.mode === 'signup') {
+      const weekly=Number(form.get('weekly')),dailySteps=Number(form.get('dailySteps'));
+      if(!Number.isInteger(weekly)||weekly<1||weekly>21||!Number.isSafeInteger(dailySteps)||dailySteps<1)throw Error(text('Bitte gültige Trainingsziele eingeben.','Please enter valid training goals.'));
       const user = await signup(email, password, name);
+      await window.SetwerkCloud?.connect(user);
+      window.SetwerkPersonalization?.setGoals({weekly,dailySteps});
       closeAuth();
       activateUser(user);
     } else {
@@ -154,4 +164,3 @@ window.addEventListener('online',async()=>{
 });
 updateAuthButton();
 window.addEventListener('setwerk:deleted-account',async event=>{if(currentUser?.id!==event.detail.id)return;try{await logout();}finally{activateUser(null);}});
-

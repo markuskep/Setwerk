@@ -38,7 +38,7 @@ window.SetwerkCloud=(()=>{
   }
   function applyRemote(data){
     // Running workout and drafts remain local, including after a reload.
-    current={...current,...C.clone(data)};
+    current={...current,...C.project(data)};
     if(!data.profile)delete current.profile;
     meta.state=current;
     persist();emitState();
@@ -133,6 +133,11 @@ window.SetwerkCloud=(()=>{
         else if(!C.equal(record,map.get(record.id)))throw Error(t('Ein Eintrag wurde bereits unterschiedlich übernommen. Bitte einzeln über Workout importieren übernehmen.','An imported record has changed. Please import it separately using Workout import.'));
       }
     }
+    for(const [date,count] of Object.entries(guest.dailySteps||{})){
+      if(Object.prototype.hasOwnProperty.call(next.dailySteps,date)&&next.dailySteps[date]!==count)throw Error(t('Für diesen Tag sind bereits andere Schritte gespeichert.','This day already has a different step count.'));
+      next.dailySteps[date]=count;
+    }
+    if(C.equal(next.overviewBlocks,G.overviewBlocks()))next.overviewBlocks=C.clone(guest.overviewBlocks);
     saveLocal(next);emitState();return sync();
   }
   function useCloudVersion(){
@@ -168,6 +173,11 @@ window.SetwerkCloud=(()=>{
         else{next[name].push(record);ids.add(record.id);}
       }
     }
+    for(const [date,count] of Object.entries(imported.dailySteps||{})){
+      if(Object.prototype.hasOwnProperty.call(next.dailySteps,date)&&next.dailySteps[date]!==count)throw Error(t('Für diesen Tag sind bereits andere Schritte gespeichert.','This day already has a different step count.'));
+      next.dailySteps[date]=count;
+    }
+    if(C.equal(next.overviewBlocks,G.overviewBlocks()))next.overviewBlocks=C.clone(imported.overviewBlocks);
     saveLocal(next);emitState();await sync();
   }
   function openPanel(onLogout){

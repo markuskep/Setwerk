@@ -14,6 +14,12 @@ import java.util.concurrent.*;
 
 public class MainActivity extends Activity {
   private WebView web; private SharedPreferences prefs; private CloudClient cloud;
+  private final ScheduledExecutorService restSounds=Executors.newSingleThreadScheduledExecutor();
+  private final List<ScheduledFuture<?>> restSoundJobs=new ArrayList<>();
+  private synchronized void clearRestSounds(){for(ScheduledFuture<?> job:restSoundJobs)job.cancel(false);restSoundJobs.clear();}
+  private void restTone(boolean high){try{int rate=24000,count=rate/5;short[] samples=new short[count];for(int i=0;i<count;i++){double envelope=Math.min(1.0,i/(rate*.01))*Math.min(1.0,(count-i)/(rate*.03));samples[i]=(short)(Math.sin(2*Math.PI*(high?1100:700)*i/rate)*(high?16000:9000)*envelope);}android.media.AudioTrack track=new android.media.AudioTrack.Builder().setAudioAttributes(new android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_MEDIA).setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build()).setAudioFormat(new android.media.AudioFormat.Builder().setSampleRate(rate).setEncoding(android.media.AudioFormat.ENCODING_PCM_16BIT).setChannelMask(android.media.AudioFormat.CHANNEL_OUT_MONO).build()).setBufferSizeInBytes(count*2).setTransferMode(android.media.AudioTrack.MODE_STATIC).build();track.write(samples,0,count);track.play();restSounds.schedule(track::release,300,TimeUnit.MILLISECONDS);}catch(Exception ignored){}}
+
+  private synchronized void queueRestSounds(long until){clearRestSounds();for(int n=3;n>=0;n--){long delay=until-System.currentTimeMillis()-n*1000;boolean high=n==0;if(delay>0)restSoundJobs.add(restSounds.schedule(()->restTone(high),delay,TimeUnit.MILLISECONDS));}}
   private final ExecutorService network=Executors.newSingleThreadExecutor();
   private ValueCallback<Uri[]> fileCallback; private byte[] exportBytes;
   private static final String ORIGIN="https://appassets.androidplatform.net";
@@ -83,8 +89,9 @@ public class MainActivity extends Activity {
       if(!id.matches("[0-9]{1,12}")||body.length()>2*1024*1024)return;
       network.execute(()->deliver(id,operation.startsWith("legacy-")?legacy(operation,body):cloud.call(operation,body)));
     }
-    @JavascriptInterface public void scheduleRest(double until){ReminderReceiver.scheduleRest(MainActivity.this,(long)until);}
-    @JavascriptInterface public void cancelRest(){ReminderReceiver.cancelRest(MainActivity.this);}
+    @JavascriptInterface public void playRestStart(){restTone(false);}
+    @JavascriptInterface public void scheduleRest(double until){queueRestSounds((long)until);ReminderReceiver.scheduleRest(MainActivity.this,(long)until);}
+    @JavascriptInterface public void cancelRest(){clearRestSounds();ReminderReceiver.cancelRest(MainActivity.this);}
     @JavascriptInterface public void accountSettings(String raw){try{JSONObject state=new JSONObject(raw);String goals=state.getJSONObject("goals").toString();boolean changed=!goals.equals(prefs.getString("goals",""));prefs.edit().putString("display-language",state.optString("language","de")).putString("goals",goals).commit();cloud.language(state.optString("language","de"));if(changed)ReminderReceiver.scheduleAll(MainActivity.this);}catch(Exception ignored){}}
     @JavascriptInterface public void setReminders(String raw){try{JSONObject goals=new JSONObject(raw);prefs.edit().putString("goals",raw).commit();ReminderReceiver.scheduleAll(MainActivity.this);if(goals.optBoolean("reminders"))runOnUiThread(()->requestNotifications());}catch(Exception ignored){}}
     @JavascriptInterface public void saveFile(String name,String data){
@@ -100,5 +107,5 @@ public class MainActivity extends Activity {
   }
   @Override protected void onResume(){super.onResume();if(web!=null)web.evaluateJavascript("window.dispatchEvent(new Event('setwerk:resume'))",null);}
   @Override public void onBackPressed(){web.evaluateJavascript("(()=>{if(!document.querySelector('#auth-gate').hidden){document.querySelector('[data-auth-close]').click();return;}for(const d of document.querySelectorAll('dialog[open]')){d.dispatchEvent(new Event('cancel',{cancelable:true}));d.close();return;}if(state.active){earlyEnd();return;}navigate('home');})()",null);}
-  @Override protected void onDestroy(){network.shutdownNow();if(fileCallback!=null)fileCallback.onReceiveValue(null);if(web!=null){web.removeJavascriptInterface("AndroidGym");web.destroy();web=null;}super.onDestroy();}
+  @Override protected void onDestroy(){clearRestSounds();restSounds.shutdownNow();network.shutdownNow();if(fileCallback!=null)fileCallback.onReceiveValue(null);if(web!=null){web.removeJavascriptInterface("AndroidGym");web.destroy();web=null;}super.onDestroy();}
 }

@@ -1,3 +1,4 @@
+// Synthetic mock accounts and TEST_ONLY passwords; no real credentials or accounts.
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {JSDOM,VirtualConsole}=require('jsdom'),G=require('../dist/core.js'),C=require('../dist/cloud-core.js');
 const root=path.join(__dirname,'../dist'),act=name=>`[data-action="${name}"]`;
@@ -9,32 +10,27 @@ function setup(stored=G.fresh(),cloud=false){
  const calls=[];let remote={revision:0,data:null};
  if(cloud)w.SetwerkFirebase={async readStore(){return remote;},async writeStore(owner,revision,data){calls.push({owner,data});remote={revision:revision+1,data};return remote;}};
  for(const file of ['core.js',...(cloud?['cloud-core.js','cloud.js']:[]),'exercises.js','exercises-en.js','i18n.js','transfer.js','app.js'])w.eval(fs.readFileSync(path.join(root,file),'utf8'));
- const q=selector=>w.document.querySelector(selector),click=selector=>{assert.ok(q(selector),selector);q(selector).click();},input=(selector,value)=>{q(selector).value=String(value);q(selector).dispatchEvent(new w.Event('input',{bubbles:true}));},submit=()=>q('#steps-form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true})),read=()=>JSON.parse(w.localStorage.getItem('setwerk.v1')),order=()=>[...w.document.querySelectorAll('[data-overview-block]')].map(el=>el.dataset.overviewBlock);
+ const q=selector=>{if(selector==='#daily-steps'&&!w.document.querySelector(selector))w.document.querySelector('[data-action=edit-steps]')?.click();return w.document.querySelector(selector);},click=selector=>{assert.ok(q(selector),selector);q(selector).click();},input=(selector,value)=>{q(selector).value=String(value);q(selector).dispatchEvent(new w.Event('input',{bubbles:true}));},submit=()=>q('#steps-form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true})),read=()=>JSON.parse(w.localStorage.getItem('setwerk.v1')),order=()=>[...w.document.querySelectorAll('[data-overview-block]')].map(el=>el.dataset.overviewBlock);
  return{dom,w,q,click,input,submit,read,order,errors,calls};
 }
-test('Tacho bleibt unten offen, zeigt die tatsächlichen Schritte und begrenzt den Zeiger am Tagesziel',()=>{
- for(const [count,angle] of [[0,-135],[5000,0],[10000,135],[15000,135]]){
-  const state=G.fresh();state.dailySteps[G.localDate()]=count;const x=setup(state);try{
-   assert.equal(x.q('.steps-gauge').dataset.stepGoal,'10000');assert.match(x.q('.steps-track').getAttribute('d'),/A 126 126 0 1 1/);assert.doesNotMatch(x.q('.steps-track').getAttribute('d'),/Z/);
-   assert.equal(x.q('.steps-needle').getAttribute('transform'),`rotate(${angle} 180 145)`);assert.equal(x.q('.steps-count').textContent,count.toLocaleString('de-AT'));assert.equal(x.q('.steps-caption').textContent,'Schritte');assert.equal(x.q('.steps-scale-goal').textContent,(10000).toLocaleString('de-AT'));
-   const children=[...x.q('.steps-gauge').children];assert.ok(children.indexOf(x.q('.steps-center'))>children.indexOf(x.q('.steps-needle')));assert.ok(children.indexOf(x.q('.steps-total'))>children.indexOf(x.q('.steps-center')));
-   x.click(act('nav-calendar'));assert.equal(x.q('.steps-count').textContent,count.toLocaleString('de-AT'));assert.deepEqual(x.errors,[]);
-  }finally{x.dom.window.close();}
- }
+test('Offener Schrittbalken zeigt echte Werte und begrenzt den Fortschritt am Tagesziel',()=>{
+ for(const count of [0,5000,10000,15000]){const state=G.fresh();state.dailySteps[G.localDate()]=count;const x=setup(state);try{
+ assert.equal(x.q('.steps-gauge').dataset.stepGoal,'10000');assert.equal(Number(x.q('.steps-gauge').dataset.stepProgress),Math.min(count/10000,1));assert.equal(x.q('.steps-needle'),null);assert.equal(x.q('.steps-gauge line'),null);assert.equal(x.q('#steps-form'),null);assert.equal(x.q('.steps-count').textContent,count.toLocaleString('de-AT'));x.click(act('edit-steps'));assert.equal(x.q('#daily-steps').value,String(count));assert.deepEqual(x.errors,[]);
+ }finally{x.dom.window.close();}}
 });
 test('Tägliches Schrittziel lässt sich zusammen mit den bisherigen Trainingszielen speichern und nach Reload nutzen',()=>{
  const state=G.fresh();state.dailySteps[G.localDate()]=4500;const x=setup(state);try{
-  x.click(act('goals'));assert.equal(x.q('[name="dailySteps"]').value,'10000');x.input('[name="dailySteps"]',9000);x.input('[name="weekly"]',5);x.q('#goals-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));
-  assert.equal(x.read().goals.dailySteps,9000);assert.equal(x.read().goals.weekly,5);assert.equal(x.q('.steps-gauge').dataset.stepGoal,'9000');assert.equal(x.q('.steps-needle').getAttribute('transform'),'rotate(0 180 145)');assert.match(x.q('.steps-scale-goal').textContent,/9.?000/);
-  const y=setup(x.read());try{assert.equal(y.q('.steps-gauge').dataset.stepGoal,'9000');y.click(act('goals'));assert.equal(y.q('[name="dailySteps"]').value,'9000');}finally{y.dom.window.close();}
+  x.click(act('personalize'));assert.equal(x.q('[name="dailySteps"]').value,'10000');x.input('[name="dailySteps"]',9000);x.input('[name="weekly"]',5);x.q('#goals-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));
+  assert.equal(x.read().goals.dailySteps,9000);assert.equal(x.read().goals.weekly,5);assert.equal(x.q('.steps-gauge').dataset.stepGoal,'9000');assert.equal(Number(x.q('.steps-gauge').dataset.stepProgress),.5);assert.match(x.q('.steps-scale-goal').textContent,/9.?000/);
+  const y=setup(x.read());try{assert.equal(y.q('.steps-gauge').dataset.stepGoal,'9000');y.click(act('personalize'));assert.equal(y.q('[name="dailySteps"]').value,'9000');}finally{y.dom.window.close();}
   assert.deepEqual(x.errors,[]);
  }finally{x.dom.window.close();}
 });
 test('Ungültiges Schrittziel und Speicherfehler ändern keine vorhandenen Ziele',()=>{
  const x=setup();try{
-  x.click(act('goals'));const previous=x.read().goals;
+  x.click(act('personalize'));const previous=x.read().goals;
   for(const value of ['',0,-1,1.5,Number.MAX_SAFE_INTEGER+1]){x.input('[name="dailySteps"]',value);x.q('#goals-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));assert.deepEqual(x.read().goals,previous);}
-  x.w.SetwerkCloud={saveLocal(){throw Error('Full');}};x.input('[name="dailySteps"]',8000);x.q('#goals-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));assert.deepEqual(x.read().goals,previous);assert.equal(x.q('#modal').open,true);x.click(act('close-modal'));x.click(act('goals'));assert.equal(x.q('[name="dailySteps"]').value,'10000');assert.deepEqual(x.errors,[]);
+  x.w.SetwerkCloud={saveLocal(){throw Error('Full');}};x.input('[name="dailySteps"]',8000);x.q('#goals-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));assert.deepEqual(x.read().goals,previous);assert.equal(x.q('#modal').open,true);x.click(act('close-modal'));x.click(act('personalize'));assert.equal(x.q('[name="dailySteps"]').value,'10000');assert.deepEqual(x.errors,[]);
  }finally{x.dom.window.close();}
 });
 test('Alte Ziele erhalten den Standardwert, neue Schrittziele werden in der Cloud validiert und konfliktfrei migriert',()=>{
@@ -49,7 +45,7 @@ test('Manuelle Schritte sind pro Tag in Übersicht und Kalender editierbar und b
   x.input('#daily-steps',8250);x.submit();assert.equal(x.read().dailySteps[today],8250);assert.equal(x.read().sessions.length,0);
   x.click(act('nav-calendar'));assert.equal(x.q('#daily-steps').value,'8250');assert.match(x.q(`[data-date="${today}"] .cal-steps`).textContent,/8.?250/);
   if(yesterday.slice(0,7)!==today.slice(0,7))x.click('[data-action="month"][data-dir="-1"]');
-  x.click(`[data-action="select-date"][data-date="${yesterday}"]`);assert.equal(x.q('#daily-steps').value,'');x.input('#daily-steps',0);x.submit();assert.equal(x.read().dailySteps[yesterday],0);
+  x.click(act('close-modal'));x.click(`[data-action="select-date"][data-date="${yesterday}"]`);assert.equal(x.q('#daily-steps').value,'');x.input('#daily-steps',0);x.submit();assert.equal(x.read().dailySteps[yesterday],0);
   x.input('#daily-steps',2100);x.submit();assert.equal(x.read().dailySteps[yesterday],2100);assert.equal(x.read().dailySteps[today],8250);
   x.click('[data-action="nav"][data-route="home"]');assert.equal(x.q('#daily-steps').value,'8250');const y=setup(x.read());try{assert.equal(y.q('#daily-steps').value,'8250');assert.equal(y.read().dailySteps[yesterday],2100);}finally{y.dom.window.close();}
   assert.deepEqual(x.errors,[]);
@@ -68,9 +64,9 @@ test('Bearbeiten steht unten; Blöcke werden verschoben, entfernt, hinzugefügt 
   x.click('[data-action="overview-move"][data-block="weekly"][data-dir="-1"]');assert.equal(x.order()[0],'weekly');assert.equal(x.read().overviewBlocks[0],'start');
   x.click('[data-action="overview-remove"][data-block="recent"]');assert.equal(x.q('[data-overview-block="recent"]'),null);assert.ok(x.q('[data-action="overview-add"][data-block="recent"]'));
   x.click('[data-action="overview-add"][data-block="recent"]');assert.equal(x.order().filter(id=>id==='recent').length,1);
-  x.click('[data-action="overview-remove"][data-block="steps"]');x.click(act('overview-save'));assert.equal(x.read().overviewBlocks[0],'weekly');assert.equal(x.q('#daily-steps'),null);
-  const y=setup(x.read());try{assert.equal(y.order()[0],'weekly');assert.equal(y.q('#daily-steps'),null);y.click(act('nav-calendar'));assert.ok(y.q('#steps-form'));}finally{y.dom.window.close();}
-  x.click(act('overview-edit'));x.click('[data-action="overview-add"][data-block="steps"]');x.click(act('overview-cancel'));assert.equal(x.q('#daily-steps'),null);assert.deepEqual(x.errors,[]);
+  x.click('[data-action="overview-remove"][data-block="steps"]');x.click(act('overview-save'));assert.equal(x.read().overviewBlocks[0],'weekly');assert.equal(x.q(act('edit-steps')),null);
+  const y=setup(x.read());try{assert.equal(y.order()[0],'weekly');assert.equal(y.q(act('edit-steps')),null);y.click(act('nav-calendar'));assert.ok(y.q(act('edit-steps')));}finally{y.dom.window.close();}
+  x.click(act('overview-edit'));x.click('[data-action="overview-add"][data-block="steps"]');x.click(act('overview-cancel'));assert.equal(x.q(act('edit-steps')),null);assert.deepEqual(x.errors,[]);
  }finally{x.dom.window.close();}
 });
 test('Blöcke lassen sich per Maus oder Touch-Griff verschieben, abbrechen und auch vollständig ausblenden',()=>{
@@ -85,12 +81,12 @@ test('Blöcke lassen sich per Maus oder Touch-Griff verschieben, abbrechen und a
 });
 test('Speicherfehler erhalten Schritte und lassen den Übersichts-Entwurf offen',()=>{
  const state=G.fresh();state.dailySteps[G.localDate()]=6000;const x=setup(state);try{
-  x.w.SetwerkCloud={saveLocal(){throw Error('Full');}};x.input('#daily-steps',7000);x.submit();assert.equal(x.read().dailySteps[G.localDate()],6000);x.click(act('overview-edit'));assert.equal(x.q('#daily-steps').value,'6000');
+  x.w.SetwerkCloud={saveLocal(){throw Error('Full');}};x.input('#daily-steps',7000);x.submit();assert.equal(x.read().dailySteps[G.localDate()],6000);x.click(act('close-modal'));x.click(act('overview-edit'));assert.equal(x.q('.steps-count').textContent,(6000).toLocaleString('de-AT'));
   x.click('[data-action="overview-remove"][data-block="recent"]');x.click(act('overview-save'));assert.ok(x.q(act('overview-save')));assert.ok(x.read().overviewBlocks.includes('recent'));x.click(act('overview-cancel'));assert.ok(x.q('[data-overview-block="recent"]'));assert.deepEqual(x.errors,[]);
  }finally{x.dom.window.close();}
 });
 test('Neue Eingaben und Bearbeitungsfunktionen verwenden auch die vorhandene englische Sprache',()=>{
- const state=G.fresh();state.language='en';const x=setup(state);try{assert.match(x.q('.steps-card').textContent,/Step counter/);assert.match(x.q('.steps-card').textContent,/Daily steps/);x.input('#daily-steps',100);x.submit();assert.equal(x.q('#toast').textContent,'Steps saved.');x.click(act('overview-edit'));assert.match(x.q('.overview-editor').textContent,/Edit overview/);assert.match(x.q('.overview-editor').textContent,/Add blocks/);assert.deepEqual(x.errors,[]);}finally{x.dom.window.close();}
+ const state=G.fresh();state.language='en';const x=setup(state);try{assert.match(x.q('.steps-card').textContent,/Step counter/);assert.match(x.q('.steps-card').textContent,/Steps/);x.input('#daily-steps',100);x.submit();assert.equal(x.q('#toast').textContent,'Steps saved.');x.click(act('overview-edit'));assert.match(x.q('.overview-editor').textContent,/Edit overview/);assert.match(x.q('.overview-editor').textContent,/Add blocks/);assert.deepEqual(x.errors,[]);}finally{x.dom.window.close();}
 });
 test('Cloud-Projektion und alte Zustände unterstützen Schritte und Blöcke ohne Trainingsdaten zu ändern',()=>{
  const old=C.project(G.fresh());delete old.dailySteps;delete old.overviewBlocks;C.validate(old);const migrated=G.migrateState(old);assert.deepEqual(migrated.dailySteps,{});assert.deepEqual(migrated.overviewBlocks,G.OVERVIEW_BLOCKS);

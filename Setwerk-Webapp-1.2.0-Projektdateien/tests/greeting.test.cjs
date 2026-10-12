@@ -1,3 +1,4 @@
+// Synthetic mock accounts and TEST_ONLY passwords; no real credentials or accounts.
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {JSDOM}=require('jsdom');
 function setup(){
@@ -7,7 +8,7 @@ function setup(){
  w.setTimeout=fn=>{timer=fn;return 1};
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'))};
  w.SetwerkCloud={user:null,profile:null};
- w.eval(fs.readFileSync(path.join(__dirname,'../dist/greeting.js'),'utf8'));
+ w.eval(fs.readFileSync(path.join(__dirname,'../dist/greeting.js'),'utf8').replace(/const previewEmail='[^']*';/,"const previewEmail='preview@example.test';"));
  const query=s=>w.document.querySelector(s),small=()=>query('[data-welcome-greeting]').textContent,large=()=>query('[data-welcome-message]').textContent;
  function clock(value){const [h,m]=value.split(':').map(Number);minutes=h*60+m;timer()}
  function connect(user,profile=null){w.SetwerkCloud.user=user;w.SetwerkCloud.profile=profile;w.SetwerkGreeting.connect(user)}
@@ -44,15 +45,15 @@ test('authenticated names update safely from profile data and disappear on sign-
 test('only the specified signed-in account can preview time; reset and account switch restore the real clock',()=>{
  const x=setup();try{
  x.clock('14:00');x.connect({id:'other',email:'markus@example.test',name:'Markus'});assert.equal(x.query('[data-greeting-clock]'),null);
- x.connect({id:'markus',email:'markusk302@gmail.com',name:'Markus'});assert.ok(x.query('[data-greeting-clock]'));x.preview('00:30');assert.equal(x.small(),'Gute Nacht Markus');assert.equal(x.query('[data-greeting-clock]').getAttribute('aria-pressed'),'true');
+ x.connect({id:'markus',email:'preview@example.test',name:'Markus'});assert.ok(x.query('[data-greeting-clock]'));x.preview('00:30');assert.equal(x.small(),'Gute Nacht Markus');assert.equal(x.query('[data-greeting-clock]').getAttribute('aria-pressed'),'true');
  x.clock('08:00');assert.equal(x.small(),'Gute Nacht Markus');x.query('[data-greeting-clock]').click();x.query('[data-greeting-reset]').click();assert.equal(x.small(),'Guten Morgen Markus');assert.equal(x.query('[data-greeting-clock]').getAttribute('aria-pressed'),'false');
  x.preview('03:00');x.query('[data-greeting-clock]').click();x.connect({id:'other',email:'other@example.test',name:'Someone'});assert.equal(x.query('#greeting-clock').open,false);assert.equal(x.small(),'Guten Morgen Someone');assert.equal(x.query('[data-greeting-clock]'),null);
- x.connect({id:'markus',email:'markusk302@gmail.com',name:'Markus'});assert.equal(x.small(),'Guten Morgen Markus');x.connect(null);assert.equal(x.small(),'Guten Morgen');assert.equal(x.query('[data-greeting-clock]'),null);
+ x.connect({id:'markus',email:'preview@example.test',name:'Markus'});assert.equal(x.small(),'Guten Morgen Markus');x.connect(null);assert.equal(x.small(),'Guten Morgen');assert.equal(x.query('[data-greeting-clock]'),null);
  }finally{x.dom.window.close()}
 });
 test('welcome and preview controls follow the selected language without translating names',()=>{
  const x=setup();try{
- x.clock('18:00');x.connect({id:'markus',email:'markusk302@gmail.com',name:'Markus'});x.w.document.documentElement.lang='en';x.w.dispatchEvent(new x.w.Event('setwerk:render'));
+ x.clock('18:00');x.connect({id:'markus',email:'preview@example.test',name:'Markus'});x.w.document.documentElement.lang='en';x.w.dispatchEvent(new x.w.Event('setwerk:render'));
  assert.equal(x.small(),'Good evening Markus');assert.equal(x.large(),'How was your day today?');assert.equal(x.query('[data-greeting-clock]').textContent,'Test greeting time');
  x.query('[data-greeting-clock]').click();assert.equal(x.query('#greeting-clock-title').textContent,'Test greeting time');assert.equal(x.query('[data-greeting-reset]').textContent,'Use current time');
  }finally{x.dom.window.close()}

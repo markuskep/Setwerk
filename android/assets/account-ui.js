@@ -9,6 +9,7 @@ export function createAccountUI(api){
   function refresh(next=user){
     const changed=user?.id!==next?.id;user=next;
     if(changed){closeMenu(false);if(dialog?.open)dialog.close();++imageJob;}
+    if(user)document.querySelectorAll('[data-action="toggle-language"]').forEach(button=>button.remove());
     for(const button of document.querySelectorAll('[data-auth-open]')){
       button.replaceChildren();
       if(user){
@@ -39,11 +40,27 @@ export function createAccountUI(api){
     if(menu&&trigger===button){closeMenu();return;}
     closeMenu(false);trigger=button;
     menu=document.createElement('div');menu.className='account-menu';menu.id='account-menu';menu.setAttribute('role','menu');menu.setAttribute('aria-label',t('Konto','Account'));
-    const options=[[t('Kontodaten','Account details'),()=>openDetails()], [t('Abmelden','Sign out'),()=>signOut()], [t('Konto löschen','Delete account'),()=>openDetails(true),'account-danger']];
+    const options=[[t('Kontodaten','Account details'),()=>openDetails()], [t('Personalisieren','Personalize'),()=>window.SetwerkPersonalization?.open()], [t('Abmelden','Sign out'),()=>signOut()], [t('Konto löschen','Delete account'),()=>openDetails(true),'account-danger']];
     for(const [label,action,cls] of options){const item=document.createElement('button');item.type='button';item.textContent=label;item.className=cls||'';item.setAttribute('role','menuitem');item.tabIndex=-1;item.onclick=()=>{closeMenu(false);action();};menu.append(item);}
     (button.closest('.account-control')||button.parentElement).append(menu);
     button.setAttribute('aria-expanded','true');button.setAttribute('aria-controls',menu.id);menu.querySelector('button').focus();
   }
+  function refreshAppearance(){
+    const appearance=window.SetwerkAppearance;if(!appearance||!dialog?.querySelector('#appearance-options'))return;
+    for(const button of dialog.querySelectorAll('[data-theme-choice]'))button.setAttribute('aria-pressed',String(button.dataset.themeChoice===appearance.theme));
+    const messages={synced:t('Im Konto gespeichert.','Saved to your account.'),offline:t('Lokal gespeichert. Wird bei Verbindung mit deinem Konto synchronisiert.','Saved locally. Will sync with your account when connected.'),pending:t('Lokal gespeichert …','Saved locally …'),syncing:t('Wird im Konto gespeichert …','Saving to your account …'),loading:t('Farbauswahl wird geladen …','Loading color scheme …')};
+    dialog.querySelector('#appearance-status').textContent=messages[appearance.mode]||'';
+  }
+  function openAppearance(){
+    if(!user||!window.SetwerkAppearance)return;
+    ensureDialog();
+    const options=[['standard',t('Standard','Default')],['cherry','Cherry'],['orange',t('Orange','Orange')],['light-blue',t('Hellblau','Light Blue')],['black-white','Black & White']];
+    dialog.innerHTML=`<div class="modal-head"><h2 id="account-title">${t('Personalisieren','Personalize')}</h2><button type="button" class="icon-btn" data-account-action="close" aria-label="${t('Schließen','Close')}">×</button></div><div class="modal-body"><p class="muted">${t('Wähle dein Farbschema. Die Vorschau wird sofort übernommen.','Choose your color scheme. The preview is applied immediately.')}</p><div id="appearance-options" class="theme-grid">${options.map(([id,label])=>`<button type="button" class="theme-choice" data-theme-choice="${id}" aria-pressed="false"><span class="theme-preview" data-preview="${id}" aria-hidden="true"><i></i><span><b></b><em></em><em></em></span></span><span class="theme-choice-label">${label}<span class="theme-selected" aria-hidden="true">✓</span></span></button>`).join('')}</div><p id="appearance-status" class="muted theme-status" role="status" aria-live="polite"></p></div>`;
+    for(const button of dialog.querySelectorAll('[data-theme-choice]'))button.onclick=()=>{try{window.SetwerkAppearance.select(button.dataset.themeChoice);}catch{dialog.querySelector('#appearance-status').textContent=t('Die Auswahl konnte nicht gespeichert werden. Bitte erneut versuchen.','The selection could not be saved. Please try again.');}};
+    refreshAppearance();if(!dialog.open)dialog.showModal();dialog.querySelector('[aria-pressed="true"]')?.focus();
+  }
+  window.addEventListener('setwerk:appearance-state',refreshAppearance);
+  window.addEventListener('setwerk:open-colors',openAppearance);
   async function signOut(){
     if(busy)return;
     try{
@@ -66,7 +83,7 @@ export function createAccountUI(api){
       if(action==='delete'){dialog.querySelector('#account-delete-section').hidden=false;dialog.querySelector('#delete-password').focus();dialog.querySelector('#account-delete-section').scrollIntoView?.({block:'nearest',behavior:'smooth'});}
       if(action==='sync-panel'){dialog.close();cloud()?.openPanel(()=>signOut());}
     });
-    dialog.addEventListener('change',event=>{if(event.target.id==='profile-photo')choosePhoto(event.target);});
+    dialog.addEventListener('change',event=>{if(event.target.id==='profile-photo')choosePhoto(event.target);else if(event.target.id==='account-language')changeLanguage(event.target);});
     dialog.addEventListener('submit',event=>{event.preventDefault();if(!busy)submit(event.target);});
   }
   function openDetails(deletion=false){
@@ -74,12 +91,23 @@ export function createAccountUI(api){
     ensureDialog();const p=profile();pendingPhoto=p.photo||'';++imageJob;
     dialog.innerHTML=`<div class="modal-head"><h2 id="account-title">${t('Kontodaten','Account details')}</h2><button type="button" class="icon-btn" data-account-action="close" aria-label="${t('Schließen','Close')}">×</button></div><div class="modal-body account-sections">
       <form id="profile-form" class="account-form"><div class="profile-photo-row"><img id="profile-preview" class="profile-preview" src="${escape(photo(pendingPhoto))}" alt="${t('Profilbild','Profile picture')}"><div class="profile-photo-controls"><label class="btn outline photo-picker">${t('Profilbild auswählen','Choose profile picture')}<input id="profile-photo" type="file" accept="image/jpeg,image/png,image/webp" aria-label="${t('Profilbild auswählen','Choose profile picture')}"></label><button type="button" class="btn ghost" data-account-action="remove-photo">${t('Bild entfernen','Remove picture')}</button></div></div><label>${t('E-Mail-Adresse','Email address')}<input type="email" value="${escape(user.email)}" readonly autocomplete="email"></label><label>${t('Nutzername','Username')}<input name="profileName" value="${escape(p.name)}" required maxlength="80" autocomplete="nickname" placeholder="${t('Dein Name','Your name')}"></label><button type="submit" class="btn accent">${t('Profil speichern','Save profile')}</button></form>
+      <section class="account-section"><h3>${t('Sprache','Language')}</h3><label>${t('App-Sprache','App language')}<select id="account-language"><option value="de" ${document.documentElement.lang==='en'?'':'selected'}>Deutsch</option><option value="en" ${document.documentElement.lang==='en'?'selected':''}>English</option></select></label></section>
       <section class="account-section"><h3>${t('Passwort ändern','Change password')}</h3><form id="password-form" class="account-form"><input type="text" name="username" value="${escape(user.email)}" autocomplete="username" hidden><label>${t('Aktuelles Passwort','Current password')}<input name="currentPassword" type="password" required autocomplete="current-password"></label><label>${t('Neues Passwort','New password')}<input name="newPassword" type="password" required minlength="6" autocomplete="new-password"></label><label>${t('Neues Passwort wiederholen','Repeat new password')}<input name="repeatPassword" type="password" required minlength="6" autocomplete="new-password"></label><button type="submit" class="btn outline">${t('Passwort ändern','Change password')}</button></form></section>
       <section class="account-section"><h3>${t('Synchronisierung','Synchronization')}</h3><p class="account-sync-status muted">${escape(cloud()?.description()||'')}</p><button type="button" class="btn outline" data-account-action="sync-panel">${t('Synchronisierung & Datensicherung','Sync & backups')}</button></section>
       <section class="account-section"><button type="button" class="btn danger" data-account-action="delete">${t('Konto löschen','Delete account')}</button><div id="account-delete-section" ${deletion?'':'hidden'}><p class="account-delete-note">${t('Dein Konto, dein Profil und alle online gespeicherten Trainings und Vorlagen werden endgültig gelöscht. Erstelle bei Bedarf vorher eine Datensicherung.','Your account, profile and all workouts and templates saved online will be permanently deleted. Download a backup first if needed.')}</p><form id="delete-account-form" class="account-form"><input type="text" name="username" value="${escape(user.email)}" autocomplete="username" hidden><label>${t('Aktuelles Passwort','Current password')}<input id="delete-password" name="deletePassword" type="password" required autocomplete="current-password"></label><label class="inline-check"><input type="checkbox" name="confirmDeletion" required>${t('Ich möchte mein Konto endgültig löschen.','I want to permanently delete my account.')}</label><button type="submit" class="btn danger">${t('Konto endgültig löschen','Permanently delete account')}</button></form></div></section>
       <p id="account-message" class="auth-message" role="status" aria-live="polite"></p></div>`;
     if(!dialog.open)dialog.showModal();
     (deletion?dialog.querySelector('#delete-password'):dialog.querySelector('[name="profileName"]')).focus();
+  }
+  function changeLanguage(select){
+    if(!user||busy)return;
+    const previous=document.documentElement.lang==='en'?'en':'de',draftPhoto=pendingPhoto,deletion=!dialog.querySelector('#account-delete-section').hidden;
+    const values=[...dialog.querySelectorAll('input:not([type="file"])')].map(input=>({value:input.value,checked:input.checked}));
+    try{
+      api.setLanguage(select.value);openDetails(deletion);pendingPhoto=draftPhoto;dialog.querySelector('#profile-preview').src=photo(pendingPhoto);
+      [...dialog.querySelectorAll('input:not([type="file"])')].forEach((input,index)=>{input.value=values[index].value;input.checked=values[index].checked;});
+      dialog.querySelector('#account-language').focus();showMessage(t('Sprache gespeichert.','Language saved.'));
+    }catch(error){select.value=previous;showMessage(api.authError(error),true);}
   }
   async function choosePhoto(input){
     const file=input.files?.[0],job=++imageJob;if(!file)return;
@@ -96,7 +124,7 @@ export function createAccountUI(api){
       pendingPhoto=data;dialog.querySelector('#profile-preview').src=data;showMessage(t('Zum Übernehmen „Profil speichern“ auswählen.','Choose “Save profile” to apply the picture.'));
     }catch(error){showMessage(error.message,true);}finally{if(url)URL.revokeObjectURL(url);busy=false;lock(false);input.value='';}
   }
-  function lock(value){dialog.querySelectorAll('button,input').forEach(node=>{node.disabled=value;});}
+  function lock(value){dialog.querySelectorAll('button,input,select').forEach(node=>{node.disabled=value;});}
   async function submit(form){
     if(!form.reportValidity())return;
     const data=new FormData(form),owner=user?.id;if(!owner)return;

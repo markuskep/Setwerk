@@ -16,6 +16,8 @@ function setMessage(text, error=false) {
 }
 function showLogin() {
   panel.dataset.mode = 'login';
+  document.getElementById('auth-goals-wrap').hidden=true;
+  document.querySelectorAll('#auth-goals-wrap input').forEach(input=>input.disabled=true);
   document.getElementById('auth-title').textContent = text('Willkommen zurück.', 'Welcome back.');
   document.getElementById('auth-submit').textContent = text('Anmelden', 'Sign in');
   document.getElementById('auth-switch').textContent = text('Noch kein Konto? Registrieren', 'New here? Sign up');
@@ -27,6 +29,8 @@ function showLogin() {
 }
 function showSignup() {
   panel.dataset.mode = 'signup';
+  document.getElementById('auth-goals-wrap').hidden=false;
+  document.querySelectorAll('#auth-goals-wrap input').forEach(input=>input.disabled=false);
   document.getElementById('auth-title').textContent = text('Konto erstellen.', 'Create an account.');
   document.getElementById('auth-submit').textContent = text('Registrieren', 'Sign up');
   document.getElementById('auth-switch').textContent = text('Bereits registriert? Anmelden', 'Already registered? Sign in');
@@ -101,7 +105,11 @@ document.getElementById('auth-form').addEventListener('submit', async event => {
   setMessage('');
   try {
     if (panel.dataset.mode === 'signup') {
+      const weekly=Number(form.get('weekly')),dailySteps=Number(form.get('dailySteps'));
+      if(!Number.isInteger(weekly)||weekly<1||weekly>21||!Number.isSafeInteger(dailySteps)||dailySteps<1)throw Error(text('Bitte gültige Trainingsziele eingeben.','Please enter valid training goals.'));
       const user = await signup(email, password, name);
+      await window.SetwerkCloud?.connect(user);
+      window.SetwerkPersonalization?.setGoals({weekly,dailySteps});
       closeAuth();
       activateUser(user);
     } else {

@@ -1,3 +1,4 @@
+// Synthetic mock accounts and TEST_ONLY passwords; no real credentials or accounts.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -41,7 +42,7 @@ test('login floats over the page, exposes only email/password, and restores focu
     q('#auth-switch').focus();
     w.document.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
     assert.equal(w.document.activeElement, q('[data-auth-close]'));
-    q('[name="password"]').value = 'private-password';
+    q('[name="password"]').value = 'TEST_ONLY_private_password';
     w.document.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     assert.equal(q('#auth-gate').hidden, true);
     assert.equal(q('#app').inert, false);
@@ -56,10 +57,10 @@ test('email/password login resets the form after asynchronous Firebase success',
   try {
     q('[data-auth-open]').click();
     q('[name="email"]').value = 'markus@example.at';
-    q('[name="password"]').value = 'test-password';
+    q('[name="password"]').value = 'TEST_ONLY_current_password';
     q('#auth-form').dispatchEvent(new w.Event('submit', { bubbles: true, cancelable: true }));
     await x.settle();
-    assert.deepEqual(x.calls, [{ email: 'markus@example.at', password: 'test-password' }]);
+    assert.deepEqual(x.calls, [{ email: 'markus@example.at', password: 'TEST_ONLY_current_password' }]);
     assert.equal(q('#auth-gate').hidden, true);
     assert.equal(q('#auth-message').textContent, '');
     assert.equal(q('#auth-submit').disabled, false);
@@ -73,7 +74,7 @@ test('failed login stays open; signup switches password autocomplete and name vi
   try {
     q('[data-auth-open]').click();
     q('[name="email"]').value = 'markus@example.at';
-    q('[name="password"]').value = 'test-password';
+    q('[name="password"]').value = 'TEST_ONLY_current_password';
     q('#auth-form').dispatchEvent(new w.Event('submit', { bubbles: true, cancelable: true }));
     await x.settle();
     assert.equal(q('#auth-gate').hidden, false);
@@ -92,10 +93,12 @@ test('failed login stays open; signup switches password autocomplete and name vi
 
 test('Firebase signup signs in immediately and never asks for a Netlify confirmation', async () => {
   const x=await setup();try{
+    let goals;x.w.SetwerkPersonalization={setGoals(value){goals=value;}};
     x.q('[data-auth-open]').click();x.q('#auth-switch').click();
-    x.q('[name="email"]').value='new@example.at';x.q('[name="password"]').value='new-password';x.q('[name="name"]').value='Markus';
+    assert.equal(x.q('#auth-goals-wrap').hidden,false);x.q('[name="weekly"]').value='4';x.q('[name="dailySteps"]').value='8000';
+    x.q('[name="email"]').value='new@example.at';x.q('[name="password"]').value='TEST_ONLY_new_password';x.q('[name="name"]').value='Markus';
     x.q('#auth-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));await x.settle();
-    assert.deepEqual(x.calls,[{email:'new@example.at',password:'new-password',name:'Markus'}]);
+    assert.deepEqual(x.calls,[{email:'new@example.at',password:'TEST_ONLY_new_password',name:'Markus'}]);assert.deepEqual(JSON.parse(JSON.stringify(goals)),{weekly:4,dailySteps:8000});
     assert.equal(x.q('#auth-gate').hidden,true);
     assert.equal(x.q('[data-auth-open]').dataset.authState,'signed-in');
     assert.equal(x.q('[name="password"]').value,'');
@@ -125,7 +128,7 @@ test('account menu uses requested order, username and default avatar; closes out
  const x=await setup();try{
   x.w.activateUser({id:'alice',email:'private@example.at',name:'Markus'});
   const button=x.q('[data-auth-open]');assert.match(button.textContent,/Markus/);assert.doesNotMatch(button.textContent,/@/);assert.match(button.querySelector('img').src,/avatar-default.svg$/);
-  button.click();assert.deepEqual([...x.q('#account-menu').children].map(n=>n.textContent),['Kontodaten','Farben','Abmelden','Konto löschen']);assert.equal(x.q('#account-menu').lastElementChild.className,'account-danger');
+  button.click();assert.deepEqual([...x.q('#account-menu').children].map(n=>n.textContent),['Kontodaten','Personalisieren','Abmelden','Konto löschen']);assert.equal(x.q('#account-menu').lastElementChild.className,'account-danger');
   x.w.document.dispatchEvent(new x.w.KeyboardEvent('keydown',{key:'End',bubbles:true}));assert.equal(x.w.document.activeElement,x.q('#account-menu').lastElementChild);
   x.w.document.dispatchEvent(new x.w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert.equal(x.q('#account-menu'),null);assert.equal(x.w.document.activeElement,button);
   button.click();x.q('#background').click();assert.equal(x.q('#account-menu'),null);

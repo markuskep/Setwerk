@@ -1,3 +1,4 @@
+// Synthetic mock accounts and TEST_ONLY passwords; no real credentials or accounts.
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {JSDOM}=require('jsdom'),root=path.join(__dirname,'../dist');
 const settle=()=>new Promise(resolve=>setImmediate(resolve));
@@ -27,7 +28,7 @@ test('late account responses cannot replace another account or a newer local sel
 });
 test('signed-in profile menu opens accessible color choices and updates selection immediately',async()=>{
  const x=setup();try{x.appearance.connect({id:'alice'});await settle();x.w.document.querySelector('#app').innerHTML='<div class="account-control"><button data-auth-open></button></div>';
- x.w.eval(fs.readFileSync(path.join(root,'account-ui.js'),'utf8').replace('export function createAccountUI','window.createAccountUI=function createAccountUI'));const ui=x.w.createAccountUI({}),button=x.w.document.querySelector('[data-auth-open]');ui.refresh({id:'alice',email:'alice@example.test',name:'Alice'});ui.toggleMenu(button);const menu=x.w.document.querySelector('#account-menu');assert.deepEqual([...menu.children].map(n=>n.textContent),['Kontodaten','Farben','Abmelden','Konto löschen']);menu.children[1].click();
+ x.w.eval(fs.readFileSync(path.join(root,'account-ui.js'),'utf8').replace('export function createAccountUI','window.createAccountUI=function createAccountUI'));const ui=x.w.createAccountUI({}),button=x.w.document.querySelector('[data-auth-open]');ui.refresh({id:'alice',email:'alice@example.test',name:'Alice'});ui.toggleMenu(button);const menu=x.w.document.querySelector('#account-menu');assert.deepEqual([...menu.children].map(n=>n.textContent),['Kontodaten','Personalisieren','Abmelden','Konto löschen']);menu.children[1].click();x.w.dispatchEvent(new x.w.Event('setwerk:open-colors'));
  const choices=[...x.w.document.querySelectorAll('[data-theme-choice]')];assert.equal(choices.length,5);choices[1].click();assert.equal(choices[1].getAttribute('aria-pressed'),'true');assert.equal(x.w.document.documentElement.dataset.theme,'cherry');await settle();assert.match(x.w.document.querySelector('#appearance-status').textContent,/Im Konto gespeichert/);
  ui.refresh(null);assert.equal(x.w.document.querySelector('#account-details').open,false);ui.toggleMenu(button);assert.equal(x.w.document.querySelector('#account-menu'),null);
  }finally{x.dom.window.close()}

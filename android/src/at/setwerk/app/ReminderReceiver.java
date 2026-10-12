@@ -1,7 +1,7 @@
 package at.setwerk.app;
 import android.app.*;import android.content.*;import android.os.Build;import org.json.*;import java.util.Calendar;
 public class ReminderReceiver extends BroadcastReceiver {
-  private static final String CHANNEL="setwerk_training";
+  private static final String CHANNEL="setwerk_training",REST_CHANNEL="setwerk_rest_countdown";
   private static PendingIntent alarm(Context c,int id){return PendingIntent.getBroadcast(c,id,new Intent(c,ReminderReceiver.class).putExtra("alarmId",id),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);}
   private static boolean english(Context c){try{return "en".equals(c.getSharedPreferences("setwerk",0).getString("display-language",new JSONObject(c.getSharedPreferences("setwerk",0).getString("state","{}")).optString("language")));}catch(Exception e){return false;}}
   public static void createChannel(Context c){NotificationChannel ch=new NotificationChannel(CHANNEL,english(c)?"Training & rests":"Training & Pausen",NotificationManager.IMPORTANCE_DEFAULT);ch.setDescription(english(c)?"Training days and rest periods":"Trainingstage und Satzpausen");c.getSystemService(NotificationManager.class).createNotificationChannel(ch);}
@@ -13,7 +13,7 @@ public class ReminderReceiver extends BroadcastReceiver {
     }catch(Exception ignored){}
   }
   @Override public void onReceive(Context c,Intent intent){int id=intent.getIntExtra("alarmId",100);if(id!=1)scheduleAll(c);if(Build.VERSION.SDK_INT>=33&&c.checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=0)return;
-    createChannel(c);boolean en=english(c);PendingIntent open=PendingIntent.getActivity(c,0,new Intent(c,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
-    Notification notification=new Notification.Builder(c,CHANNEL).setSmallIcon(at.setwerk.app.v2.R.drawable.ic_notify).setContentTitle(id==1?(en?"Your rest is over":"Deine Pause ist vorbei"):(en?"Your training day":"Dein Trainingstag")).setContentText(id==1?(en?"Ready for your next set?":"Bereit für deinen nächsten Satz?"):(en?"Time for your next session in Setwerk.":"Zeit für deine nächste Einheit in Setwerk.")).setContentIntent(open).setAutoCancel(true).build();c.getSystemService(NotificationManager.class).notify(id,notification);
+    createChannel(c);NotificationChannel restChannel=new NotificationChannel(REST_CHANNEL,"Pausentimer",NotificationManager.IMPORTANCE_DEFAULT);restChannel.setSound(null,null);c.getSystemService(NotificationManager.class).createNotificationChannel(restChannel);boolean en=english(c);PendingIntent open=PendingIntent.getActivity(c,0,new Intent(c,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+    Notification notification=new Notification.Builder(c,id==1?REST_CHANNEL:CHANNEL).setSmallIcon(at.setwerk.app.v2.R.drawable.ic_notify).setContentTitle(id==1?(en?"Your rest is over":"Deine Pause ist vorbei"):(en?"Your training day":"Dein Trainingstag")).setContentText(id==1?(en?"Ready for your next set?":"Bereit für deinen nächsten Satz?"):(en?"Time for your next session in Setwerk.":"Zeit für deine nächste Einheit in Setwerk.")).setContentIntent(open).setAutoCancel(true).build();c.getSystemService(NotificationManager.class).notify(id,notification);
   }
 }
