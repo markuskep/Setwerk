@@ -3,7 +3,7 @@
   "versionCode": 5,
   "webRepository": "markuskep/Setwerk",
   "webBranch": "firebase-migration",
-  "webCommit": "97df4e8c22486ff3aaf7ac95512d3a0b2fd25b32",
+  "webCommit": "13be56c768ac6ff1258d3a77b6233316a1606f85",
   "firebaseProject": "setwerk-cb1e0",
   "files": {
     "cloud-core.js": {
