@@ -1,10 +1,24 @@
-# Setwerk Android 1.4.0
+# Setwerk Android 1.4.1
 
-Android auf dem Funktionsstand der Webapp unter https://setwerk-cb1e0.web.app/ (Commit `8d4c3570d6f4d5b3b8faf50529fa8e4627171ba3`). Die Oberfläche und alle 269 Übungen liegen in der APK; Training funktioniert auch ohne Anmeldung und ohne Internet.
+Android auf dem Funktionsstand der Webapp unter https://setwerk-cb1e0.web.app/ (Commit `b98d754d89c08638e1c2cb7233eac88bb2d499bf`). Die Oberfläche und alle 269 Übungen liegen in der APK; Training funktioniert auch ohne Anmeldung und ohne Internet.
+
+## Schritte über Health Connect
+
+Diese APK nutzt die native Health-Connect-Schnittstelle ab **Android 14**. Auf Android 8 bis 13 bleiben Training und manuelle Schritte verfügbar; eine Health-Connect-Anbindung über die separate Android-9–13-App ist in dieser Version nicht enthalten.
+
+1. In Samsung Health unter **Einstellungen → Health Connect** das Schreiben von Schritten erlauben. Andere Quellen müssen ihre Schritte ebenfalls an Health Connect übergeben.
+2. Im Setwerk-Schrittzähler **Health verbinden** wählen. Die Erklärung nennt die lokale Speicherung, die Übernahme vorhandener Tageswerte und bei Anmeldung die Synchronisierung mit Firebase.
+3. Verbinden und im Android-Systemdialog ausschließlich das Lesen von Schritten erlauben.
+
+Setwerk übernimmt die aggregierten Tagessummen der letzten sieben Tage beim Start, bei der Rückkehr zur App und über **Synchronisieren**. Tagesgrenzen entsprechen der aktuellen Zeitzone des Geräts. Die Aggregate-API berücksichtigt überlappende Quellen; die App addiert keine Rohdaten von Smartphone und Uhr. Erneutes Synchronisieren ersetzt die Tagessumme. Tage ohne Health-Daten behalten ihre vorhandenen manuellen Einträge. Bei einem offenen Schrittformular wird die Übernahme bis zur nächsten Synchronisierung zurückgestellt. Laufende Trainings und offene Gewichtseingaben werden nicht neu gerendert.
+
+Die Zustimmung gilt pro Setwerk-Konto auf diesem Gerät und wird nicht mit Firebase übertragen. Beim Kontowechsel oder Trennen werden verspätete Antworten verworfen. **Trennen** stoppt die Übernahme; **Health-Einstellungen** öffnet die Systemberechtigungen zum Widerrufen. Bereits importierte Schritte bleiben erhalten. Setwerk fragt keine Schreib-, Hintergrund- oder anderen Gesundheitsberechtigungen an. Der Systemdialog bietet eine offline verfügbare Datenschutzerklärung.
+
+Automatisierte Prüfungen verwenden simulierte Health-Antworten. Installation, native Berechtigungsdialoge und tatsächliche Schrittdaten müssen noch auf einem Android-Gerät geprüft werden.
 
 ## Installation
 
-`Setwerk-1.4.0.apk` als Update über Setwerk 1.1, 1.3.0 oder 1.3.1 installieren. Paketkennung `at.setwerk.app.v2` und Signatur bleiben gleich, der Versionscode steigt auf 5. Die App vorher nicht deinstallieren, damit die lokal gespeicherten Daten erhalten bleiben. Android 8 oder neuer ist erforderlich.
+`Setwerk-1.4.1.apk` als Update über Setwerk 1.1, 1.3.0 oder 1.3.1 installieren. Paketkennung `at.setwerk.app.v2` und Signatur bleiben gleich, der Versionscode steigt auf 6. Die App vorher nicht deinstallieren, damit die lokal gespeicherten Daten erhalten bleiben. Android 8 oder neuer ist erforderlich.
 
 Mit demselben Firebase-Konto wie in der aktuellen Webapp anmelden. Frühere Netlify-Anmeldungen werden nicht als Firebase-Sitzung übernommen. Registrierung und Passwort-Zurücksetzen sind direkt in der App möglich.
 
@@ -50,7 +64,7 @@ Das Skript kopiert gemeinsame Assets, übernimmt die wenigen Android-Anpassungen
 Benötigt: JDK 17, Android SDK Platform 35 und Build Tools 35.0.0. Alternativ zum JDK-Compiler kann Eclipse ECJ 3.38.0 verwendet werden.
 
 ```bash
-python3 build.py --tools /path/to/build-tools/35.0.0 --platform /path/to/android-35/android.jar --signing /private/signing.properties --keystore /private/setwerk-stable-release.jks --output /path/to/Setwerk-1.4.0.apk
+python3 build.py --tools /path/to/build-tools/35.0.0 --platform /path/to/android-35/android.jar --signing /private/signing.properties --keystore /private/setwerk-stable-release.jks --output /path/to/Setwerk-1.4.1.apk
 ```
 
 Bei ECJ zusätzlich `--compiler /path/to/ecj.jar`. Die bestehende private Signatursicherung separat verwenden; sie gehört nicht in den Quellcode. Build-Verzeichnisse können gelöscht werden.

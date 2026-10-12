@@ -1,62 +1,59 @@
 {
-  "version": "1.4.0",
-  "webCommit": "8d4c3570d6f4d5b3b8faf50529fa8e4627171ba3",
+  "version": "1.4.1",
+  "webCommit": "b98d754d89c08638e1c2cb7233eac88bb2d499bf",
   "automatedTests": {
-    "total": 81,
-    "passed": 81,
-    "failed": 0
-  },
-  "liveFirebase": {
-    "passed": true,
-    "temporaryAccountRemoved": true,
-    "checks": [
-      "signup and lookup",
-      "same snapshot read/write as web",
-      "revision conflict and concurrent commit",
-      "owner checks and deployed Firestore rules",
-      "profile name",
-      "password reauthentication and change",
-      "token refresh",
-      "deletion marker and restore",
-      "credential deletion",
-      "repeated deletion marker before credential cleanup"
-    ]
+    "total": 119,
+    "passed": 119,
+    "failed": 0,
+    "healthTests": 8,
+    "notes": "118 tests passed initially; after the open-form change, all 8 health tests passed (including the added focus test). Unchanged tests were not repeated."
   },
   "apk": {
     "built": true,
     "verified": true,
-    "versionCode": 5,
+    "versionCode": 6,
     "package": "at.setwerk.app.v2",
     "minSdk": 26,
     "targetSdk": 35,
     "previousCertificateMatched": true,
     "certificateSha256": "30e9fec2689fb103630a494a9a8c04a74548050db0ac27de508f5e7fc426d026",
-    "sha256": "9e9d37307afa34cd4e74d6ff4c0b62df943ef19d4395e096407304ba6aadc447",
+    "sha256": "1810ea6e470579f50b26aed4dba50615a7add517122f1efc055aa49296344586",
     "bundledAssetsMatch": true
   },
-  "browser": {
-    "status": "passed",
-    "browser": "Chromium",
-    "mobileViewportWidth": 390,
-    "nativeBridgeMocked": true,
-    "run": "https://github.com/markuskep/Setwerk/actions/runs/37612298809",
-    "sourceCommit": "740ebc5e6815438662e2602fdbe91edda0631ff4",
+  "healthConnect": {
+    "minimumAndroid": 14,
+    "readOnlySteps": true,
+    "days": 7,
+    "foregroundOnly": true,
+    "nativeCompiled": true,
+    "jsBridgeTests": "simulated Health Connect responses",
     "checks": [
-      "calendar import removed",
-      "sport-specific cardio and ballsport editors",
-      "completion and cloud upload",
-      "file import and export",
-      "profile name and photo",
-      "offline restart and reconnection"
-    ],
-    "pageErrors": []
+      "explicit opt-in and Firebase disclosure",
+      "repeat synchronization without addition",
+      "missing health days preserve manual values",
+      "recorded zero is valid",
+      "revoked permissions and unsupported Android",
+      "late response discarded after disconnect or account switch",
+      "storage failure rollback",
+      "open step form and weight edit preserved",
+      "calendar and gauge share daily totals"
+    ]
+  },
+  "browser": {
+    "status": "not-run-this-change",
+    "reason": "Browser skill unavailable in managed environment; UI checked using JSDOM."
+  },
+  "liveFirebase": {
+    "status": "not-run-this-change",
+    "reason": "Existing step cloud payload and cloud regression tests cover the unchanged Firebase adapter."
   },
   "realAndroidDevice": {
     "tested": false,
     "outstanding": [
-      "installation and native document picker",
-      "Android Keystore persistence across updates",
-      "background notifications"
+      "installation as update",
+      "native Health Connect permission prompt",
+      "actual Samsung Health / Health Connect totals",
+      "permission revocation and system settings"
     ]
   }
 }

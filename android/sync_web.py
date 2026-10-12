@@ -16,7 +16,7 @@ for source in (web/'dist').iterdir():
     content=source.read_text()
     if source.name=='index.html':
         content=replace_once(content,'<script defer src="exercises.js">','<script defer src="android-bridge.js"></script><script defer src="exercises.js">')
-        content=replace_once(content,'<script defer src="app.js"></script>','<script defer src="app.js"></script><script defer src="android-legacy.js"></script>')
+        content=replace_once(content,'<script defer src="app.js"></script>','<script defer src="app.js"></script><script defer src="android-legacy.js"></script><script defer src="android-health.js"></script>')
     if source.name=='greeting.js':
         content=re.sub(r"const previewEmail='[^']*';","const previewEmail='';",content)
     if source.name=='appearance.js':
@@ -38,5 +38,7 @@ for source in (web/'dist').iterdir():
     if source.is_file():
         target=assets/source.name
         files[source.name]={'web_sha256':hashlib.sha256(source.read_bytes()).hexdigest(),'android_sha256':hashlib.sha256(target.read_bytes()).hexdigest(),'android_adapter':source.name in {'index.html','app.js','auth.js','firebase-service.js','appearance.js','greeting.js'}}
-(root/'SOURCE_VERSION.json').write_text(json.dumps({'androidVersion':'1.4.0','versionCode':5,'webRepository':'markuskep/Setwerk','webBranch':'firebase-migration','webCommit':args.commit,'firebaseProject':'setwerk-cb1e0','files':files},indent=2)+'\n')
+for name in ['android-bridge.js','android-legacy.js','android-health.js']:
+    files[name]={'android_sha256':hashlib.sha256((assets/name).read_bytes()).hexdigest(),'android_adapter':True}
+(root/'SOURCE_VERSION.json').write_text(json.dumps({'androidVersion':'1.4.1','versionCode':6,'webRepository':'markuskep/Setwerk','webBranch':'firebase-migration','webCommit':args.commit,'firebaseProject':'setwerk-cb1e0','files':files},indent=2)+'\n')
 print('Android assets updated from web commit',args.commit)

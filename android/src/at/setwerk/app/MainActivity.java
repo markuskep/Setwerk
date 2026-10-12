@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public class MainActivity extends Activity {
+  private HealthStepsClient health;
   private WebView web; private SharedPreferences prefs; private CloudClient cloud;
   private final ScheduledExecutorService restSounds=Executors.newSingleThreadScheduledExecutor();
   private final List<ScheduledFuture<?>> restSoundJobs=new ArrayList<>();
@@ -24,7 +25,7 @@ public class MainActivity extends Activity {
   private ValueCallback<Uri[]> fileCallback; private byte[] exportBytes;
   private static final String ORIGIN="https://appassets.androidplatform.net";
   @Override public void onCreate(Bundle saved){
-    super.onCreate(saved);prefs=getSharedPreferences("setwerk",MODE_PRIVATE);cloud=new CloudClient(this);ReminderReceiver.createChannel(this);
+    super.onCreate(saved);if(Build.VERSION.SDK_INT>=34)health=new HealthStepsClient(this,network);prefs=getSharedPreferences("setwerk",MODE_PRIVATE);cloud=new CloudClient(this);ReminderReceiver.createChannel(this);
     web=new WebView(this);web.setBackgroundColor(Color.rgb(242,244,240));web.setFitsSystemWindows(true);
     web.getSettings().setJavaScriptEnabled(true);web.getSettings().setDomStorageEnabled(true);web.getSettings().setAllowFileAccess(false);web.getSettings().setAllowContentAccess(true);web.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);web.getSettings().setMediaPlaybackRequiresUserGesture(true);
     web.setWebViewClient(new WebViewClient(){
@@ -87,6 +88,17 @@ public class MainActivity extends Activity {
     @JavascriptInterface public String getSite(){return cloud.site();}
     @JavascriptInterface public void request(String id,String operation,String body){
       if(!id.matches("[0-9]{1,12}")||body.length()>2*1024*1024)return;
+      if(operation.startsWith("health-")){
+        runOnUiThread(()->{
+          if(health==null){deliver(id,new FirebaseClient.Result(200,"{\"supported\":false,\"granted\":false}"));return;}
+          HealthStepsClient.Reply reply=(status,raw)->deliver(id,new FirebaseClient.Result(status,raw));
+          if(operation.equals("health-status"))health.status(reply);
+          else if(operation.equals("health-connect"))health.connect(reply);
+          else if(operation.equals("health-read"))health.read(reply);
+          else if(operation.equals("health-settings"))health.settings(reply);
+          else deliver(id,new FirebaseClient.Result(400,"{\"code\":\"health/invalid-operation\"}"));
+        });return;
+      }
       network.execute(()->deliver(id,operation.startsWith("legacy-")?legacy(operation,body):cloud.call(operation,body)));
     }
     @JavascriptInterface public void playRestStart(){restTone(false);}
@@ -101,6 +113,9 @@ public class MainActivity extends Activity {
     }
   }
   private void requestNotifications(){if(Build.VERSION.SDK_INT>=33&&checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=PackageManager.PERMISSION_GRANTED)requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},7);}
+  @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] grants){
+    super.onRequestPermissionsResult(request,permissions,grants);if(request==83&&health!=null)health.permissionResult();
+  }
   @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);
     if(request==80&&fileCallback!=null){fileCallback.onReceiveValue(result==RESULT_OK&&data!=null?new Uri[]{data.getData()}:null);fileCallback=null;}
     if(request==81){byte[] bytes=exportBytes;exportBytes=null;if(result==RESULT_OK&&data!=null&&bytes!=null)try(OutputStream out=getContentResolver().openOutputStream(data.getData())){out.write(bytes);}catch(Exception e){web.evaluateJavascript("toast('Datei konnte nicht gespeichert werden.')",null);}}
