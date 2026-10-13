@@ -32,6 +32,7 @@ const server = http.createServer((req,res) => {
       const imp=await page.locator('.template-import').boundingBox();
       assert(imp.y>=create.y+create.height);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`empty ${width}`);
+      assert.equal(await page.evaluate(()=>innerWidth),width,`empty viewport ${width}`);
       await page.locator('.template-import').click();
       await page.locator('#workout-import-code').waitFor();
       await page.locator('[data-action=close-modal]').click();
@@ -41,16 +42,50 @@ const server = http.createServer((req,res) => {
       await page.locator('[data-draft=category]').selectOption('Ballsport');
       await page.locator('#editor-form button[type=submit]').click();
       assert.equal(await page.locator('.template-card').count(),1);
+      const card=page.locator('.template-card').first();
+      assert.deepEqual(await card.locator('footer [data-action]').evaluateAll(buttons=>buttons.map(b=>b.dataset.action)),['start-template','edit-template']);
+      assert.equal(await card.locator('[data-action=export-template]').isVisible(),false);
+      await card.locator('.template-menu summary').click();
+      await card.locator('[data-action=export-template]').click();
+      await page.locator('#modal').waitFor({state:'visible'});
+      await page.locator('[data-action=close-modal]').click();
+      await card.locator('.template-menu summary').click();
+      await page.keyboard.press('Escape');
+      assert.equal(await card.locator('.template-menu').getAttribute('open'),null);
+      await card.locator('.template-menu summary').click();
+      await page.locator('.page-head h1').click();
+      assert.equal(await card.locator('.template-menu').getAttribute('open'),null);
+      await card.locator('.template-menu summary').click();
+      await card.locator('[data-action=copy-template]').click();
+      assert.equal(await page.locator('.template-card').count(),2);
+      const duplicate=page.locator('.template-card').last();
+      await duplicate.locator('.template-menu summary').click();
+      await duplicate.locator('[data-action=delete-template]').click();
+      await page.locator('[data-action=confirm-delete-template]').click();
+      assert.equal(await page.locator('.template-card').count(),1);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`populated ${width}`);
       await page.locator('[data-action=edit-template]').click();
       await page.locator('#draft-name').fill('SehrLangerVorlagennameOhneLeerzeichen'.repeat(5));
       await page.locator('#editor-form button[type=submit]').click();
       if(width<700)await page.addStyleTag({content:':root{font-size:20px}'});
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`long title, large text ${width}`);
+      assert.equal(await page.evaluate(()=>innerWidth),width,`large text viewport ${width}`);
+      for(const action of ['start-template','edit-template']){
+        const button=page.locator(`.template-card footer [data-action=${action}]`);
+        assert.equal(await button.evaluate(el=>{
+          const text=[...el.childNodes].find(n=>n.nodeType===Node.TEXT_NODE&&n.textContent.trim());
+          const range=document.createRange();range.selectNodeContents(text);
+          return range.getClientRects().length===1&&el.scrollWidth<=el.clientWidth;
+        }),true,`single-line ${action} ${width}`);
+      }
+      await page.locator('.template-menu summary').click();
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`open menu ${width}`);
+      await page.screenshot({path:path.join(screenshots,'templates-menu-'+width+'.png'),fullPage:true});
+      await page.locator('.template-menu summary').click();
       await page.screenshot({path:path.join(screenshots,'templates-'+width+'.png'),fullPage:true});
       await page.locator('[data-action=start-template]').click();
       await page.locator('#activity-clock').waitFor();
-      results.push({width,empty:true,populated:true,largeText:true,create:true,edit:true,import:true,start:true});
+      results.push({width,empty:true,populated:true,largeText:true,singleLineButtons:true,menu:true,share:true,duplicate:true,delete:true,create:true,edit:true,import:true,start:true});
       await page.close();
     }
     assert.deepEqual(errors,[]);console.log(JSON.stringify({results,errors}));

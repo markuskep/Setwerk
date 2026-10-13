@@ -90,5 +90,17 @@ body.focus-mode{background:var(--tone-101b14)}body.focus-mode #toast{bottom:calc
 .template-grid>.empty{grid-column:1/-1}
 .template-card>.row{flex-wrap:wrap;gap:8px}
 .template-card .meta,.template-card li{overflow-wrap:anywhere}
-.template-card footer>.btn{min-width:0;white-space:normal;overflow-wrap:anywhere}
+.template-card footer>.btn{min-width:0;white-space:nowrap;overflow-wrap:normal}
 @media(max-width:700px){.templates-page .page-head{display:block}.templates-page .head-actions:empty{display:none}.template-card{padding:20px}.template-card footer{gap:8px}}
+
+/* Keep primary template actions readable and secondary actions in a corner menu. */
+.template-card>.template-topline{flex-wrap:nowrap;align-items:flex-start;gap:12px}
+.template-meta{min-width:0;flex-wrap:wrap;gap:8px}
+.template-menu{position:relative;flex:0 0 auto}
+.template-menu>summary{list-style:none;cursor:pointer;font-size:1.5rem;line-height:1}
+.template-menu>summary::-webkit-details-marker{display:none}
+.template-menu-panel{position:absolute;right:0;top:calc(100% + 6px);z-index:20;width:min(220px,calc(100vw - 64px));padding:6px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 24px #0002;display:grid;gap:4px}
+.template-menu:not([open]) .template-menu-panel{display:none}
+.template-menu-panel>.btn{width:100%;justify-content:flex-start;text-align:left;white-space:normal;font-size:.85rem;padding:12px}
+.template-card footer{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+@media(max-width:700px){.template-card footer{gap:8px}.template-card footer>.btn{font-size:.85rem;padding:12px 10px;gap:6px}.template-card footer .icon{width:18px;height:18px}}
