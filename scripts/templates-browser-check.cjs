@@ -106,6 +106,11 @@ const server = http.createServer((req,res) => {
       assert.equal(await page.locator('.template-name').evaluate(el=>Number(getComputedStyle(el).fontWeight)>=700),true);
       const titleBox=await page.locator('.template-name').boundingBox(),badgeBox=await page.locator('.template-summary .badge').boundingBox();
       assert(badgeBox.y>=titleBox.y+titleBox.height);
+      const summaryBox=await page.locator('.template-summary').boundingBox(),menuBox=await page.locator('.template-menu summary').boundingBox(),headerBox=await page.locator('.template-topline').boundingBox();
+      assert(Math.abs(summaryBox.y-titleBox.y-titleBox.height)<1,`subtitle spacing ${width}`);
+      assert(Math.abs(menuBox.y-titleBox.y)<1,`menu aligned with title ${width}`);
+      assert(Math.abs(menuBox.x+menuBox.width-headerBox.x-headerBox.width)<1,`menu at right edge ${width}`);
+      assert(menuBox.width<=28&&menuBox.height<=24,`compact menu ${width}`);
       assert.equal(await page.evaluate(()=>innerWidth),width,`exercise summary viewport ${width}`);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`exercise summary ${width}`);
       await page.screenshot({path:path.join(screenshots,'templates-summary-'+width+'.png'),fullPage:true});

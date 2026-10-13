@@ -94,10 +94,10 @@ body.focus-mode{background:var(--tone-101b14)}body.focus-mode #toast{bottom:calc
 @media(max-width:700px){.templates-page .page-head{display:block}.templates-page .head-actions:empty{display:none}.template-card{padding:20px}.template-card footer{gap:8px}}
 
 /* Keep primary template actions readable and secondary actions in a corner menu. */
-.template-card>.template-topline{flex-wrap:nowrap;align-items:flex-start;gap:12px}
+.template-card>.template-topline{position:relative;display:block;padding-right:32px}
 .template-meta{min-width:0;flex-wrap:wrap;gap:8px}
-.template-menu{position:relative;flex:0 0 auto}
-.template-menu>summary{list-style:none;cursor:pointer;font-size:1.5rem;line-height:1}
+.template-menu{position:absolute;right:0;top:0}
+.template-menu>summary{list-style:none;cursor:pointer;font-size:1rem;line-height:1;min-width:28px;width:28px;height:24px;padding:0;border-radius:8px}
 .template-menu>summary::-webkit-details-marker{display:none}
 .template-menu-panel{position:absolute;right:0;top:calc(100% + 6px);z-index:20;width:min(220px,calc(100vw - 64px));padding:6px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 24px #0002;display:grid;gap:4px}
 .template-menu:not([open]) .template-menu-panel{display:none}
@@ -107,6 +107,6 @@ body.focus-mode{background:var(--tone-101b14)}body.focus-mode #toast{bottom:calc
 
 /* Workout names lead the card, followed by its type and exercise focus. */
 .template-card .template-name{margin:0;font-weight:750;flex:1;min-width:0}
-.template-summary{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin-top:12px}
+.template-summary{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin-top:0}
 .template-summary>.meta{font-size:.8rem;flex:1;min-width:0}
-.template-activity{margin-top:12px}
+.template-activity{margin-top:0}
