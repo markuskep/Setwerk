@@ -107,6 +107,8 @@ const server = http.createServer((req,res) => {
       const titleBox=await page.locator('.template-name').boundingBox(),badgeBox=await page.locator('.template-summary .badge').boundingBox();
       assert(badgeBox.y>=titleBox.y+titleBox.height);
       const summaryBox=await page.locator('.template-summary').boundingBox(),menuBox=await page.locator('.template-menu summary').boundingBox(),headerBox=await page.locator('.template-topline').boundingBox();
+      console.log(JSON.stringify({templateHeader:{width,titleBox,summaryBox,menuBox,headerBox,styles:await page.locator('.template-menu summary').evaluate(el=>({position:getComputedStyle(el.parentElement).position,top:getComputedStyle(el.parentElement).top,display:getComputedStyle(el).display,height:getComputedStyle(el).height}))}}));
+      await page.screenshot({path:path.join(screenshots,'templates-summary-'+width+'.png'),fullPage:true});
       assert(Math.abs(summaryBox.y-titleBox.y-titleBox.height)<1,`subtitle spacing ${width}`);
       assert(Math.abs(menuBox.y-titleBox.y)<1,`menu aligned with title ${width}`);
       assert(Math.abs(menuBox.x+menuBox.width-headerBox.x-headerBox.width)<1,`menu at right edge ${width}`);
