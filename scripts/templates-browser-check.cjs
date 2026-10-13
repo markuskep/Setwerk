@@ -85,7 +85,26 @@ const server = http.createServer((req,res) => {
       await page.screenshot({path:path.join(screenshots,'templates-'+width+'.png'),fullPage:true});
       await page.locator('[data-action=start-template]').click();
       await page.locator('#activity-clock').waitFor();
-      results.push({width,empty:true,populated:true,largeText:true,singleLineButtons:true,menu:true,share:true,duplicate:true,delete:true,create:true,edit:true,import:true,start:true});
+      await page.evaluate(()=>{
+        const chest=GYM_EXERCISES.filter(e=>e.muscle==='Brust'),back=GYM_EXERCISES.filter(e=>e.muscle==='Rücken'),legs=GYM_EXERCISES.find(e=>e.muscle==='Beine');
+        const custom={id:'custom-summary',name:'Eigene Brustübung',muscle:'Brust',equipment:'Eigengewicht',kind:'reps',custom:true};
+        const state=GymCore.fresh();state.customExercises=[custom];
+        state.templates=[{id:'summary',name:'Oberkörper A',category:'Kraft',items:[GymCore.item(chest[0],1),GymCore.item(custom,10),GymCore.item(back[0],1),GymCore.item(back[1],1),GymCore.item(legs,1)]}];
+        localStorage.setItem('setwerk.v1',JSON.stringify(state));
+      });
+      await page.reload();await page.locator('[data-action=nav][data-route=templates]:visible').click();
+      if(width<700)await page.addStyleTag({content:':root{font-size:20px}'});
+      assert.equal(await page.locator('.template-name').textContent(),'Oberkörper A');
+      assert.equal(await page.locator('.template-summary .meta').textContent(),'5 Übungen · Brust / Rücken');
+      assert.equal(await page.locator('.template-card li').count(),4);
+      assert.equal(await page.locator('.template-card li').last().textContent(),'+ 2 weitere Übungen');
+      assert.equal(await page.locator('.template-name').evaluate(el=>Number(getComputedStyle(el).fontWeight)>=700),true);
+      const titleBox=await page.locator('.template-name').boundingBox(),badgeBox=await page.locator('.template-summary .badge').boundingBox();
+      assert(badgeBox.y>=titleBox.y+titleBox.height);
+      assert.equal(await page.evaluate(()=>innerWidth),width,`exercise summary viewport ${width}`);
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`exercise summary ${width}`);
+      await page.screenshot({path:path.join(screenshots,'templates-summary-'+width+'.png'),fullPage:true});
+      results.push({width,empty:true,populated:true,largeText:true,singleLineButtons:true,menu:true,share:true,duplicate:true,delete:true,create:true,edit:true,import:true,start:true,summary:true,muscleTie:true,threeExercisePreview:true});
       await page.close();
     }
     assert.deepEqual(errors,[]);console.log(JSON.stringify({results,errors}));
