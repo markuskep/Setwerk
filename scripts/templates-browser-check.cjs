@@ -1,0 +1,58 @@
+const { chromium } = require('playwright');
+const http = require('node:http'), fs = require('node:fs'), path = require('node:path');
+const assert = require('node:assert/strict');
+const repo = path.join(__dirname, '..');
+const root = path.join(repo, 'Setwerk-Webapp-1.2.0-Projektdateien/dist');
+const screenshots=path.join(process.env.RUNNER_TEMP||require('node:os').tmpdir(),'setwerk-ui');fs.mkdirSync(screenshots,{recursive:true});
+const types = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml'};
+const server = http.createServer((req,res) => {
+  let url = new URL(req.url,'http://localhost').pathname;
+  const name=url==='/'?'index.html':url.slice(1);
+  try {
+    let content=fs.readFileSync(path.join(root,name));
+    if(name==='index.html')content=content.toString().replace(/<script[^>]*src="(?:cloud.js|auth.js)"[^>]*><\/script>/g,'');
+    res.setHeader('Content-Type',types[path.extname(name)]||'application/octet-stream');res.end(content);
+  }catch{res.statusCode=404;res.end();}
+});
+(async()=>{
+  await new Promise(r=>server.listen(0,'127.0.0.1',r));
+  const browser=await chromium.launch({headless:true});
+  const origin='http://127.0.0.1:'+server.address().port;
+  const errors=[],results=[];
+  try {
+    for(const width of [320,360,390,430,768,1440]){
+      const page=await browser.newPage({viewport:{width,height:900},isMobile:width<700,hasTouch:width<700});
+      page.on('pageerror',e=>errors.push(e.message));
+      await page.goto(origin);
+      await page.locator('[data-action=nav][data-route=templates]:visible').click();
+      assert.equal(await page.locator('.template-grid > :first-child [data-action=new-template]').count(),1);
+      assert.equal(await page.locator('.page-head [data-action=new-template]').count(),0);
+      assert.equal(await page.locator('[data-action=new-template]').count(),1);
+      const create=await page.locator('.template-create [data-action=new-template]').boundingBox();
+      const imp=await page.locator('.template-import').boundingBox();
+      assert(imp.y>=create.y+create.height);
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`empty ${width}`);
+      await page.locator('.template-import').click();
+      await page.locator('#workout-import-code').waitFor();
+      await page.locator('[data-action=close-modal]').click();
+      await page.locator('[data-action=new-template]').click();
+      await page.locator('#draft-name').waitFor();
+      await page.locator('#draft-name').fill('Mobiler Testplan');
+      await page.locator('[data-draft=category]').selectOption('Ballsport');
+      await page.locator('#editor-form button[type=submit]').click();
+      assert.equal(await page.locator('.template-card').count(),1);
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`populated ${width}`);
+      await page.locator('[data-action=edit-template]').click();
+      await page.locator('#draft-name').fill('SehrLangerVorlagennameOhneLeerzeichen'.repeat(5));
+      await page.locator('#editor-form button[type=submit]').click();
+      if(width<700)await page.addStyleTag({content:':root{font-size:20px}'});
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`long title, large text ${width}`);
+      await page.screenshot({path:path.join(screenshots,'templates-'+width+'.png'),fullPage:true});
+      await page.locator('[data-action=start-template]').click();
+      await page.locator('#activity-clock').waitFor();
+      results.push({width,empty:true,populated:true,largeText:true,create:true,edit:true,import:true,start:true});
+      await page.close();
+    }
+    assert.deepEqual(errors,[]);console.log(JSON.stringify({results,errors}));
+  }finally{await browser.close();server.close();}
+})().catch(e=>{console.error(e);server.close();process.exitCode=1});

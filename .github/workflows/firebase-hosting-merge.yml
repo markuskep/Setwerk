@@ -57,6 +57,7 @@ jobs:
           node scripts/account-browser-check.cjs
           node scripts/cache-update-browser-check.cjs
           node scripts/sport-browser-check.cjs
+          node scripts/templates-browser-check.cjs
 
       - name: Keep account settings screenshots
         if: always()

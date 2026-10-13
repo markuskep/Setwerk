@@ -81,3 +81,14 @@ body.focus-mode{background:var(--tone-101b14)}body.focus-mode #toast{bottom:calc
 
 /* Keep both guest account actions reachable with narrow viewports and larger text. */
 @media(max-width:700px){.app-topbar{flex-wrap:wrap}.topbar-controls{flex-wrap:wrap;justify-content:flex-end;min-width:0;max-width:100%;margin-left:auto}.mobile-account{display:flex;flex-wrap:wrap;align-items:center;gap:8px;max-width:100%;min-width:0}.mobile-account .language-mini{min-height:44px;padding:8px 10px;white-space:normal;overflow-wrap:anywhere}.mobile-register{background:var(--accent);color:var(--ink)}.mobile-register[hidden]{display:none!important}}
+
+/* Template actions belong to the list; cards stay within the mobile viewport. */
+.templates-page,.templates-page .page-head>div,.template-grid>*{min-width:0}
+.template-create{grid-column:1/-1;display:grid;gap:4px;justify-items:center}
+.template-create>.btn:first-child{width:100%}
+.template-create>.template-import{font-size:.8rem;font-weight:500;padding:8px 12px;min-height:44px}
+.template-grid>.empty{grid-column:1/-1}
+.template-card>.row{flex-wrap:wrap;gap:8px}
+.template-card .meta,.template-card li{overflow-wrap:anywhere}
+.template-card footer>.btn{min-width:0;white-space:normal;overflow-wrap:anywhere}
+@media(max-width:700px){.templates-page .page-head{display:block}.templates-page .head-actions:empty{display:none}.template-card{padding:20px}.template-card footer{gap:8px}}
