@@ -21,7 +21,7 @@ const server = http.createServer((req,res) => {
   const errors=[],results=[];
   try {
     for(const width of [320,360,390,430,768,1440]){
-      const page=await browser.newPage({viewport:{width,height:900},isMobile:width<700,hasTouch:width<700});
+      let page=await browser.newPage({viewport:{width,height:900},isMobile:width<700,hasTouch:width<700});
       page.on('pageerror',e=>errors.push(e.message));
       await page.goto(origin);
       await page.locator('[data-action=nav][data-route=templates]:visible').click();
@@ -85,14 +85,19 @@ const server = http.createServer((req,res) => {
       await page.screenshot({path:path.join(screenshots,'templates-'+width+'.png'),fullPage:true});
       await page.locator('[data-action=start-template]').click();
       await page.locator('#activity-clock').waitFor();
-      await page.evaluate(()=>{
+      const summaryFixture=await page.evaluate(()=>{
         const chest=GYM_EXERCISES.filter(e=>e.muscle==='Brust'),back=GYM_EXERCISES.filter(e=>e.muscle==='Rücken'),legs=GYM_EXERCISES.find(e=>e.muscle==='Beine');
         const custom={id:'custom-summary',name:'Eigene Brustübung',muscle:'Brust',equipment:'Eigengewicht',kind:'reps',custom:true};
         const state=GymCore.fresh();state.customExercises=[custom];
         state.templates=[{id:'summary',name:'Oberkörper A',category:'Kraft',items:[GymCore.item(chest[0],1),GymCore.item(custom,10),GymCore.item(back[0],1),GymCore.item(back[1],1),GymCore.item(legs,1)]}];
-        localStorage.setItem('setwerk.v1',JSON.stringify(state));
+        return state;
       });
-      await page.reload();await page.locator('[data-action=nav][data-route=templates]:visible').click();
+      // Use a fresh page: the active workout's beforeunload handler saves its state.
+      await page.close();
+      page=await browser.newPage({viewport:{width,height:900},isMobile:width<700,hasTouch:width<700});
+      page.on('pageerror',e=>errors.push(e.message));
+      await page.addInitScript(fixture=>localStorage.setItem('setwerk.v1',JSON.stringify(fixture)),summaryFixture);
+      await page.goto(origin+'/#templates');
       if(width<700)await page.addStyleTag({content:':root{font-size:20px}'});
       assert.equal(await page.locator('.template-name').textContent(),'Oberkörper A');
       assert.equal(await page.locator('.template-summary .meta').textContent(),'5 Übungen · Brust / Rücken');
