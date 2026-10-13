@@ -10,6 +10,9 @@ export function createAccountUI(api){
     const changed=user?.id!==next?.id;user=next;
     if(changed){closeMenu(false);if(dialog?.open)dialog.close();++imageJob;}
     if(user)document.querySelectorAll('[data-action="toggle-language"]').forEach(button=>button.remove());
+    for(const button of document.querySelectorAll('[data-auth-signup]')){
+      button.hidden=!!user;button.textContent=t('Registrieren','Sign up');button.setAttribute('aria-label',button.textContent);
+    }
     for(const button of document.querySelectorAll('[data-auth-open]')){
       button.replaceChildren();
       if(user){

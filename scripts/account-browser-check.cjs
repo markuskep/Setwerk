@@ -15,6 +15,7 @@ let browser;try{
 browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
 await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>document.querySelector('[data-auth-state="signed-in"]')&&window.SetwerkCloud.mode==='synced');
 assert.match(await page.locator('[data-welcome-greeting]').textContent(),/Markus/);
+assert.equal(await page.locator('[data-action=personalize]').count(),0);assert.equal(await page.locator('[data-auth-signup]').isVisible(),false);
 const realDate=await page.locator('.home-welcome p').textContent();
 const greetingCases=[['04:00','Guten Morgen Markus','Der frühe Vogel fängt den Wurm'],['07:00','Guten Morgen Markus','Perfekter Zeitpunkt für ein Workout'],['09:00','Hallo Markus','Wünsche einen schönen Vormittag'],['11:00','Hallo Markus','Schon Mittaggegessen?'],['13:00','Schönen Nachmittag Markus','Vergiss nicht, auch mal Pausen einzulegen'],['17:00','Schönen Abend Markus','Wie war dein Tag heute?'],['20:00','Schönen Abend Markus','Spätes Workout oder früh ins Bett gehen?'],['22:00','Gute Nacht Markus','Morgen nichts vor oder schlaflose Nacht?'],['00:30','Gute Nacht Markus','Morgen nichts vor oder schlaflose Nacht?'],['01:00','Hi Markus','Es gibt keinen schlechten Zeitpunkt für Sport']];
 for(const [clock,small,large] of greetingCases){
@@ -57,6 +58,15 @@ await page.locator('[name=repeatPassword]').fill('TEST_ONLY_new_password');await
 await page.locator('[name=currentPassword]').fill('TEST_ONLY_current_password');await page.locator('[name=newPassword]').fill('TEST_ONLY_new_password');await page.locator('[name=repeatPassword]').fill('TEST_ONLY_new_password');await page.locator('#password-form button').click();await page.waitForFunction(()=>window.__passwordChanged==='TEST_ONLY_new_password');
 await page.locator('[data-account-action=delete]').click();await page.locator('#delete-password').fill('TEST_ONLY_current_password');await page.locator('#delete-account-form button').click();assert.equal(await page.evaluate(()=>!!window.__accountRemoved),false);
 await page.locator('[name=confirmDeletion]').check();await page.locator('#delete-account-form button').click();await page.waitForFunction(()=>window.__accountRemoved);assert.equal(await page.locator('[data-greeting-clock]').count(),0);assert.doesNotMatch(await page.locator('[data-welcome-greeting]').textContent(),/Markus/);
+assert.equal(await page.locator('[data-action=personalize]').count(),0);assert.equal(await page.locator('#account-menu').count(),0);
+for(const width of [320,390,540]){
+ await page.setViewportSize({width,height:844});await page.evaluate(()=>document.documentElement.style.fontSize='150%');
+ for(const selector of ['.mobile-account [data-auth-open]','[data-auth-signup]']){const button=page.locator(selector);assert.equal(await button.isVisible(),true);const box=await button.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=width&&box.y+box.height<844&&box.height>=44);}
+ await page.locator('[data-auth-signup]').click();assert.equal(await page.locator('#auth-panel').getAttribute('data-mode'),'signup');assert.equal(await page.locator('#auth-name-wrap').isVisible(),true);await page.locator('[data-auth-close]').click();
+ await page.locator('.mobile-account [data-auth-open]').click();assert.equal(await page.locator('#auth-panel').getAttribute('data-mode'),'login');await page.locator('[data-auth-close]').click();
+}
+await page.evaluate(()=>document.documentElement.style.fontSize='');await page.locator('[data-action=toggle-language]').click();assert.equal(await page.locator('[data-auth-signup]').textContent(),'Sign up');await page.locator('[data-action=toggle-language]').click();
+await page.screenshot({path:path.join(screenshots,'mobile-registration-guest.png')});
 assert.deepEqual(errors,[]);console.log(JSON.stringify({browserChecks:'passed',colorThemes:5,personalGreetings:9,midnightGreeting:true,accountOnlyClockPreview:true,mobileColorPicker:true,desktop:1440,mobile:390,imageUpload:'192px JPEG',profileSaved:true,passwordChanged:true,deletionRequiresConfirmation:true,pageErrors:errors}));
 }finally{await browser?.close();server.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

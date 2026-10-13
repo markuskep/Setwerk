@@ -12,7 +12,7 @@ async function setup(loginError, cloud=null) {
   });
   const w = dom.window, calls = [];
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
-  w.document.getElementById('app').innerHTML = '<button data-auth-open>Login / Sign up</button><button id="background">Training starten</button>';
+  w.document.getElementById('app').innerHTML = '<button data-auth-open>Login / Sign up</button><button data-auth-signup>Registrieren</button><button id="background">Training starten</button>';
   if(cloud)w.SetwerkCloud=cloud;
   w.__firebase = {
     async login(email, password) { calls.push({ email, password }); if (loginError) throw Error(loginError); return { id:'alice', email }; },
@@ -94,11 +94,11 @@ test('failed login stays open; signup switches password autocomplete and name vi
 test('Firebase signup signs in immediately and never asks for a Netlify confirmation', async () => {
   const x=await setup();try{
     let goals;x.w.SetwerkPersonalization={setGoals(value){goals=value;}};
-    x.q('[data-auth-open]').click();x.q('#auth-switch').click();
-    assert.equal(x.q('#auth-goals-wrap').hidden,false);x.q('[name="weekly"]').value='4';x.q('[name="dailySteps"]').value='8000';
+    assert.equal(x.q('[data-auth-signup]').hidden,false);x.q('[data-auth-signup]').click();
+    assert.equal(x.q('#auth-panel').dataset.mode,'signup');assert.equal(x.q('#auth-goals-wrap').hidden,false);x.q('[name="weekly"]').value='4';x.q('[name="dailySteps"]').value='8000';
     x.q('[name="email"]').value='new@example.at';x.q('[name="password"]').value='TEST_ONLY_new_password';x.q('[name="name"]').value='Markus';
     x.q('#auth-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));await x.settle();
-    assert.deepEqual(x.calls,[{email:'new@example.at',password:'TEST_ONLY_new_password',name:'Markus'}]);assert.deepEqual(JSON.parse(JSON.stringify(goals)),{weekly:4,dailySteps:8000});
+    assert.equal(x.q('[data-auth-signup]').hidden,true);assert.deepEqual(x.calls,[{email:'new@example.at',password:'TEST_ONLY_new_password',name:'Markus'}]);assert.deepEqual(JSON.parse(JSON.stringify(goals)),{weekly:4,dailySteps:8000});
     assert.equal(x.q('#auth-gate').hidden,true);
     assert.equal(x.q('[data-auth-open]').dataset.authState,'signed-in');
     assert.equal(x.q('[name="password"]').value,'');

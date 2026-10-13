@@ -78,3 +78,6 @@ body.focus-mode{background:var(--tone-101b14)}body.focus-mode #toast{bottom:calc
 @media(max-width:480px){.rest-overlay.is-minimized{gap:8px}.rest-overlay.is-minimized .btn{padding:9px;font-size:12px}.auth-panel{max-height:90dvh;overflow:auto}}
 
 .overview-steps{grid-column:span 2}.steps-card{display:block}.rest-overlay.is-minimized{flex-direction:row;backdrop-filter:none}.rest-overlay.is-minimized .rest-clock{letter-spacing:-.5px}.rest-overlay.is-minimized .rest-actions{flex-wrap:nowrap}.focus-shell .focus-pr{color:var(--accent)}
+
+/* Keep both guest account actions reachable with narrow viewports and larger text. */
+@media(max-width:700px){.app-topbar{flex-wrap:wrap}.topbar-controls{flex-wrap:wrap;justify-content:flex-end;min-width:0;max-width:100%;margin-left:auto}.mobile-account{display:flex;flex-wrap:wrap;align-items:center;gap:8px;max-width:100%;min-width:0}.mobile-account .language-mini{min-height:44px;padding:8px 10px;white-space:normal;overflow-wrap:anywhere}.mobile-register{background:var(--accent);color:var(--ink)}.mobile-register[hidden]{display:none!important}}

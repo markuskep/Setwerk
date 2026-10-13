@@ -20,17 +20,17 @@ test('Offener Schrittbalken zeigt echte Werte und begrenzt den Fortschritt am Ta
 });
 test('Tägliches Schrittziel lässt sich zusammen mit den bisherigen Trainingszielen speichern und nach Reload nutzen',()=>{
  const state=G.fresh();state.dailySteps[G.localDate()]=4500;const x=setup(state);try{
-  x.click(act('personalize'));assert.equal(x.q('[name="dailySteps"]').value,'10000');x.input('[name="dailySteps"]',9000);x.input('[name="weekly"]',5);x.q('#goals-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));
+  assert.equal(x.q(act('personalize')),null);x.w.SetwerkPersonalization.open();assert.equal(x.q('[name="dailySteps"]').value,'10000');x.input('[name="dailySteps"]',9000);x.input('[name="weekly"]',5);x.q('#goals-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));
   assert.equal(x.read().goals.dailySteps,9000);assert.equal(x.read().goals.weekly,5);assert.equal(x.q('.steps-gauge').dataset.stepGoal,'9000');assert.equal(Number(x.q('.steps-gauge').dataset.stepProgress),.5);assert.match(x.q('.steps-scale-goal').textContent,/9.?000/);
-  const y=setup(x.read());try{assert.equal(y.q('.steps-gauge').dataset.stepGoal,'9000');y.click(act('personalize'));assert.equal(y.q('[name="dailySteps"]').value,'9000');}finally{y.dom.window.close();}
+  const y=setup(x.read());try{assert.equal(y.q('.steps-gauge').dataset.stepGoal,'9000');y.w.SetwerkPersonalization.open();assert.equal(y.q('[name="dailySteps"]').value,'9000');}finally{y.dom.window.close();}
   assert.deepEqual(x.errors,[]);
  }finally{x.dom.window.close();}
 });
 test('Ungültiges Schrittziel und Speicherfehler ändern keine vorhandenen Ziele',()=>{
  const x=setup();try{
-  x.click(act('personalize'));const previous=x.read().goals;
+  x.w.SetwerkPersonalization.open();const previous=x.read().goals;
   for(const value of ['',0,-1,1.5,Number.MAX_SAFE_INTEGER+1]){x.input('[name="dailySteps"]',value);x.q('#goals-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));assert.deepEqual(x.read().goals,previous);}
-  x.w.SetwerkCloud={saveLocal(){throw Error('Full');}};x.input('[name="dailySteps"]',8000);x.q('#goals-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));assert.deepEqual(x.read().goals,previous);assert.equal(x.q('#modal').open,true);x.click(act('close-modal'));x.click(act('personalize'));assert.equal(x.q('[name="dailySteps"]').value,'10000');assert.deepEqual(x.errors,[]);
+  x.w.SetwerkCloud={saveLocal(){throw Error('Full');}};x.input('[name="dailySteps"]',8000);x.q('#goals-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));assert.deepEqual(x.read().goals,previous);assert.equal(x.q('#modal').open,true);x.click(act('close-modal'));x.w.SetwerkPersonalization.open();assert.equal(x.q('[name="dailySteps"]').value,'10000');assert.deepEqual(x.errors,[]);
  }finally{x.dom.window.close();}
 });
 test('Alte Ziele erhalten den Standardwert, neue Schrittziele werden in der Cloud validiert und konfliktfrei migriert',()=>{
