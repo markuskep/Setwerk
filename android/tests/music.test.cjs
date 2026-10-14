@@ -34,3 +34,7 @@ test('metadata is escaped, english labels work and the player survives workout r
 test('polling preserves controls but updates a track changed outside Setwerk while a button is focused',async()=>{
  const x=setup();try{await settle();const button=x.q('[data-music-action=next]');button.focus();await x.w.SetwerkMusic.refresh();assert.equal(x.q('[data-music-action=next]'),button);x.setState({...fixture(),title:'Second Wind'});await x.w.SetwerkMusic.refresh();assert.equal(x.q('.music-track strong').textContent,'Second Wind');assert.equal(x.w.document.activeElement.dataset.musicAction,'next');}finally{x.dom.window.close();}
 });
+test('source logo and name follow the active music app and reject external image URLs',async()=>{
+ const png='data:image/png;base64,iVBORw0KGgo=';const x=setup({...fixture(),appName:'Spotify',appIcon:png});
+ try{await settle();assert.equal(x.q('.music-source small').textContent,'Spotify');assert.equal(x.q('.music-source-icon').getAttribute('src'),png);assert.equal(x.q('.music-source-icon').getAttribute('alt'),'');x.setState({...fixture(),sessionKey:'youtube:2',appName:'YouTube Music',appIcon:png});await x.w.SetwerkMusic.refresh();assert.equal(x.q('.music-source small').textContent,'YouTube Music');x.setState({...fixture(),appName:'Other player',appIcon:'https://untrusted.test/icon.png'});await x.w.SetwerkMusic.refresh();assert.equal(x.q('.music-source-icon'),null);assert.ok(x.q('.music-source svg'));assert.equal(x.q('.music-source small').textContent,'Other player');}finally{x.dom.window.close();}
+});

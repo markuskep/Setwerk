@@ -2,7 +2,8 @@
 
 Diese Vorschau ergänzt einen kompakten Musikbereich im Focus Mode und während
 der Satzpause. Er steuert die aktive Android-Medien-App mit Titel, Interpret,
-Zeitleiste, Pause/Fortsetzen und vorherigem/nächstem Titel. Die Zeitleiste ist
+Zeitleiste, Pause/Fortsetzen und vorherigem/nächstem Titel. Das Logo und der Name der aktiven Musik-App
+stehen im Kopf des Players; das Logo stammt vom installierten Android-App-Icon. Die Zeitleiste ist
 nur bedienbar, wenn der Player eine Dauer und die Seek-Funktion freigibt.
 
 Einmalig im Musikbereich „Musiksteuerung einrichten“ wählen und in Android den

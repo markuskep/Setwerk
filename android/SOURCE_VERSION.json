@@ -125,11 +125,11 @@
     },
     "android-music.js": {
       "android_adapter": true,
-      "android_sha256": "f8561d01bcc28dc38313a3a98b7210b09c1f89e3325686e65a474661fc8a8bc5"
+      "android_sha256": "48c1633d0a36b79ea311b96e9f4510d9373ce190628e46de6a36a14b404aa4f2"
     },
     "android-music.css": {
       "android_adapter": true,
-      "android_sha256": "98e9a5cb8fa5bd356ab6e5b09954b22837368b1549f02e29490d949a1d462262"
+      "android_sha256": "35fe894e90604a53e1b7acde1984e6ff6e3037d1202ab1b7c5def93bc49502eb"
     }
   },
   "webSourceModified": true

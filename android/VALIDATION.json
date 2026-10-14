@@ -59,6 +59,11 @@
     "standalonePreviewIntegration": "passed",
     "apkBuildAndSignature": "passed",
     "browserLayoutCheck": "blocked: browser socket creation unavailable in this runtime",
-    "externalMusicApps": "Android device verification required"
+    "externalMusicApps": "Android device verification required",
+    "sourceLogoUpdate": {
+      "musicTestsPassed": 8,
+      "apkRebuilt": false,
+      "preview": "Spotify and YouTube Music logos and source switching checked"
+    }
   }
 }

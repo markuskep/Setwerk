@@ -20,7 +20,8 @@ window.SetwerkMusic = (() => {
   }
   function markup() {
     const s = snapshot;
-    const heading = `<div class="music-heading"><span>${icon('music')}${t('Deine Musik', 'Your music')}</span>${s?.active ? `<small>${escape(s.appName)}</small>` : ''}</div>`;
+    const sourceIcon = typeof s?.appIcon === 'string' && /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(s.appIcon) && s.appIcon.length <= 65536 ? `<img class="music-source-icon" src="${escape(s.appIcon)}" alt="" width="18" height="18">` : icon('music');
+    const heading = `<div class="music-heading"><span>${icon('music')}${t('Deine Musik', 'Your music')}</span>${s?.active ? `<span class="music-source" aria-label="${t('Musikquelle', 'Music source')}" title="${escape(s.appName || t('Musik-App', 'Music app'))}">${sourceIcon}<small>${escape(s.appName || t('Musik-App', 'Music app'))}</small></span>` : ''}</div>`;
     if (!s) return `${heading}<p class="music-hint">${t('Musiksteuerung wird geladen …', 'Loading music controls …')}</p>`;
     if (!s.granted) return `${heading}<p class="music-hint">${t('Steuere deine Musik direkt im Training. Android benötigt dafür Benachrichtigungszugriff. Setwerk nutzt ihn nur für Musikinformationen und die Wiedergabesteuerung.', 'Control your music during training. Android requires notification access. Setwerk uses it only for music information and playback controls.')}</p><button type="button" class="music-connect" data-music-action="connect" ${busy ? 'disabled' : ''}>${t('Musiksteuerung einrichten', 'Set up music controls')}</button>`;
     if (!s.active) return `${heading}<p class="music-hint">${t('Starte ein Lied in deiner Musik-App. Die Steuerung erscheint hier automatisch.', 'Start a song in your music app. The controls will appear here automatically.')}</p>`;

@@ -5,6 +5,9 @@ import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.media.MediaDescription;
 import android.media.MediaMetadata;
 import android.media.session.MediaController;
@@ -17,11 +20,15 @@ import android.os.SystemClock;
 import android.provider.Settings;
 import org.json.JSONObject;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.io.ByteArrayOutputStream;
 
 /** Controls the active external media session; all calls run on the UI thread. */
 public final class MusicControlClient {
   private final Activity activity;
   private final ComponentName listener;
+  private final Map<String, JSONObject> sources = new HashMap<>();
   // AndroidX MediaSessionCompat's queue-command contract. This index-only command
   // avoids requiring a MediaDescriptionCompat parcel or another SDK dependency.
   // Source: https://android.googlesource.com/platform/frameworks/support/+/65cde2c4554985493a2e7560b5e71c5f24969287%5E%21/
@@ -68,9 +75,26 @@ public final class MusicControlClient {
     MediaMetadata metadata = controller.getMetadata();
     return MusicQueuePolicy.nextIndex(ids, playback == null ? -1 : playback.getActiveQueueItemId(), mediaIds, metadata == null ? null : metadata.getString(MediaMetadata.METADATA_KEY_MEDIA_ID));
   }
-  private String appName(MediaController controller) {
-    try { return text(activity.getPackageManager().getApplicationLabel(activity.getPackageManager().getApplicationInfo(controller.getPackageName(), 0))); }
-    catch (Exception ignored) { return controller.getPackageName(); }
+  private JSONObject source(MediaController controller) throws Exception {
+    String packageName = controller.getPackageName();
+    JSONObject cached = sources.get(packageName);
+    if (cached != null) return cached;
+    String fallback = packageName.equals("com.spotify.music") ? "Spotify" : packageName.equals("com.google.android.apps.youtube.music") ? "YouTube Music" : "";
+    JSONObject result = new JSONObject().put("appName", fallback).put("appIcon", "");
+    try {
+      android.content.pm.PackageManager packages = activity.getPackageManager();
+      result.put("appName", text(packages.getApplicationLabel(packages.getApplicationInfo(packageName, 0))));
+      Drawable icon = packages.getApplicationIcon(packageName);
+      Bitmap bitmap = Bitmap.createBitmap(64, 64, Bitmap.Config.ARGB_8888);
+      try {
+        icon.setBounds(0, 0, 64, 64); icon.draw(new Canvas(bitmap));
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        if (bitmap.compress(Bitmap.CompressFormat.PNG, 100, bytes)) result.put("appIcon", "data:image/png;base64," + android.util.Base64.encodeToString(bytes.toByteArray(), android.util.Base64.NO_WRAP));
+      } finally { bitmap.recycle(); }
+    } catch (Exception ignored) {}
+    if (sources.size() >= 16) sources.clear();
+    sources.put(packageName, result);
+    return result;
   }
   public JSONObject state() throws Exception {
     JSONObject data = new JSONObject().put("supported", true).put("granted", granted()).put("active", false);
@@ -83,7 +107,8 @@ public final class MusicControlClient {
     long updated = playback == null ? 0 : playback.getLastPositionUpdateTime();
     long elapsed = updated > 0 ? Math.max(0, SystemClock.elapsedRealtime() - updated) : 0;
     long position = MusicQueuePolicy.position(playback == null ? 0 : playback.getPosition(), elapsed, playback == null ? 0 : playback.getPlaybackSpeed(), playing, duration);
-    data.put("active", true).put("sessionKey", sessionKey(controller)).put("appName", appName(controller)).put("playing", playing)
+    JSONObject source = source(controller);
+    data.put("active", true).put("sessionKey", sessionKey(controller)).put("appName", source.optString("appName")).put("appIcon", source.optString("appIcon")).put("playing", playing)
       .put("title", metadata == null ? "" : text(metadata.getDescription().getTitle()))
       .put("artist", metadata == null ? "" : text(metadata.getString(MediaMetadata.METADATA_KEY_ARTIST)))
       .put("position", position).put("duration", duration).put("speed", playback == null ? 0 : playback.getPlaybackSpeed())
