@@ -140,7 +140,10 @@ body.focus-mode{background:var(--tone-101b14)}body.focus-mode #toast{bottom:calc
 .template-insert-button{width:36px;min-width:36px;height:36px;padding:7px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--green)}
 .template-editor .stack{gap:8px}
 @media(max-width:700px){
- .template-editor-mode .app-topbar{padding-top:8px}
+ .template-editor-mode .app-topbar{padding:8px 16px 0}
+ .template-editor-mode .topbar-controls,.template-editor-mode .mobile-account{gap:6px}
+ .template-editor-mode .mobile-account .language-mini{padding:8px;min-height:38px;font-size:.75rem}
+ .template-editor-mode .language-toggle{padding:6px;min-height:38px;gap:6px}
  .template-editor-mode .topbar-brand{display:none}
  .template-editor-mode .app-topbar+.main{padding:12px 16px 94px}
  .template-editor .page-head{margin-bottom:12px;gap:10px}

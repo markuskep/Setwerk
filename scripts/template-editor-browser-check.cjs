@@ -13,11 +13,13 @@ const server=http.createServer((req,res)=>{const name=new URL(req.url,'http://lo
   assert.equal(await page.locator('.set-type').count(),0);assert.deepEqual(await page.locator('.template-exercise .set-table').first().locator('th').allTextContents(),['Satz','Wdh.','kg','']);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   assert.equal(await page.locator('.template-exercise .set-scroll').first().evaluate(el=>el.scrollWidth>el.clientWidth),false);
+  await page.locator('#toast').evaluate(el=>el.classList.remove('show'));
   await page.screenshot({path:path.join(output,`editor-single-${width}.png`),fullPage:true});
   if(width<700){
    for(const selector of ['#draft-name','[data-draft=category]','[data-field=reps]','[data-field=weight]','.exercise-rest input','[data-insert="1"]','#editor-form button[type=submit]']){
     const box=await page.locator(selector+':visible').first().boundingBox(),nav=await page.locator('.bottom-nav').boundingBox();console.log(JSON.stringify({width,selector,box,nav}));assert(box.y>=0&&box.y+box.height<=nav.y,`important control fits: ${selector} ${width}`);
    }
+   const plus=await page.locator('[data-insert="1"]').boundingBox(),save=await page.locator('.save-bar').boundingBox();assert(plus.y+plus.height<=save.y,`save controls do not cover insertion ${width}`);
   }
   await page.screenshot({path:path.join(output,`editor-single-${width}.png`),fullPage:true});
   await page.locator('[data-item="0"][data-set="0"][data-field=reps]').fill('12');await page.locator('[data-item="0"][data-set="0"][data-field=weight]').fill('42.5');
@@ -25,6 +27,7 @@ const server=http.createServer((req,res)=>{const name=new URL(req.url,'http://lo
   await page.locator('[data-insert="1"]').click();await page.locator(`[data-action=choose-exercise][data-id="${ids[1]}"]`).click();
   assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('setwerk.v1')).draft.items.map(it=>it.exerciseId)),ids);
   if(width<700){assert.equal(await page.locator('.template-exercise>.exercise-edit-body:visible').count(),1);await page.locator('[data-action=toggle-template-item][data-item="0"]').click();assert.equal(await page.locator('[data-item="0"][data-set="0"][data-field=weight]').inputValue(),'42.5');}
+  await page.locator('#toast').evaluate(el=>el.classList.remove('show'));
   await page.screenshot({path:path.join(output,`editor-three-${width}.png`),fullPage:true});
   await page.locator('#editor-form button[type=submit]').click();assert.equal(await page.locator('.template-card').count(),1);
   await page.reload();await page.locator('[data-action=nav][data-route=templates]:visible').click();await page.locator('[data-action=edit-template]').click();
