@@ -1,6 +1,6 @@
 {
-  "androidVersion": "1.4.2",
-  "versionCode": 7,
+  "androidVersion": "1.4.3-preview",
+  "versionCode": 8,
   "webRepository": "markuskep/Setwerk",
   "webBranch": "firebase-migration",
   "webCommit": "e8bd5ac7e3eb3a2b36ecd603962bfa45ce2b7589",
@@ -8,7 +8,7 @@
   "files": {
     "index.html": {
       "web_sha256": "6cf9e8d8205d53dd0bc70e2fe4decdfb61b7561a65ef184c23ff437dfe7cfa06",
-      "android_sha256": "446908623930f811535cb35c600d2d4f9b36bb8cc0982703942d32649c9f53b9",
+      "android_sha256": "a283bdb25f902c96fb7294e67f88db7cd8fa1702278faef49469c0ee53fd8581",
       "android_adapter": true
     },
     "greeting.js": {
@@ -122,6 +122,14 @@
     "android-health.js": {
       "android_sha256": "03c67cb72fa2ceb68d75403ab3a8e0a9903e696a1aea5d031262977f14c9ee44",
       "android_adapter": true
+    },
+    "android-music.js": {
+      "android_adapter": true,
+      "android_sha256": "f8561d01bcc28dc38313a3a98b7210b09c1f89e3325686e65a474661fc8a8bc5"
+    },
+    "android-music.css": {
+      "android_adapter": true,
+      "android_sha256": "98e9a5cb8fa5bd356ab6e5b09954b22837368b1549f02e29490d949a1d462262"
     }
   },
   "webSourceModified": true

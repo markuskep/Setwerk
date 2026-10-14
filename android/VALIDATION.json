@@ -45,5 +45,20 @@
   "browser": {
     "status": "not-run",
     "reason": "No browser-control skill available; jsdom UI checks passed"
+  },
+  "musicPreview": {
+    "version": "1.4.3-preview",
+    "functionTests": {
+      "passed": 37,
+      "failed": 0
+    },
+    "queueAndPositionChecks": {
+      "passed": 12,
+      "failed": 0
+    },
+    "standalonePreviewIntegration": "passed",
+    "apkBuildAndSignature": "passed",
+    "browserLayoutCheck": "blocked: browser socket creation unavailable in this runtime",
+    "externalMusicApps": "Android device verification required"
   }
 }

@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public class MainActivity extends Activity {
+  private MusicControlClient music;
   private HealthStepsClient health;
   private HealthStepsClient.Reply stepPermissionReply;
   private WebView web; private SharedPreferences prefs; private CloudClient cloud;
@@ -26,7 +27,7 @@ public class MainActivity extends Activity {
   private ValueCallback<Uri[]> fileCallback; private byte[] exportBytes;
   private static final String ORIGIN="https://appassets.androidplatform.net";
   @Override public void onCreate(Bundle saved){
-    super.onCreate(saved);if(Build.VERSION.SDK_INT>=34)health=new HealthStepsClient(this,network);prefs=getSharedPreferences("setwerk",MODE_PRIVATE);cloud=new CloudClient(this);ReminderReceiver.createChannel(this);
+    super.onCreate(saved);music=new MusicControlClient(this);if(Build.VERSION.SDK_INT>=34)health=new HealthStepsClient(this,network);prefs=getSharedPreferences("setwerk",MODE_PRIVATE);cloud=new CloudClient(this);ReminderReceiver.createChannel(this);
     web=new WebView(this);web.setBackgroundColor(Color.rgb(242,244,240));web.setFitsSystemWindows(true);
     web.getSettings().setJavaScriptEnabled(true);web.getSettings().setDomStorageEnabled(true);web.getSettings().setAllowFileAccess(false);web.getSettings().setAllowContentAccess(true);web.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);web.getSettings().setMediaPlaybackRequiresUserGesture(true);
     web.setWebViewClient(new WebViewClient(){
@@ -89,6 +90,14 @@ public class MainActivity extends Activity {
     @JavascriptInterface public String getSite(){return cloud.site();}
     @JavascriptInterface public void request(String id,String operation,String body){
       if(!id.matches("[0-9]{1,12}")||body.length()>2*1024*1024)return;
+      if(operation.startsWith("music-")){
+        runOnUiThread(()->{
+          try{deliver(id,new FirebaseClient.Result(200,music.call(operation,new JSONObject(body)).toString()));}
+          catch(SecurityException error){deliver(id,new FirebaseClient.Result(403,"{\"code\":\"music/access-denied\"}"));}
+          catch(IllegalArgumentException error){try{deliver(id,new FirebaseClient.Result(409,new JSONObject().put("code",error.getMessage()).toString()));}catch(Exception ignored){}}
+          catch(Exception error){deliver(id,new FirebaseClient.Result(503,"{\"code\":\"music/unavailable\"}"));}
+        });return;
+      }
       if(operation.startsWith("steps-")){
         runOnUiThread(()->{
           HealthStepsClient.Reply reply=(status,raw)->deliver(id,new FirebaseClient.Result(status,raw));
