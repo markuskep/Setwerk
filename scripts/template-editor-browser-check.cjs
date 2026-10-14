@@ -36,7 +36,21 @@ const server=http.createServer((req,res)=>{const name=new URL(req.url,'http://lo
   if(await page.locator('[data-action=toggle-template-item][data-item="0"]').getAttribute('aria-expanded')==='false')await page.locator('[data-action=toggle-template-item][data-item="0"]').click();await page.locator('.template-extra').first().locator('summary').first().click();await page.locator('[data-field=notes]').first().fill('Sitzhöhe 4');
   await page.locator('#editor-form button[type=submit]').click();assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('setwerk.v1')).templates[0].items[0].notes),'Sitzhöhe 4');
   await page.locator('[data-action=edit-template]').click();await page.locator('[data-action=template-pauses]').first().click();await page.locator('[name=setRest]').fill('90');await page.locator('[name=exerciseRest]').fill('180');await page.locator('#template-rest-form button[type=submit]').click();assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('setwerk.v1')).draft.items.map(it=>it.rest)),[90,90,90]);await page.locator('#editor-form button[type=submit]').click();assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('setwerk.v1')).templates[0].exerciseRest),180);
-  results.push({setupDialog:true,editablePauses:true,independentCollapse:true,width,height,compactFields:true,insertionOrder:true,persistence:true,noHorizontalScroll:true});await page.close();
+  await page.locator('[data-action=edit-template]').click();
+  const prior=await page.evaluate(()=>JSON.parse(localStorage.getItem('setwerk.v1')).draft.items.map(it=>it.uid));
+  await page.locator('#editor-form [data-action=move-item][data-item="0"][data-dir="1"]').click();
+  assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('setwerk.v1')).draft.items.map(it=>it.uid)),[prior[1],prior[0],prior[2]]);
+  assert(await page.locator('#editor-form').evaluate(el=>el.getAnimations({subtree:true}).length>0),'reordering animates');
+  await page.waitForFunction(()=>!document.querySelector('#editor-form').getAnimations({subtree:true}).length);
+  await page.locator('#editor-form [data-action=remove-item][data-item="0"]').click();
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('setwerk.v1')).draft.items.length),2);
+  await page.locator('.template-motion-ghost').waitFor({state:'detached'});
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.locator('#editor-form [data-action=move-item][data-item="0"][data-dir="1"]').click();
+  assert.equal(await page.locator('#editor-form').evaluate(el=>el.getAnimations({subtree:true}).length),0);
+  await page.locator('#editor-form [data-action=remove-item][data-item="0"]').click();assert.equal(await page.locator('.template-motion-ghost').count(),0);
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('setwerk.v1')).draft.items.length),1);
+  results.push({moveAnimation:true,deleteAnimation:true,reducedMotion:true,setupDialog:true,editablePauses:true,independentCollapse:true,width,height,compactFields:true,insertionOrder:true,persistence:true,noHorizontalScroll:true});await page.close();
  }
  assert.deepEqual(errors,[]);console.log(JSON.stringify({results,errors}));
  }finally{await browser.close();server.close();}

@@ -194,3 +194,10 @@ body.focus-mode{background:var(--tone-101b14)}body.focus-mode #toast{bottom:calc
  .template-editor .section-title{margin-top:8px}
  #template-setup-form .grid2,#template-rest-form .grid2{grid-template-columns:1fr;gap:12px}
 }
+
+/* Brief feedback for moving and removing template exercises. */
+.template-motion-ghost{position:fixed;pointer-events:none;z-index:4;transform-origin:center;overflow:hidden}
+.template-motion-ghost>.template-exercise{width:100%;margin:0}
+.template-editor .reorder .icon-btn{transition:transform .12s ease,background-color .12s ease}
+.template-editor .reorder .icon-btn:active{transform:scale(.92)}
+@media(prefers-reduced-motion:reduce){.template-editor .reorder .icon-btn:active{transform:none}}
