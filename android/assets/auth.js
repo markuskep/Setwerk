@@ -50,7 +50,7 @@ function closeAuth() {
 }
 function openAuth(trigger) {
   authReturnFocus = trigger || document.activeElement;
-  showLogin();
+  trigger?.hasAttribute('data-auth-signup') ? showSignup() : showLogin();
   gate.hidden = false;
   document.body.classList.add('auth-open');
   document.getElementById('app').inert = true;
@@ -69,6 +69,8 @@ window.addEventListener('setwerk:render', () => updateAuthButton());
 window.addEventListener('setwerk:cloud-status', () => updateAuthButton());
 document.addEventListener('click', async (event) => {
   if (event.target.closest('[data-auth-close]')) { closeAuth(); return; }
+  const signupButton = event.target.closest('[data-auth-signup]');
+  if (signupButton) { if (!currentUser) openAuth(signupButton); return; }
   const button = event.target.closest('[data-auth-open]');
   if (!button) return;
   if (button.dataset.authState === 'signed-in') {

@@ -65,5 +65,21 @@
       "apkRebuilt": false,
       "preview": "Spotify and YouTube Music logos and source switching checked"
     }
+  },
+  "androidRelease143": {
+    "version": "1.4.3",
+    "versionCode": 9,
+    "webCommit": "d08f89d1994b821dddb1919d43f0c31d88670e20",
+    "sourceBranch": "release/android-1.4.3",
+    "tests": {
+      "passed": 142,
+      "failed": 0
+    },
+    "build": "passed",
+    "samePackageAs142": true,
+    "sameSigningCertificateAs142": true,
+    "apkAssetsMatchSource": true,
+    "realDeviceMediaTest": "not performed",
+    "browserLayoutCheck": "previously blocked by runtime socket restrictions"
   }
 }

@@ -41,5 +41,5 @@ for source in (web/'dist').iterdir():
         files[source.name]={'web_sha256':hashlib.sha256(source.read_bytes()).hexdigest(),'android_sha256':hashlib.sha256(target.read_bytes()).hexdigest(),'android_adapter':source.name in {'index.html','app.js','auth.js','firebase-service.js','appearance.js','greeting.js'}}
 for name in ['android-bridge.js','android-legacy.js','android-health.js','android-music.js','android-music.css']:
     files[name]={'android_sha256':hashlib.sha256((assets/name).read_bytes()).hexdigest(),'android_adapter':True}
-(root/'SOURCE_VERSION.json').write_text(json.dumps({'androidVersion':'1.4.3-preview','versionCode':8,'webRepository':'markuskep/Setwerk','webBranch':'firebase-migration','webCommit':args.commit,'firebaseProject':'setwerk-cb1e0','files':files},indent=2)+'\n')
+(root/'SOURCE_VERSION.json').write_text(json.dumps({'androidVersion':'1.4.3','versionCode':9,'webRepository':'markuskep/Setwerk','webBranch':'firebase-migration','webCommit':args.commit,'firebaseProject':'setwerk-cb1e0','files':files},indent=2)+'\n')
 print('Android assets updated from web commit',args.commit)
