@@ -3,6 +3,22 @@ const test=require('node:test');const assert=require('node:assert/strict');const
 const {JSDOM,VirtualConsole}=require(process.env.JSDOM_PATH||'jsdom');const root=path.join(__dirname,'../dist');
 function setup(stored=null){const errors=[];const vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e.message));const dom=new JSDOM('<!doctype html><html lang="de"><body><div id="app"></div><dialog id="modal"></dialog><div id="toast"></div></body></html>',{url:'https://setwerk.test/',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;w.scrollTo=()=>{};w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false};if(stored)w.localStorage.setItem('setwerk.v1',JSON.stringify(stored));for(const f of ['exercises.js','exercises-en.js','i18n.js','core.js','transfer.js','app.js']){const s=w.document.createElement('script');s.textContent=fs.readFileSync(path.join(root,f),'utf8');w.document.body.append(s);}const q=s=>w.document.querySelector(s);const click=s=>{assert.ok(q(s),'Element fehlt: '+s);q(s).click();if(q('#template-setup-form')){q('#template-setup-name').value='Testvorlage';q('#template-setup-form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));}};const input=(s,v)=>{assert.ok(q(s),'Feld fehlt: '+s);q(s).value=String(v);q(s).dispatchEvent(new w.Event('input',{bubbles:true}));q(s).dispatchEvent(new w.Event('change',{bubbles:true}));};const submit=s=>q(s).dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));const read=()=>JSON.parse(w.localStorage.getItem('setwerk.v1'));return{dom,w,q,click,input,submit,read,errors};}
 const act=n=>`[data-action="${n}"]`;
+test('Übungssuche ignoriert Schreibformat und durchsucht beide Katalogsprachen unabhängig von der Oberfläche',()=>{
+ const x=setup();try{
+  x.click(act('new-template'));x.click(act('pick-exercise'));
+  const results=()=>[...x.w.document.querySelectorAll('#picker-results [data-action=choose-exercise]')].map(el=>el.dataset.id);
+  let expected;
+  for(const query of ['t-bar','T BAR','tbar','t–bar','  TBar  ']){x.input('#picker-search',query);const ids=results();assert.ok(ids.includes('ex-037'));if(expected)assert.deepEqual(ids,expected);else expected=ids;}
+  for(const query of ['pushup','PUSH-UP','push up','Liegestütz']){x.input('#picker-search',query);assert.ok(results().includes('ex-021'));assert.match(x.q('#picker-results').textContent,/Liegestütze/);}
+  x.input('#picker-search','tbar');x.input('#picker-muscle','Brust');assert.deepEqual(results(),[]);x.input('#picker-muscle','Rücken');assert.ok(results().includes('ex-037'));
+  x.click(act('close-modal'));x.click(act('toggle-language'));x.click(act('pick-exercise'));x.input('#picker-search','Liegestütz');assert.ok(results().includes('ex-021'));assert.match(x.q('#picker-results').textContent,/Push-ups/);
+  for(const language of ['en','de']){
+   if(x.w.document.documentElement.lang!==language){x.click(act('close-modal'));x.click(act('toggle-language'));}
+   for(const ex of x.w.GYM_EXERCISES)for(const name of [ex.name,x.w.GYM_EXERCISES_EN[ex.id].name])assert.ok(x.w.filteredExercises(name,'','').some(found=>found.id===ex.id),`${language}: ${name}`);
+  }
+  assert.deepEqual(x.errors,[]);
+ }finally{x.dom.window.close();}
+});
 test('Vorlagen-Setup validiert Name und Pausen, bricht ohne Entwurf ab und übernimmt getrennte Pausenzeiten',()=>{
  const x=setup();try{
   x.q(act('new-template')).click();assert.ok(x.q('#template-setup-form'));assert.equal(x.q('#editor-form'),null);assert.equal(x.read()?.draft,undefined);

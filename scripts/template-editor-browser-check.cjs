@@ -9,6 +9,9 @@ const server=http.createServer((req,res)=>{const name=new URL(req.url,'http://lo
   const page=await browser.newPage({viewport:{width,height},isMobile:width<700,hasTouch:width<700});page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:'+server.address().port);
   await page.locator('[data-action=new-template]').first().click();assert.equal(await page.locator('#template-setup-form').isVisible(),true);await page.locator('#template-setup-name').fill('Oberkörper A');await page.locator('.template-setup-pauses summary').click();await page.locator('[name=setRest]').fill('75');await page.locator('[name=exerciseRest]').fill('150');await page.screenshot({path:path.join(output,`setup-${width}.png`),fullPage:true});await page.locator('#template-setup-form button[type=submit]').click();assert.equal(await page.locator('#draft-name').inputValue(),'Oberkörper A');
   await page.locator('[data-action=pick-exercise]:visible').first().click();const ids=await page.evaluate(()=>GYM_EXERCISES.filter(e=>e.kind==='reps').slice(0,3).map(e=>e.id));
+  for(const query of ['t-bar','T BAR','tbar','TBar Row']){await page.locator('#picker-search').fill(query);assert.equal(await page.locator('#picker-results [data-id="ex-037"]').count(),1);}
+  for(const query of ['pushup','PUSH-UP','push up']){await page.locator('#picker-search').fill(query);assert.match(await page.locator('#picker-results [data-id="ex-021"] strong').textContent(),/Liegestütze/);}
+  await page.locator('#picker-search').fill('');
   await page.locator(`[data-action=choose-exercise][data-id="${ids[0]}"]`).click();
   assert.equal(await page.locator('.set-type').count(),0);assert.deepEqual(await page.locator('.template-exercise .set-table').first().locator('th').allTextContents(),['Satz','Wdh.','kg','']);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
@@ -50,7 +53,7 @@ const server=http.createServer((req,res)=>{const name=new URL(req.url,'http://lo
   assert.equal(await page.locator('#editor-form').evaluate(el=>el.getAnimations({subtree:true}).length),0);
   await page.locator('#editor-form [data-action=remove-item][data-item="0"]').click();assert.equal(await page.locator('.template-motion-ghost').count(),0);
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('setwerk.v1')).draft.items.length),1);
-  results.push({moveAnimation:true,deleteAnimation:true,reducedMotion:true,setupDialog:true,editablePauses:true,independentCollapse:true,width,height,compactFields:true,insertionOrder:true,persistence:true,noHorizontalScroll:true});await page.close();
+  results.push({bilingualSearch:true,formatIndependentSearch:true,moveAnimation:true,deleteAnimation:true,reducedMotion:true,setupDialog:true,editablePauses:true,independentCollapse:true,width,height,compactFields:true,insertionOrder:true,persistence:true,noHorizontalScroll:true});await page.close();
  }
  assert.deepEqual(errors,[]);console.log(JSON.stringify({results,errors}));
  }finally{await browser.close();server.close();}
