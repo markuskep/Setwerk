@@ -13,9 +13,10 @@ const server=http.createServer((req,res)=>{const name=new URL(req.url,'http://lo
   assert.equal(await page.locator('.set-type').count(),0);assert.deepEqual(await page.locator('.template-exercise .set-table').first().locator('th').allTextContents(),['Satz','Wdh.','kg','']);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   assert.equal(await page.locator('.template-exercise .set-scroll').first().evaluate(el=>el.scrollWidth>el.clientWidth),false);
+  await page.screenshot({path:path.join(output,`editor-single-${width}.png`),fullPage:true});
   if(width<700){
    for(const selector of ['#draft-name','[data-draft=category]','[data-field=reps]','[data-field=weight]','.exercise-rest input','[data-insert="1"]','#editor-form button[type=submit]']){
-    const box=await page.locator(selector+':visible').first().boundingBox(),nav=await page.locator('.bottom-nav').boundingBox();assert(box.y>=0&&box.y+box.height<=nav.y,`important control fits: ${selector} ${width}`);
+    const box=await page.locator(selector+':visible').first().boundingBox(),nav=await page.locator('.bottom-nav').boundingBox();console.log(JSON.stringify({width,selector,box,nav}));assert(box.y>=0&&box.y+box.height<=nav.y,`important control fits: ${selector} ${width}`);
    }
   }
   await page.screenshot({path:path.join(output,`editor-single-${width}.png`),fullPage:true});

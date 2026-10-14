@@ -113,8 +113,8 @@ body.focus-mode{background:var(--tone-101b14)}body.focus-mode #toast{bottom:calc
 
 /* Compact template editor; manual recording and active workouts keep their controls. */
 .template-editor .template-basics{gap:12px;padding:16px;margin-bottom:16px}
-.template-notes{grid-column:1/-1;min-width:0}
-.template-notes>summary,.template-extra>summary{font-size:.8rem;color:var(--muted);cursor:pointer}
+.template-notes{grid-column:1/-1;min-width:0;margin-top:0}
+.template-notes>summary,.template-extra>summary{font-size:.8rem;color:var(--muted);cursor:pointer;padding:4px 0}
 .template-notes textarea{margin-top:8px}
 .template-exercise-toggle{display:flex;align-items:center;gap:8px;text-align:left;width:100%;background:none;padding:0;font-weight:700;overflow-wrap:anywhere}
 .template-exercise-toggle span{min-width:0;flex:1}
@@ -133,13 +133,15 @@ body.focus-mode{background:var(--tone-101b14)}body.focus-mode #toast{bottom:calc
 .template-set-actions>.btn{min-height:36px;padding:6px 0;font-size:.8rem}
 .template-set-actions .exercise-rest{display:flex;align-items:center;gap:6px;font-size:.75rem;min-width:0}
 .template-set-actions .exercise-rest input{width:62px;min-height:34px;padding:6px;font-size:16px}
+.template-extra{margin-top:4px}
 .template-extra>label{margin-top:10px}
 .template-extra>details{margin-top:10px}
 .template-insert{display:flex;justify-content:center}
 .template-insert-button{width:36px;min-width:36px;height:36px;padding:7px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--green)}
 .template-editor .stack{gap:8px}
 @media(max-width:700px){
- .template-editor-mode .app-topbar{padding-top:10px}
+ .template-editor-mode .app-topbar{padding-top:8px}
+ .template-editor-mode .topbar-brand{display:none}
  .template-editor-mode .app-topbar+.main{padding:12px 16px 94px}
  .template-editor .page-head{margin-bottom:12px;gap:10px}
  .template-editor .page-head h1{font-size:1.6rem;margin-bottom:0}
