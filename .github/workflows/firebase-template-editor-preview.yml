@@ -25,7 +25,10 @@ jobs:
       - name: Check mobile editor and exercise insertion in Chromium
         env:
           NODE_PATH: ${{ github.workspace }}/.preview-tools/node_modules
-        run: node scripts/template-editor-browser-check.cjs
+        run: |
+          node scripts/template-editor-browser-check.cjs
+          node scripts/templates-browser-check.cjs
+          node scripts/sport-browser-check.cjs
       - name: Retain editor screenshots
         if: always()
         uses: actions/upload-artifact@v4

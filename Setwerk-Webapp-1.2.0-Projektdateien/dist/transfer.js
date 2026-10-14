@@ -10,6 +10,7 @@ function normalize(input){
  if(!object(input)||input.format!=='setwerk-workout'||input.version!==1||!['template','session'].includes(input.kind))fail();
  const w=input.workout;if(!object(w)||!G.CATEGORIES.includes(w.category)||!Array.isArray(w.items)||w.items.length>50)fail();
  const workout={name:string(w.name,100),category:w.category,notes:string(w.notes,10000,true),items:[]};
+ for(const key of ['setRest','exerciseRest'])if(w[key]!==undefined)workout[key]=number(w[key],0,3600);
  for(const it of w.items){
   const e=it?.exercise;if(!object(e)||!['reps','time','distance'].includes(e.kind)||!Array.isArray(e.instructions)||e.instructions.length>30||!Array.isArray(it.sets)||it.sets.length<1||it.sets.length>50)fail();
   const exercise={id:string(e.id,150),name:string(e.name,100),kind:e.kind,muscle:string(e.muscle,80),equipment:string(e.equipment,80),instructions:e.instructions.map(x=>string(x,1000,true)),custom:e.custom===true};
@@ -32,6 +33,7 @@ function pack(record,kind,catalog,personal=false){
   const e=catalog.find(e=>e.id===it.exerciseId)||{id:it.exerciseId,name:it.exerciseName,kind:it.kind,muscle:'Ganzkörper',equipment:'Keines',instructions:[],custom:true};
   return{exercise:{id:e.id,name:e.name,kind:e.kind,muscle:e.muscle,equipment:e.equipment,instructions:e.instructions||[],custom:!!e.custom},rest:Number(it.rest),notes:personal?it.notes||'':'',sets:it.sets.filter(s=>kind==='template'||s.done).map(s=>({reps:+s.reps,weight:+s.weight,seconds:+s.seconds,distance:+s.distance,type:s.type,rpe:personal?s.rpe:'',rir:personal?s.rir:''}))};
  }).filter(it=>it.sets.length)};
+ for(const key of ['setRest','exerciseRest'])if(record[key]!==undefined)workout[key]=record[key];
  if(record.cardio)workout.cardio=record.cardio;if(record.sport)workout.sport=record.sport;if(kind==='template'&&G.isActivity(record))workout.durationMinutes=record.durationMinutes;
  if(kind==='session'){workout.date=record.date;workout.duration=record.duration;if(personal&&record.feedback)workout.feedback=record.feedback;}
  return normalize({format:'setwerk-workout',version:1,kind,workout});
@@ -47,6 +49,7 @@ function prepareImport(input,target,catalog,now=Date.now()){
  const bundle=normalize(input),w=bundle.workout;
  if(!['template','session'].includes(target)||target==='session'&&bundle.kind!=='session'||target==='template'&&bundle.kind!=='template'&&(!w.items.length||w.cardio))fail();
  const additions=[],mapping=new Map(),record={id:G.uid(),name:w.name,category:w.category,notes:w.notes,items:[]};
+ for(const key of ['setRest','exerciseRest'])if(w[key]!==undefined)record[key]=w[key];
  for(const it of w.items){const e=it.exercise;let ex=mapping.get(e.id);
   if(!ex){const existing=catalog.find(x=>x.id===e.id&&!x.custom&&!e.custom&&x.name===e.name&&x.kind===e.kind)||[...catalog,...additions].find(x=>x.custom&&x.name===e.name&&x.kind===e.kind&&x.muscle===e.muscle&&x.equipment===e.equipment&&JSON.stringify(x.instructions)===JSON.stringify(e.instructions));ex=existing||{...G.clone(e),id:G.uid(),custom:true};if(!existing)additions.push(ex);mapping.set(e.id,ex);}else if(ex.name!==e.name||ex.kind!==e.kind)fail();
   const item=G.item(ex,it.sets.length,it.rest);item.notes=it.notes;item.sets=it.sets.map(s=>({...G.setDefaults(ex.kind),...s,done:target==='session',skipped:false}));record.items.push(item);

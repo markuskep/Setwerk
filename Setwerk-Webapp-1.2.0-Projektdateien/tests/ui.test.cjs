@@ -1,8 +1,26 @@
 // Synthetic mock accounts and TEST_ONLY passwords; no real credentials or accounts.
 const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');
 const {JSDOM,VirtualConsole}=require(process.env.JSDOM_PATH||'jsdom');const root=path.join(__dirname,'../dist');
-function setup(stored=null){const errors=[];const vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e.message));const dom=new JSDOM('<!doctype html><html lang="de"><body><div id="app"></div><dialog id="modal"></dialog><div id="toast"></div></body></html>',{url:'https://setwerk.test/',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;w.scrollTo=()=>{};w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false};if(stored)w.localStorage.setItem('setwerk.v1',JSON.stringify(stored));for(const f of ['exercises.js','exercises-en.js','i18n.js','core.js','transfer.js','app.js']){const s=w.document.createElement('script');s.textContent=fs.readFileSync(path.join(root,f),'utf8');w.document.body.append(s);}const q=s=>w.document.querySelector(s);const click=s=>{assert.ok(q(s),'Element fehlt: '+s);q(s).click()};const input=(s,v)=>{assert.ok(q(s),'Feld fehlt: '+s);q(s).value=String(v);q(s).dispatchEvent(new w.Event('input',{bubbles:true}));q(s).dispatchEvent(new w.Event('change',{bubbles:true}));};const submit=s=>q(s).dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));const read=()=>JSON.parse(w.localStorage.getItem('setwerk.v1'));return{dom,w,q,click,input,submit,read,errors};}
+function setup(stored=null){const errors=[];const vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e.message));const dom=new JSDOM('<!doctype html><html lang="de"><body><div id="app"></div><dialog id="modal"></dialog><div id="toast"></div></body></html>',{url:'https://setwerk.test/',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;w.scrollTo=()=>{};w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false};if(stored)w.localStorage.setItem('setwerk.v1',JSON.stringify(stored));for(const f of ['exercises.js','exercises-en.js','i18n.js','core.js','transfer.js','app.js']){const s=w.document.createElement('script');s.textContent=fs.readFileSync(path.join(root,f),'utf8');w.document.body.append(s);}const q=s=>w.document.querySelector(s);const click=s=>{assert.ok(q(s),'Element fehlt: '+s);q(s).click();if(q('#template-setup-form')){q('#template-setup-name').value='Testvorlage';q('#template-setup-form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));}};const input=(s,v)=>{assert.ok(q(s),'Feld fehlt: '+s);q(s).value=String(v);q(s).dispatchEvent(new w.Event('input',{bubbles:true}));q(s).dispatchEvent(new w.Event('change',{bubbles:true}));};const submit=s=>q(s).dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));const read=()=>JSON.parse(w.localStorage.getItem('setwerk.v1'));return{dom,w,q,click,input,submit,read,errors};}
 const act=n=>`[data-action="${n}"]`;
+test('Vorlagen-Setup validiert Name und Pausen, bricht ohne Entwurf ab und übernimmt getrennte Pausenzeiten',()=>{
+ const x=setup();try{
+  x.q(act('new-template')).click();assert.ok(x.q('#template-setup-form'));assert.equal(x.q('#editor-form'),null);assert.equal(x.read()?.draft,undefined);
+  x.click(act('close-modal'));assert.equal(x.read()?.draft,undefined);
+  x.q(act('new-template')).click();x.submit('#template-setup-form');assert.ok(x.q('#template-setup-form'));assert.match(x.q('#toast').textContent,/Namen/);
+  x.input('#template-setup-name','Pausenplan');x.input('[name=setRest]',75);x.input('[name=exerciseRest]',-1);x.submit('#template-setup-form');assert.ok(x.q('#template-setup-form'));
+  x.input('[name=exerciseRest]',150);x.submit('#template-setup-form');assert.equal(x.read().draft.name,'Pausenplan');assert.equal(x.read().draft.setRest,75);assert.equal(x.read().draft.exerciseRest,150);
+  const ids=Array.from(x.w.GYM_EXERCISES.filter(e=>e.kind==='reps').slice(0,2),e=>e.id);
+  for(const id of ids){x.click(act('pick-exercise'));x.click(`[data-action=choose-exercise][data-id="${id}"]`);}
+  assert.deepEqual(x.read().draft.items.map(it=>it.rest),[75,75]);
+  x.click('[data-action=toggle-template-item][data-item="0"]');assert.equal(x.q('[data-template-item="0"]').classList.contains('is-expanded'),false);assert.equal(x.q('[data-template-item="1"]').classList.contains('is-expanded'),true);
+  x.click('[data-action=toggle-template-item][data-item="0"]');assert.equal(x.q('[data-template-item="0"]').classList.contains('is-expanded'),true);
+  x.click(act('template-pauses'));x.input('[name=setRest]',0);x.input('[name=exerciseRest]',180);x.submit('#template-rest-form');assert.deepEqual(x.read().draft.items.map(it=>it.rest),[0,0]);
+  x.submit('#editor-form');const t=x.read().templates[0];assert.equal(t.setRest,0);assert.equal(t.exerciseRest,180);
+  const y=setup(x.read());try{y.click('[data-action=nav][data-route=templates]');y.click(act('edit-template'));assert.match(y.q('.template-rest-settings').textContent,/180 s/);assert.equal(y.read().draft.setRest,0);}finally{y.dom.window.close();}
+  assert.deepEqual(x.errors,[]);
+ }finally{x.dom.window.close();}
+});
 test('Kompakte Vorlagen fügen Übungen an der gewählten Stelle ein und behalten Werte nach Reload',()=>{
  const x=setup();try{
   x.click(act('new-template'));x.input('#draft-name','Kompakter Plan');
@@ -13,7 +31,7 @@ test('Kompakte Vorlagen fügen Übungen an der gewählten Stelle ein und behalte
   x.input('[data-item="0"][data-set="0"][data-field="weight"]',42.5);
   add(ids[1],'[data-insert="1"]');
   assert.deepEqual(x.read().draft.items.map(it=>it.exerciseId),ids);
-  assert.equal(x.q('.template-exercise.is-expanded').dataset.templateItem,'1');
+  assert.ok(x.q('[data-template-item="1"]').classList.contains('is-expanded'));
   assert.equal(x.q('.set-type'),null);assert.equal(x.q('[data-field="type"]'),null);
   assert.deepEqual([...x.q('.set-table thead').querySelectorAll('th')].map(el=>el.textContent).filter(Boolean),['Satz','Wdh.','kg']);
   assert.equal(x.w.document.querySelectorAll('.template-insert-button').length,3);
@@ -31,8 +49,8 @@ test('Abgebrochene Einfügung beeinflusst späteres Anhängen nicht; eigene Übu
   assert.deepEqual(x.read().draft.items.map(it=>it.exerciseId),[...ids,ids[0]]);
   x.click('[data-insert="1"]');x.click(act('custom-exercise'));x.input('[name="name"]','Neue Übung');x.input('[name="equipment"]','Hantel');x.submit('#custom-form');
   assert.equal(x.read().draft.items[1].exerciseName,'Neue Übung');
-  x.click('[data-action="move-item"][data-item="1"][data-dir="1"]');assert.equal(x.q('.template-exercise.is-expanded').dataset.templateItem,'2');
-  x.click('[data-action="remove-item"][data-item="0"]');assert.equal(x.q('.template-exercise.is-expanded').dataset.templateItem,'1');
+  x.click('[data-action="move-item"][data-item="1"][data-dir="1"]');assert.ok(x.q('[data-template-item="2"]').classList.contains('is-expanded'));
+  x.click('[data-action="remove-item"][data-item="0"]');assert.ok(x.q('[data-template-item="1"]').classList.contains('is-expanded'));
   assert.deepEqual(x.errors,[]);
  }finally{x.dom.window.close();}
 });

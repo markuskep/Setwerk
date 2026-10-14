@@ -36,7 +36,7 @@ const server = http.createServer((req,res) => {
       await page.locator('.template-import').click();
       await page.locator('#workout-import-code').waitFor();
       await page.locator('[data-action=close-modal]').click();
-      await page.locator('[data-action=new-template]').click();
+      await page.locator('[data-action=new-template]').click();await page.locator('#template-setup-name').fill('Testvorlage');await page.locator('#template-setup-form button[type=submit]').click();
       await page.locator('#draft-name').waitFor();
       await page.locator('#draft-name').fill('Mobiler Testplan');
       await page.locator('[data-draft=category]').selectOption('Ballsport');

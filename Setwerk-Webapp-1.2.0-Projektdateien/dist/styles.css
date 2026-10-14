@@ -167,3 +167,30 @@ body.focus-mode{background:var(--tone-101b14)}body.focus-mode #toast{bottom:calc
  .template-editor .save-bar .btn{min-height:42px;padding:8px 10px;font-size:.8rem}
  .template-editor .save-bar .icon{width:16px;height:16px}
 }
+
+/* Template setup and independently collapsible exercise panels. */
+.template-editor .template-exercise:not(.is-expanded)>.exercise-edit-body{display:none}
+.template-editor .template-exercise-toggle>.icon{display:block;width:16px;height:16px}
+.template-editor .template-exercise.is-expanded .template-exercise-toggle>.icon{transform:rotate(180deg)}
+.template-rest-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0}
+.template-rest-settings>.btn{display:flex;align-items:flex-start;flex-direction:column;gap:3px;text-align:left;min-height:48px;padding:8px 12px}
+.template-rest-settings span{font-size:.75rem;color:var(--muted)}
+.template-rest-settings strong{font-size:.9rem}
+.template-setup-pauses .grid2{margin-top:8px}
+.template-setup-pauses{margin-top:0}
+.template-editor .exercise-edit-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 8px;align-items:start}
+.template-editor .exercise-edit-body>.set-scroll{grid-column:1/-1}
+.template-editor .template-set-actions{margin:0}
+.template-editor .template-extra{margin-top:0;text-align:right}
+.template-editor .template-extra>summary{padding:10px 0}
+.template-editor .template-extra[open]{grid-column:1/-1;text-align:left}
+.template-editor .template-extra .exercise-rest{margin-top:10px}
+@media(max-width:700px){
+ .template-editor .page-head .icon-btn{height:32px;min-width:32px;padding:6px}
+ .template-editor .template-basics{padding:10px;gap:6px;margin-bottom:6px}
+ .template-editor .template-basics input,.template-editor .template-basics select{min-height:34px;padding:6px}
+ .template-editor .template-rest-settings>.btn{padding:6px 8px;min-height:44px}
+ .template-editor .template-rest-settings{margin:6px 0}
+ .template-editor .section-title{margin-top:8px}
+ #template-setup-form .grid2,#template-rest-form .grid2{grid-template-columns:1fr;gap:12px}
+}

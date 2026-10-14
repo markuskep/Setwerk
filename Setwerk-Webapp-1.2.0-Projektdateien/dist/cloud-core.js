@@ -30,7 +30,7 @@
         if(key==='customExercises'){
           if(!['reps','time','distance'].includes(record.kind)||typeof record.muscle!=='string'||typeof record.equipment!=='string'||!Array.isArray(record.instructions)||record.instructions.some(s=>typeof s!=='string'||s.length>10000))throw Error('Invalid exercise');
         }else{
-          if(!G.CATEGORIES.includes(record.category))throw Error('Invalid category');
+          if(!G.CATEGORIES.includes(record.category))throw Error('Invalid category');G.validateRestSettings(record);
           if(!Array.isArray(record.items)||record.items.length>300)throw Error('Invalid exercises');
           for(const item of record.items){
             if(!item||!Array.isArray(item.sets)||item.sets.length>100||typeof item.exerciseId!=='string'||! /^[A-Za-z0-9_-]{1,100}$/.test(item.exerciseId)||typeof item.exerciseName!=='string'||!['reps','time','distance'].includes(item.kind)||!Number.isFinite(item.rest)||item.rest<0||item.rest>3600)throw Error('Invalid sets');
