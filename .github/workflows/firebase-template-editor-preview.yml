@@ -1,0 +1,42 @@
+name: Preview compact Setwerk template editor
+on:
+  push:
+    branches: [preview/template-editor-mobile-20261014]
+permissions:
+  contents: read
+concurrency:
+  group: setwerk-template-editor-preview
+  cancel-in-progress: true
+jobs:
+  preview:
+    if: github.ref == 'refs/heads/preview/template-editor-mobile-20261014'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Check template editing and existing application behavior
+        run: npm ci && npm test
+      - name: Install browser tools
+        run: npm install --prefix .preview-tools --no-package-lock --ignore-scripts playwright@1.62.1 && .preview-tools/node_modules/.bin/playwright install --with-deps chromium
+      - name: Check mobile editor and exercise insertion in Chromium
+        env:
+          NODE_PATH: ${{ github.workspace }}/.preview-tools/node_modules
+        run: node scripts/template-editor-browser-check.cjs
+      - name: Retain editor screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: template-editor-mobile-review
+          path: ${{ runner.temp }}/setwerk-template-editor
+      - name: Create Firebase preview for review
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SETWERK_CB1E0 }}
+          projectId: setwerk-cb1e0
+          channelId: template-editor-mobile
+          expires: 7d
+          entryPoint: .
