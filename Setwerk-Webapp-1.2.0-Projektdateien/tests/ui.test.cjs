@@ -1,8 +1,59 @@
 // Synthetic mock accounts and TEST_ONLY passwords; no real credentials or accounts.
 const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');
 const {JSDOM,VirtualConsole}=require(process.env.JSDOM_PATH||'jsdom');const root=path.join(__dirname,'../dist');
-function setup(stored=null){const errors=[];const vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e.message));const dom=new JSDOM('<!doctype html><html lang="de"><body><div id="app"></div><dialog id="modal"></dialog><div id="toast"></div></body></html>',{url:'https://setwerk.test/',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;w.scrollTo=()=>{};w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false};if(stored)w.localStorage.setItem('setwerk.v1',JSON.stringify(stored));for(const f of ['exercises.js','exercises-en.js','i18n.js','core.js','transfer.js','app.js']){const s=w.document.createElement('script');s.textContent=fs.readFileSync(path.join(root,f),'utf8');w.document.body.append(s);}const q=s=>w.document.querySelector(s);const click=s=>{assert.ok(q(s),'Element fehlt: '+s);q(s).click()};const input=(s,v)=>{assert.ok(q(s),'Feld fehlt: '+s);q(s).value=String(v);q(s).dispatchEvent(new w.Event('input',{bubbles:true}));q(s).dispatchEvent(new w.Event('change',{bubbles:true}));};const submit=s=>q(s).dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));const read=()=>JSON.parse(w.localStorage.getItem('setwerk.v1'));return{dom,w,q,click,input,submit,read,errors};}
+function setup(stored=null){const errors=[];const vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e.message));const dom=new JSDOM('<!doctype html><html lang="de"><body><div id="app"></div><dialog id="modal"></dialog><div id="toast"></div></body></html>',{url:'https://setwerk.test/',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:vc});const w=dom.window;w.scrollTo=()=>{};w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false};if(stored)w.localStorage.setItem('setwerk.v1',JSON.stringify(stored));for(const f of ['exercises.js','exercises-en.js','i18n.js','core.js','transfer.js','app.js']){const s=w.document.createElement('script');s.textContent=fs.readFileSync(path.join(root,f),'utf8');w.document.body.append(s);}const q=s=>w.document.querySelector(s);const click=s=>{assert.ok(q(s),'Element fehlt: '+s);q(s).click();if(q('#template-setup-form')){q('#template-setup-name').value='Testvorlage';q('#template-setup-form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));}};const input=(s,v)=>{assert.ok(q(s),'Feld fehlt: '+s);q(s).value=String(v);q(s).dispatchEvent(new w.Event('input',{bubbles:true}));q(s).dispatchEvent(new w.Event('change',{bubbles:true}));};const submit=s=>q(s).dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));const read=()=>JSON.parse(w.localStorage.getItem('setwerk.v1'));return{dom,w,q,click,input,submit,read,errors};}
 const act=n=>`[data-action="${n}"]`;
+test('Vorlagen-Setup validiert Name und Pausen, bricht ohne Entwurf ab und übernimmt getrennte Pausenzeiten',()=>{
+ const x=setup();try{
+  x.q(act('new-template')).click();assert.ok(x.q('#template-setup-form'));assert.equal(x.q('#editor-form'),null);assert.equal(x.read()?.draft,undefined);
+  x.click(act('close-modal'));assert.equal(x.read()?.draft,undefined);
+  x.q(act('new-template')).click();x.submit('#template-setup-form');assert.ok(x.q('#template-setup-form'));assert.match(x.q('#toast').textContent,/Namen/);
+  x.input('#template-setup-name','Pausenplan');x.input('[name=setRest]',75);x.input('[name=exerciseRest]',-1);x.submit('#template-setup-form');assert.ok(x.q('#template-setup-form'));
+  x.input('[name=exerciseRest]',150);x.submit('#template-setup-form');assert.equal(x.read().draft.name,'Pausenplan');assert.equal(x.read().draft.setRest,75);assert.equal(x.read().draft.exerciseRest,150);
+  const ids=Array.from(x.w.GYM_EXERCISES.filter(e=>e.kind==='reps').slice(0,2),e=>e.id);
+  for(const id of ids){x.click(act('pick-exercise'));x.click(`[data-action=choose-exercise][data-id="${id}"]`);}
+  assert.deepEqual(x.read().draft.items.map(it=>it.rest),[75,75]);
+  x.click('[data-action=toggle-template-item][data-item="0"]');assert.equal(x.q('[data-template-item="0"]').classList.contains('is-expanded'),false);assert.equal(x.q('[data-template-item="1"]').classList.contains('is-expanded'),true);
+  x.click('[data-action=toggle-template-item][data-item="0"]');assert.equal(x.q('[data-template-item="0"]').classList.contains('is-expanded'),true);
+  x.click(act('template-pauses'));x.input('[name=setRest]',0);x.input('[name=exerciseRest]',180);x.submit('#template-rest-form');assert.deepEqual(x.read().draft.items.map(it=>it.rest),[0,0]);
+  x.submit('#editor-form');const t=x.read().templates[0];assert.equal(t.setRest,0);assert.equal(t.exerciseRest,180);
+  const y=setup(x.read());try{y.click('[data-action=nav][data-route=templates]');y.click(act('edit-template'));assert.match(y.q('.template-rest-settings').textContent,/180 s/);assert.equal(y.read().draft.setRest,0);}finally{y.dom.window.close();}
+  assert.deepEqual(x.errors,[]);
+ }finally{x.dom.window.close();}
+});
+test('Kompakte Vorlagen fügen Übungen an der gewählten Stelle ein und behalten Werte nach Reload',()=>{
+ const x=setup();try{
+  x.click(act('new-template'));x.input('#draft-name','Kompakter Plan');
+  const ids=Array.from(x.w.GYM_EXERCISES.filter(e=>e.kind==='reps').slice(0,3),e=>e.id);
+  const add=(id,selector=act('pick-exercise'))=>{x.click(selector);x.click(`[data-action="choose-exercise"][data-id="${id}"]`);};
+  add(ids[0]);add(ids[2]);
+  x.input('[data-item="0"][data-set="0"][data-field="reps"]',12);
+  x.input('[data-item="0"][data-set="0"][data-field="weight"]',42.5);
+  add(ids[1],'[data-insert="1"]');
+  assert.deepEqual(x.read().draft.items.map(it=>it.exerciseId),ids);
+  assert.ok(x.q('[data-template-item="1"]').classList.contains('is-expanded'));
+  assert.equal(x.q('.set-type'),null);assert.equal(x.q('[data-field="type"]'),null);
+  assert.deepEqual([...x.q('.set-table thead').querySelectorAll('th')].map(el=>el.textContent).filter(Boolean),['Satz','Wdh.','kg']);
+  assert.equal(x.w.document.querySelectorAll('.template-insert-button').length,3);
+  x.click('[data-action="add-set"][data-item="1"]');assert.equal(x.read().draft.items[1].sets.length,4);
+  x.click('[data-action="remove-set"][data-item="1"][data-set="3"]');
+  const y=setup(x.read());try{y.click(act('resume-draft'));assert.deepEqual(y.read().draft.items.map(it=>it.exerciseId),ids);y.submit('#editor-form');const t=y.read().templates[0];assert.deepEqual(t.items.map(it=>it.exerciseId),ids);assert.equal(t.items[0].sets[0].reps,12);assert.equal(t.items[0].sets[0].weight,42.5);}finally{y.dom.window.close();}
+  assert.deepEqual(x.errors,[]);
+ }finally{x.dom.window.close();}
+});
+test('Abgebrochene Einfügung beeinflusst späteres Anhängen nicht; eigene Übungen werden dazwischen eingefügt',()=>{
+ const x=setup();try{
+  x.click(act('new-template'));x.input('#draft-name','Einfügen');const ids=Array.from(x.w.GYM_EXERCISES.filter(e=>e.kind==='reps').slice(0,2),e=>e.id);
+  for(const id of ids){x.click(act('pick-exercise'));x.click(`[data-action="choose-exercise"][data-id="${id}"]`);}
+  x.click('[data-insert="1"]');x.click(act('close-modal'));x.click(act('pick-exercise'));x.click(`[data-action="choose-exercise"][data-id="${ids[0]}"]`);
+  assert.deepEqual(x.read().draft.items.map(it=>it.exerciseId),[...ids,ids[0]]);
+  x.click('[data-insert="1"]');x.click(act('custom-exercise'));x.input('[name="name"]','Neue Übung');x.input('[name="equipment"]','Hantel');x.submit('#custom-form');
+  assert.equal(x.read().draft.items[1].exerciseName,'Neue Übung');
+  x.click('[data-action="move-item"][data-item="1"][data-dir="1"]');assert.ok(x.q('[data-template-item="2"]').classList.contains('is-expanded'));
+  x.click('[data-action="remove-item"][data-item="0"]');assert.ok(x.q('[data-template-item="1"]').classList.contains('is-expanded'));
+  assert.deepEqual(x.errors,[]);
+ }finally{x.dom.window.close();}
+});
 function workoutState(completed=0,partial=false){const G=require('../dist/core.js'),s=G.fresh();s.active=G.start({id:'plan',name:'Abbruchtest',category:'Kraft',items:[0,1,2].map(i=>G.item({id:'test-'+i,name:'Übung '+i,kind:'reps'},2,0))});for(let i=0;i<completed*2+(partial?1:0);i++)G.complete(s.active);return s;}
 test('Focus Mode füllt die Seite ohne Website-Navigation und behält die eigene URL',()=>{const x=setup(workoutState(1));try{assert.equal(x.w.location.hash,'#focus');assert.ok(x.q('#app>.focus-shell'));assert.equal(x.w.document.querySelectorAll('main').length,1);assert.ok(x.w.document.body.classList.contains('focus-mode'));for(const selector of ['.app-shell','.sidebar','.app-topbar','.bottom-nav','.focus-breadcrumb','.active-workout-banner','[data-auth-open]','[data-action="toggle-language"]'])assert.equal(x.q(selector),null,selector);x.w.history.replaceState(null,'','#home');x.w.dispatchEvent(new x.w.PopStateEvent('popstate'));assert.ok(x.q('.active-workout-banner'));assert.equal(x.w.document.body.classList.contains('focus-mode'),false);assert.equal(x.read().active.items[0].sets[0].done,true);x.click('.active-workout-banner '+act('resume'));assert.equal(x.w.location.hash,'#focus');assert.ok(x.q('#app>.focus-shell'));assert.equal(x.q('.sidebar'),null);assert.equal(x.q('#modal').open,false);assert.deepEqual(x.errors,[]);}finally{x.dom.window.close();}});
 test('Abbruch fragt zuerst mit genau zwei Buttons; Zurück und Schließen erhalten das Training',()=>{const x=setup(workoutState(2,true));try{const before=x.read().active;x.click(act('early-end'));assert.match(x.q('#modal p').textContent,/Möchtest du das Training abbrechen/);const buttons=x.w.document.querySelectorAll('.training-end-actions button');assert.deepEqual([...buttons].map(b=>b.textContent),['Training beenden','Zurück']);x.click('.training-end-actions '+act('close-modal'));assert.deepEqual(x.read().active,before);x.click(act('early-end'));x.click(act('confirm-end-active'));assert.ok(x.q(act('save-active')));x.click(act('close-modal'));assert.deepEqual(x.read().active,before);assert.equal(x.read().sessions.length,0);assert.deepEqual(x.errors,[]);}finally{x.dom.window.close();}});

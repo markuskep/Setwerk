@@ -2,6 +2,9 @@
  * opaque slots: names, notes, IDs and form values are never translated. */
 window.SetwerkI18n=(()=>{
  const EN={
+ 'Pausen (optional)':'Rest periods (optional)','Zwischen Sätzen (Sekunden)':'Between sets (seconds)','Zwischen Übungen (Sekunden)':'Between exercises (seconds)','Zwischen Sätzen':'Between sets','Zwischen Übungen':'Between exercises','Pausen ändern':'Edit rest periods','Pausen':'Rest periods','Individuell':'Individual','Ohne Eingabe: 120 Sekunden. Mit 0 überspringst du die Pause.':'Default: 120 seconds. Enter 0 to skip the rest period.',
+
+ 'Weitere Optionen':'More options',
  'Personalisieren':'Personalize','Minimieren':'Minimize','Vergrößern':'Expand','Schritte ändern':'Edit steps','Starkes Workout!':'Great workout!','Training abschließen':'Finish workout','PR im Training anzeigen':'Show personal records during workouts','Farbschema wählen':'Choose color scheme','PR: Noch kein Rekord':'PR: No record yet',
 
  'Deine gespeicherten Daten konnten nicht gelesen werden. Es wird nichts überschrieben. Bitte die App neu öffnen.':'Your saved data could not be read. Nothing will be overwritten. Please reopen the app.',
