@@ -22,8 +22,8 @@
       "android_adapter": false
     },
     "app.js": {
-      "web_sha256": "f06b0ea85b52bd8604526cd633f1739a16ffb785ca33f97f4dd2d1e88e73b9eb",
-      "android_sha256": "e912230ed3573ffd376756652a37444d33dfebe51a3c4cea12ef961219dff340",
+      "web_sha256": "af495542859838648d9fe10419bf38c786429ac3a57b5f3dade410c5d94c03bf",
+      "android_sha256": "757e408d00f12b0f79a29d0b63ac9585bfdb74dc92e6e7e97fc7f76cffed9d5f",
       "android_adapter": true
     },
     "avatar-default.svg": {
@@ -97,8 +97,8 @@
       "android_adapter": true
     },
     "styles.css": {
-      "web_sha256": "68fa6804648d5b30387d4a7d42c8188801e0d2d32213549ae27dc57bf2cf7910",
-      "android_sha256": "68fa6804648d5b30387d4a7d42c8188801e0d2d32213549ae27dc57bf2cf7910",
+      "web_sha256": "1333f6b27d09086beedff86e800c8cdee4734d121049c8d051b7fcf4af58a327",
+      "android_sha256": "1333f6b27d09086beedff86e800c8cdee4734d121049c8d051b7fcf4af58a327",
       "android_adapter": false
     },
     "auth.js": {
@@ -124,12 +124,13 @@
       "android_adapter": true
     },
     "android-music.js": {
-      "android_sha256": "48c1633d0a36b79ea311b96e9f4510d9373ce190628e46de6a36a14b404aa4f2",
+      "android_sha256": "995c66b91e3a8aa84f1ccc5d8772c3d594db7f03710105f22dfaffa0b42803a1",
       "android_adapter": true
     },
     "android-music.css": {
       "android_sha256": "35fe894e90604a53e1b7acde1984e6ff6e3037d1202ab1b7c5def93bc49502eb",
       "android_adapter": true
     }
-  }
+  },
+  "webSourceModified": true
 }

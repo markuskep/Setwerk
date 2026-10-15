@@ -38,3 +38,13 @@ test('source logo and name follow the active music app and reject external image
  const png='data:image/png;base64,iVBORw0KGgo=';const x=setup({...fixture(),appName:'Spotify',appIcon:png});
  try{await settle();assert.equal(x.q('.music-source small').textContent,'Spotify');assert.equal(x.q('.music-source-icon').getAttribute('src'),png);assert.equal(x.q('.music-source-icon').getAttribute('alt'),'');x.setState({...fixture(),sessionKey:'youtube:2',appName:'YouTube Music',appIcon:png});await x.w.SetwerkMusic.refresh();assert.equal(x.q('.music-source small').textContent,'YouTube Music');x.setState({...fixture(),appName:'Other player',appIcon:'https://untrusted.test/icon.png'});await x.w.SetwerkMusic.refresh();assert.equal(x.q('.music-source-icon'),null);assert.ok(x.q('.music-source svg'));assert.equal(x.q('.music-source small').textContent,'Other player');}finally{x.dom.window.close();}
 });
+
+test('exercise list hides music through navigation snapshots and restores it on return',async()=>{
+ const x=setup();try{await settle();assert.ok(x.q('#setwerk-music'));
+ const main=x.q('.focus-main');main.innerHTML='<div class="focus-workout-list">Übungen</div>';
+ x.w.dispatchEvent(new x.w.Event('setwerk:render'));await settle();assert.equal(x.q('#setwerk-music'),null);
+ await x.w.SetwerkMusic.refresh();assert.equal(x.q('#setwerk-music'),null);
+ const snapshot=x.w.document.createElement('div');snapshot.className='focus-shell focus-navigation-snapshot';snapshot.innerHTML=main.innerHTML;x.w.document.body.prepend(snapshot);main.innerHTML='Workout';
+ x.w.dispatchEvent(new x.w.Event('setwerk:render'));await settle();assert.ok(x.q('#setwerk-music'));assert.equal(snapshot.querySelector('#setwerk-music'),null);
+ }finally{x.dom.window.close();}
+});

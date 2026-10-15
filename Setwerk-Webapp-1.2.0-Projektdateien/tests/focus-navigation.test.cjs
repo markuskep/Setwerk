@@ -77,3 +77,12 @@ test('Ziehen nach unten bleibt getrennt von Wisch-Navigation und leere Spontantr
  use(fixture(),x=>{const before=x.read().active.items.map(it=>it.uid);x.click(act('focus-exercises'));geometry(x);const handle=x.q(`[data-focus-handle="${before[0]}"]`);pointer(x,handle,'pointerdown',120);pointer(x,handle,'pointermove',340);pointer(x,handle,'pointerup',340);assert.deepEqual(x.read().active.items.map(it=>it.uid),[before[1],before[2],before[0]]);assert.equal(x.read().active.focusExerciseUid,before[0]);assert.ok(x.q('#app .focus-exercise-list'));});
  const s=G.fresh();s.active=G.spontaneous();use(s,x=>{x.click(act('focus-exercises'));assert.ok(x.q(act('add-focus-exercise')));x.click(act('add-focus-exercise'));x.click('#picker-results [data-action=choose-exercise]');assert.equal(x.read().active.items.length,1);assert.equal(x.q('#app .focus-row-count').textContent,'0/3');});
 });
+
+test('Übungszeilen erlauben Wischen in beide Richtungen; Tippen bleibt Auswahl und Wischklick wird abgefangen',()=>use(fixture(),x=>{
+ x.click(act('focus-exercises'));const row=x.q('#app .focus-row-select'),id=x.read().active.focusExerciseUid;
+ x.swipe(row,-100);assert.ok(x.q('#app .focus-workout-list'));assert.equal(x.read().active.focusExerciseUid,id);
+ const click=new x.w.MouseEvent('click',{bubbles:true,cancelable:true,detail:1});row.dispatchEvent(click);assert.equal(click.defaultPrevented,true);assert.ok(x.q('#app .focus-workout-list'));
+ x.swipe(row,100);assert.equal(x.q('#app .focus-workout-list'),null);
+ x.click(act('focus-exercises'));x.swipe(x.q('#app .focus-row-select'),10,120);assert.ok(x.q('#app .focus-workout-list'));
+ x.click('#app .focus-row-select');assert.equal(x.q('#app .focus-workout-list'),null);
+}));

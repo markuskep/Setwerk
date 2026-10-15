@@ -225,9 +225,11 @@ function renderFocusNavigation(direction){
 function closeFocusExercises(){focusListOpen=false;renderFocusNavigation('back');$('.focus-list-button')?.focus();}
 function showFocusExercises(){if(route!=='focus'||!state.active||G.isActivity(state.active)||focusListOpen)return;focusListOpen=true;renderFocusNavigation('forward');$('#focus-list-title')?.focus({preventScroll:true});}
 function selectFocusExercise(id){const a=state.active;if(!a||!a.items.some(it=>it.uid===id))return;stopExerciseClock();if(!G.selectFocusExercise(a,id))return;focusListOpen=false;if(a.rest)a.rest.minimized=true;save();renderFocusNavigation('back');$('.focus-main h1')?.setAttribute('tabindex','-1');$('.focus-main h1')?.focus({preventScroll:true});}
-// Keep vertical scrolling and ignore controls, dialogs and native music gestures.
-document.addEventListener('pointerdown',e=>{focusSwipe=null;if(e.isPrimary===false||e.button!==0||route!=='focus'||!e.target.closest('.focus-shell')||e.target.closest('button,a,input,select,textarea,[role="slider"],.music-player,dialog'))return;focusSwipe={id:e.pointerId,x:e.clientX,y:e.clientY};});
-document.addEventListener('pointerup',e=>{const start=focusSwipe;focusSwipe=null;if(!start||start.id!==e.pointerId||$('#modal')?.open)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;if(dx<-60&&Math.abs(dx)>Math.abs(dy)*1.4)showFocusExercises();else if(focusListOpen&&dx>60&&Math.abs(dx)>Math.abs(dy)*1.4){closeFocusExercises();}});
+// Exercise rows allow navigation swipes while drag handles and other controls keep their gestures.
+let focusSwipeClickUntil=0;
+document.addEventListener('pointerdown',e=>{focusSwipe=null;if(e.isPrimary===false||e.button!==0||route!=='focus'||!e.target.closest('.focus-shell')||e.target.closest('a,input,select,textarea,[role="slider"],.music-player,dialog,[data-focus-handle]')||e.target.closest('button:not(.focus-row-select)'))return;focusSwipe={id:e.pointerId,x:e.clientX,y:e.clientY};});
+document.addEventListener('pointerup',e=>{const start=focusSwipe;focusSwipe=null;if(!start||start.id!==e.pointerId||$('#modal')?.open||focusDrag)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;if(Math.abs(dx)<=60||Math.abs(dx)<=Math.abs(dy)*1.4)return;focusSwipeClickUntil=Date.now()+400;if(dx<0)showFocusExercises();else if(focusListOpen)closeFocusExercises();});
+document.addEventListener('click',e=>{if(e.detail!==0&&Date.now()<focusSwipeClickUntil&&e.target.closest('.focus-shell')){e.preventDefault();e.stopImmediatePropagation();}},{capture:true});
 document.addEventListener('pointercancel',()=>{focusSwipe=null;});
 function focus(){
  const a=state.active;if(!a)return home();if(G.isActivity(a))return activityFocus(a);
