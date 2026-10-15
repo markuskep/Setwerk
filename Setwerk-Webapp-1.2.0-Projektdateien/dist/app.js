@@ -1,7 +1,7 @@
 /* Setwerk – gemeinsame Oberfläche für Android und Browser. */
 'use strict';
 const G=GymCore,$=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-let restAudio=null,restAudioNodes=[],focusListOpen=false,focusSwipe=null;
+let restAudio=null,restAudioNodes=[],focusListOpen=false,focusSwipe=null,focusDrag=null;
 const KEY='setwerk.v1';let storageFault=false,writeFault=false;
 function readState(){try{const raw=window.AndroidGym?AndroidGym.readState():window.SetwerkCloud?SetwerkCloud.readState():localStorage.getItem(KEY);if(!raw)return G.fresh();const s=JSON.parse(raw);if(s.version!==1||!Array.isArray(s.templates)||!Array.isArray(s.sessions))throw Error();return G.migrateState(s);}catch(e){storageFault=true;return G.fresh();}}
 let state=readState(),route=state.active?'focus':'home',draft=state.draft||null,selectedDate=G.localDate(),calMonth=selectedDate.slice(0,7),manualMonth=calMonth,search='',muscle='',equipment='',limit=60,selectedExercise='',pickerTarget='',pickerInsertIndex=null,openTemplateItems=null,pickerSearch='',pickerMuscle='',modalKind='',viewSession='',toastTimer,exerciseClock=null,wakeLock=null,lastFocus='',nextMotion='',feedbackTarget='',feedbackDraft=null;
@@ -157,11 +157,7 @@ function activityFocus(a){return `<div class="focus-shell"><header class="focus-
 function openActivityFinish(){const a=state.active;if(!a)return;const c=a.cardio,minutes=a.actualDurationSeconds?a.actualDurationSeconds/60:Math.max(0.1,Math.round((Date.now()-a.startedAt)/6000)/10);openModal('Training abschließen',`<form id="activity-finish-form" class="inline-form"><label>Dauer (Minuten)<input name="minutes" type="number" min="0.1" step="0.1" value="${minutes}" required></label>${c&&G.cardioHasDistance(c.type)?`<label>Erreichte Distanz (km, optional)<input name="distanceKm" type="number" min="0" step="0.001" value="${a.actualDurationSeconds&&c.distanceMeters!=null?c.distanceMeters/1000:''}"></label>`:''}${c&&G.cardioHasElevation(c.type)?`<label>Höhenmeter (optional)<input name="elevationM" type="number" min="0" step="1" value="${a.actualDurationSeconds&&c.elevationMeters!=null?c.elevationMeters:''}"></label>`:''}<label>Notizen<textarea name="notes">${esc(a.notes)}</textarea></label><button class="btn accent" type="submit">Weiter zum Trainingsgefühl</button>${btn('Zum laufenden Training zurück','resume','outline')}</form>`,'activity-finish');}
 function focusExerciseList(a){
  const current=a.focusExerciseUid||a.items[G.next(a)?.i]?.uid;
- return `<div class="focus-workout-list"><div class="eyebrow">DEIN WORKOUT</div><h1 id="focus-list-title" tabindex="-1">Alle Übungen</h1><div class="focus-exercise-list">${a.items.map((it,i)=>{const progress=G.exerciseStatus(it),status=progress.status==='pending'&&it.uid===current&&!a.focusNeedsStart?'started':progress.status;return `<div class="focus-exercise-row is-${status}"><button type="button" class="focus-row-select" data-action="select-focus-exercise" data-id="${esc(it.uid)}" ${it.uid===current?'aria-current="true"':''} aria-label="${esc(itemName(it))}, ${progress.done}/${progress.total}, ${tr(status==='completed'?'Abgeschlossen':status==='started'?'Angefangen':'Noch nicht gestartet')}"><span class="focus-row-number" aria-hidden="true">${i+1}</span><span class="focus-row-name">${esc(itemName(it))}</span><span class="focus-row-count" aria-hidden="true">${progress.done}/${progress.total}</span>${icon('chevron')}</button>${ib('grip',tr('Übung verschieben')+': '+esc(itemName(it)),'open-focus-move',`data-id="${esc(it.uid)}"`,'focus-row-move')}</div>`;}).join('')}</div><div class="focus-list-add">${ib('plus','Übung hinzufügen','add-focus-exercise','','focus-add-exercise')}</div></div>`;
-}
-function openFocusMove(id){
- const a=state.active,index=a?.items.findIndex(it=>it.uid===id);if(index===undefined||index<0)return;
- openModal('Übung verschieben',`<form id="focus-move-form" class="inline-form"><input type="hidden" name="itemId" value="${esc(id)}"><p class="meta">${esc(itemName(a.items[index]))}</p><label>Position<select name="position">${a.items.map((it,i)=>`<option value="${i}" ${i===index?'selected':''}>${i+1} · ${esc(itemName(it))}</option>`).join('')}</select></label><div class="modal-actions"><button type="submit" class="btn accent">Verschieben</button>${btn('Abbrechen','close-modal','outline')}</div></form>`,'focus-move');
+ return `<div class="focus-workout-list"><div class="eyebrow">DEIN WORKOUT</div><h1 id="focus-list-title" tabindex="-1">Alle Übungen</h1><div class="focus-exercise-list">${a.items.map((it,i)=>{const progress=G.exerciseStatus(it),status=progress.status==='pending'&&it.uid===current&&!a.focusNeedsStart?'started':progress.status;return `<div class="focus-exercise-row is-${status}" data-focus-row="${esc(it.uid)}"><button type="button" class="focus-row-select" data-action="select-focus-exercise" data-id="${esc(it.uid)}" ${it.uid===current?'aria-current="true"':''} aria-label="${esc(itemName(it))}, ${progress.done}/${progress.total}, ${tr(status==='completed'?'Abgeschlossen':status==='started'?'Angefangen':'Noch nicht gestartet')}"><span class="focus-row-number" aria-hidden="true">${i+1}</span><span class="focus-row-name">${esc(itemName(it))}</span><span class="focus-row-count" aria-hidden="true">${progress.done}/${progress.total}</span>${icon('chevron')}</button><button type="button" class="icon-btn focus-row-move" data-focus-handle="${esc(it.uid)}" aria-label="${tr('Übung verschieben')}: ${esc(itemName(it))}" aria-description="${tr('Ziehen oder mit den Pfeiltasten verschieben.')}">${icon('grip')}</button></div>`;}).join('')}</div><div class="focus-list-add">${ib('plus','Übung hinzufügen','add-focus-exercise','','focus-add-exercise')}</div></div>`;
 }
 function moveFocusExercise(id,position){
  const a=state.active,index=a?.items.findIndex(it=>it.uid===id);if(index===undefined||index<0||!Number.isInteger(position)||position<0||position>=a.items.length)throw Error('Ungültige Position.');
@@ -170,8 +166,51 @@ function moveFocusExercise(id,position){
  a.focusExerciseUid=a.focusExerciseUid||a.items[G.next(a)?.i]?.uid;
  const [item]=a.items.splice(index,1);a.items.splice(position,0,item);
  if(!save()){a.items=previous;if(previousFocus===undefined)delete a.focusExerciseUid;else a.focusExerciseUid=previousFocus;throw Error('Änderungen konnten nicht dauerhaft gespeichert werden. Bitte die App geöffnet lassen und Speicherplatz prüfen.');}
- closeModal();render();$$('#app [data-action="open-focus-move"]').find(button=>button.dataset.id===id)?.focus({preventScroll:true});
+ closeModal();render();$$('#app [data-focus-handle]').find(button=>button.dataset.focusHandle===id)?.focus({preventScroll:true});toast('Übung verschoben.');
 }
+function updateFocusDrop(y){
+ const drag=focusDrag;if(!drag?.started)return;
+ const rows=$$('#app [data-focus-row]');rows.forEach(row=>row.classList.remove('focus-drop-before','focus-drop-after'));
+ const others=rows.filter(row=>row.dataset.focusRow!==drag.id);drag.position=others.filter(row=>{const r=row.getBoundingClientRect();return y>r.top+r.height/2;}).length;
+ const target=others[drag.position]||others.at(-1);target?.classList.add(drag.position<others.length?'focus-drop-before':'focus-drop-after');
+}
+function scrollFocusDrag(){
+ const drag=focusDrag;if(!drag?.started)return;
+ const delta=drag.y<80?-Math.min(14,(80-drag.y)/4):drag.y>window.innerHeight-80?Math.min(14,(drag.y-window.innerHeight+80)/4):0;
+ if(delta){window.scrollBy(0,delta);updateFocusDrop(drag.y);}
+ drag.frame=requestAnimationFrame(scrollFocusDrag);
+}
+function endFocusDrag(commit=false){
+ const drag=focusDrag;if(!drag)return;focusDrag=null;cancelAnimationFrame(drag.frame);drag.ghost?.remove();drag.row.classList.remove('focus-drag-source');
+ $$('#app [data-focus-row]').forEach(row=>row.classList.remove('focus-drop-before','focus-drop-after'));document.body.classList.remove('focus-dragging');
+ try{drag.handle.releasePointerCapture?.(drag.pointerId);}catch{}
+ if(commit&&drag.started&&drag.position!==drag.from)moveFocusExercise(drag.id,drag.position);
+}
+document.addEventListener('pointerdown',e=>{
+ const handle=e.target.closest('#app [data-focus-handle]');if(!handle||!focusListOpen||focusDrag||e.isPrimary===false||e.button!==0||$('#modal')?.open)return;
+ const row=handle.closest('[data-focus-row]'),rect=row.getBoundingClientRect(),id=handle.dataset.focusHandle;
+ focusDrag={id,row,handle,pointerId:e.pointerId,from:state.active.items.findIndex(it=>it.uid===id),position:null,startY:e.clientY,y:e.clientY,rect,started:false};
+ handle.focus({preventScroll:true});try{handle.setPointerCapture?.(e.pointerId);}catch{}e.preventDefault();
+});
+document.addEventListener('pointermove',e=>{
+ const drag=focusDrag;if(!drag||drag.pointerId!==e.pointerId)return;drag.y=e.clientY;
+ if(!drag.started&&Math.abs(drag.y-drag.startY)<6)return;e.preventDefault();
+ if(!drag.started){
+  drag.started=true;document.querySelector('.focus-navigation-snapshot')?.remove();document.body.classList.add('focus-dragging');drag.row.classList.add('focus-drag-source');
+  const ghost=document.createElement('div'),copy=drag.row.cloneNode(true);copy.classList.remove('focus-drag-source');copy.querySelectorAll('[id],[data-action],[data-focus-handle]').forEach(node=>{node.removeAttribute('id');node.removeAttribute('data-action');node.removeAttribute('data-focus-handle');});copy.removeAttribute('data-focus-row');
+  ghost.className='focus-shell focus-drag-ghost';ghost.setAttribute('aria-hidden','true');ghost.setAttribute('inert','');Object.assign(ghost.style,{top:drag.rect.top+'px',left:drag.rect.left+'px',width:drag.rect.width+'px'});ghost.append(copy);document.body.append(ghost);drag.ghost=ghost;drag.frame=requestAnimationFrame(scrollFocusDrag);
+ }
+ drag.ghost.style.transform=`translateY(${drag.y-drag.startY}px)`;updateFocusDrop(drag.y);
+},{passive:false});
+document.addEventListener('pointerup',e=>{if(focusDrag?.pointerId!==e.pointerId)return;try{endFocusDrag(true);}catch(error){errorDisplay(error);}});
+document.addEventListener('pointercancel',e=>{if(focusDrag?.pointerId===e.pointerId)endFocusDrag();});
+document.addEventListener('lostpointercapture',e=>{if(focusDrag?.pointerId===e.pointerId)endFocusDrag();});
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&focusDrag){endFocusDrag();return;}
+ const handle=e.target.closest('#app [data-focus-handle]');if(!handle||!['ArrowUp','ArrowDown'].includes(e.key)||!focusListOpen||$('#modal')?.open)return;e.preventDefault();
+ const from=state.active.items.findIndex(it=>it.uid===handle.dataset.focusHandle),to=from+(e.key==='ArrowUp'?-1:1);if(to<0||to>=state.active.items.length)return;
+ try{moveFocusExercise(handle.dataset.focusHandle,to);}catch(error){errorDisplay(error);}
+});
 function renderFocusNavigation(direction){
  document.querySelector('.focus-navigation-snapshot')?.remove();
  const main=$('.focus-main'),reduce=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
@@ -258,7 +297,7 @@ const pageRoutes=['home','templates','select','editor','manual','exercises','cal
 function resolveRoute(requested){if(!pageRoutes.includes(requested)||requested==='focus'&&!state.active||['editor','manual'].includes(requested)&&!draft)return'home';return requested;}
 route=location.hash?resolveRoute(location.hash.slice(1)):route;
 let routeInitialized=false;
-function render(motion=''){route=resolveRoute(route);document.documentElement.lang=state.language;document.title=state.language==='en'?'Setwerk · Your training':'Setwerk · Dein Training';const a=$('#app'),pages={home,templates,select:()=>templates(true),editor:()=>editor(false),manual:()=>editor(true),exercises,calendar:calendarPage,progress,focus};document.body.classList.toggle('focus-mode',route==='focus');document.body.classList.toggle('template-editor-mode',route==='editor');a.innerHTML=localizeHTML(route==='focus'?focus():shell(pages[route]()));if(motion&&route==='focus')document.querySelector('.focus-main')?.classList.add('motion-'+motion);if(location.hash!=='#'+route)history[routeInitialized?'pushState':'replaceState'](null,'','#'+route);routeInitialized=true;if(storageFault||writeFault)showStorageError();window.dispatchEvent(new Event('setwerk:render'));}
+function render(motion=''){endFocusDrag();route=resolveRoute(route);document.documentElement.lang=state.language;document.title=state.language==='en'?'Setwerk · Your training':'Setwerk · Dein Training';const a=$('#app'),pages={home,templates,select:()=>templates(true),editor:()=>editor(false),manual:()=>editor(true),exercises,calendar:calendarPage,progress,focus};document.body.classList.toggle('focus-mode',route==='focus');document.body.classList.toggle('template-editor-mode',route==='editor');a.innerHTML=localizeHTML(route==='focus'?focus():shell(pages[route]()));if(motion&&route==='focus')document.querySelector('.focus-main')?.classList.add('motion-'+motion);if(location.hash!=='#'+route)history[routeInitialized?'pushState':'replaceState'](null,'','#'+route);routeInitialized=true;if(storageFault||writeFault)showStorageError();window.dispatchEvent(new Event('setwerk:render'));}
 function restoreRoute(){const requested=resolveRoute(location.hash.slice(1));if(requested!==route)navigate(requested);}
 window.addEventListener('popstate',restoreRoute);
 window.addEventListener('hashchange',restoreRoute);
@@ -308,7 +347,6 @@ const actions={
 'focus-guide':b=>{const ex=exBy(b.dataset.id);openModal(esc(exName(ex)),`<ol class="guide">${instructionsFor(ex).map(t=>`<li>${esc(t)}</li>`).join('')}</ol>${btn('Zurück zu den Einstellungen','focus-settings','outline')}`);},
 'focus-exercises':showFocusExercises,
 'add-focus-exercise':()=>openPicker('focus-list'),
-'open-focus-move':b=>openFocusMove(b.dataset.id),
 'close-focus-exercises':closeFocusExercises,
 'select-focus-exercise':b=>selectFocusExercise(b.dataset.id),
 'start-focus-exercise':()=>{if(state.active.rest)return;if(G.startFocusExercise(state.active)){save();render();}},
@@ -359,8 +397,6 @@ document.addEventListener('submit',e=>{e.preventDefault();try{if(e.target.id==='
  const count=Number(raw);G.validateSteps(date,count);const previous=G.clone(state.dailySteps);state.dailySteps[date]=count;
  if(!save()){state.dailySteps=previous;throw Error('Schritte konnten nicht gespeichert werden.');}
  closeModal();render();toast('Schritte gespeichert.');
- }else if(e.target.id==='focus-move-form'){
- const f=new FormData(e.target);moveFocusExercise(f.get('itemId'),Number(f.get('position')));
  }else if(e.target.id==='value-form'){
  const f=new FormData(e.target),field=f.get('field'),value=Number(f.get('value')),p=G.next(state.active);if(!p)throw Error('Keine aktive Übung.');
  if(!['reps','weight','seconds','distance'].includes(field)||String(f.get('value')).trim()==='')throw Error('Bitte einen gültigen Wert eingeben.');
