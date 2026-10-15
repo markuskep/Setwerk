@@ -1,6 +1,10 @@
-# Setwerk Android 1.4.3 – Musiksteuerung (Vorschau)
+# Setwerk Android 1.4.4 – Übungsauswahl im Focus Mode
 
-Diese Vorschau ergänzt einen kompakten Musikbereich im Focus Mode und während
+Im Focus Mode öffnet Linkswischen die Übungsauswahl mit Satzstand und formatiertem Fortschritt. Antippen wechselt zur Übung; „Starte diese Übung“ aktiviert sie ohne Satzabschluss. Das Plus ergänzt Übungen, und am Griff lassen sich Übungen direkt ziehen. Aktive Übung, Satzwerte, Timer und Pause bleiben beim Umsortieren erhalten. Die Ansicht wechselt mit einer seitlichen Animation. Auch der aktuelle Login-Dialog ist enthalten.
+
+## Musiksteuerung
+
+Diese Version enthält einen kompakten Musikbereich im Focus Mode und während
 der Satzpause. Er steuert die aktive Android-Medien-App mit Titel, Interpret,
 Zeitleiste, Pause/Fortsetzen und vorherigem/nächstem Titel. Das Logo und der Name der aktiven Musik-App
 stehen im Kopf des Players; das Logo stammt vom installierten Android-App-Icon. Die Zeitleiste ist
@@ -22,9 +26,9 @@ Musik-Apps zu prüfen; Browserchecks verwenden gekennzeichnete Beispieldaten.
 Gezielte Prüfung: `node --test tests/music.test.cjs tests/android.test.cjs
 tests/health.test.cjs`; `MusicQueuePolicyTest.java` prüft Queue-Zuordnung und
 Positionsberechnung. `tests/music-browser-check.cjs` prüft die eigenständige
-interaktive Vorschau. Keine Website-Veröffentlichung ist Teil dieser Vorschau.
+interaktive Vorschau. Die native Musiksteuerung wird mit diesem APK-Update installiert.
 
-Android auf dem Funktionsstand der Webapp unter https://setwerk-cb1e0.web.app/ (Commit `b98d754d89c08638e1c2cb7233eac88bb2d499bf`). Die Oberfläche und alle 269 Übungen liegen in der APK; Training funktioniert auch ohne Anmeldung und ohne Internet.
+Android auf dem Funktionsstand der Webapp unter https://setwerk-cb1e0.web.app/ (Commit `d9c5621406b25d180c9b276f4ccca5635293abb7`). Die Oberfläche und alle 269 Übungen liegen in der APK; Training funktioniert auch ohne Anmeldung und ohne Internet.
 
 ## Automatische Schritte und Health Connect
 
@@ -40,7 +44,7 @@ Die automatisierten Prüfungen simulieren Sensor-/Health-Antworten und prüfen d
 
 ## Installation
 
-`Setwerk-1.4.3-Musik-Vorschau.apk` als Update über Setwerk 1.1, 1.3.0 oder 1.3.1 installieren. Paketkennung `at.setwerk.app.v2` und Signatur bleiben gleich, der Versionscode steigt auf 8. Die App vorher nicht deinstallieren, damit die lokal gespeicherten Daten erhalten bleiben. Android 8 oder neuer ist erforderlich.
+`Setwerk-1.4.4.apk` als Update über Setwerk 1.4.3 installieren. Paketkennung `at.setwerk.app.v2` und Signatur bleiben gleich, der Versionscode steigt auf 10. Die App vorher nicht deinstallieren, damit die lokal gespeicherten Daten erhalten bleiben. Android 8 oder neuer ist erforderlich.
 
 Mit demselben Firebase-Konto wie in der aktuellen Webapp anmelden. Frühere Netlify-Anmeldungen werden nicht als Firebase-Sitzung übernommen. Registrierung und Passwort-Zurücksetzen sind direkt in der App möglich.
 
@@ -86,7 +90,7 @@ Das Skript kopiert gemeinsame Assets, übernimmt die wenigen Android-Anpassungen
 Benötigt: JDK 17, Android SDK Platform 35 und Build Tools 35.0.0. Alternativ zum JDK-Compiler kann Eclipse ECJ 3.38.0 verwendet werden.
 
 ```bash
-python3 build.py --tools /path/to/build-tools/35.0.0 --platform /path/to/android-35/android.jar --signing /private/signing.properties --keystore /private/setwerk-stable-release.jks --output /path/to/Setwerk-1.4.3-Musik-Vorschau.apk
+python3 build.py --tools /path/to/build-tools/35.0.0 --platform /path/to/android-35/android.jar --signing /private/signing.properties --keystore /private/setwerk-stable-release.jks --output /path/to/Setwerk-1.4.4.apk
 ```
 
 Bei ECJ zusätzlich `--compiler /path/to/ecj.jar`. Die bestehende private Signatursicherung separat verwenden; sie gehört nicht in den Quellcode. Build-Verzeichnisse können gelöscht werden.
@@ -104,4 +108,4 @@ Die Browserprüfung verwendet den Android-Asset-Ursprung mit einer simulierten n
 
 `tests/FirebaseLiveTest.java` prüft die echte REST-Verbindung mit einem temporären Konto und entfernt dieses danach. Sie benötigt eine JVM und das Laufzeit-JAR `org.json`. Keine bestehenden Konten werden dafür verwendet. Bei Erfolg kann ein inhaltsfreier Löschmarker für das gelöschte Testkonto verbleiben. Nur bewusst ausführen; der normale CI-Lauf legt keine Firebase-Konten an.
 
-Die APK wurde gebaut und signaturgeprüft. Die Zertifikatsgleichheit zur APK 1.3.1 wurde geprüft. Ein Installationstest und die nativen Systemdialoge bzw. Hintergrundbenachrichtigungen auf einem echten Android-Gerät stehen aus. Details zu den ausgeführten Prüfungen stehen in `VALIDATION.json`.
+Die APK wurde gebaut und signaturgeprüft. Die Zertifikatsgleichheit zur APK 1.4.3 wurde geprüft. Ein Installationstest und die nativen Systemdialoge bzw. Hintergrundbenachrichtigungen auf einem echten Android-Gerät stehen aus. Details zu den ausgeführten Prüfungen stehen in `VALIDATION.json`.

@@ -12,10 +12,10 @@ async function setup(loginError, cloud=null) {
   });
   const w = dom.window, calls = [];
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
-  w.document.getElementById('app').innerHTML = '<button data-auth-open>Login / Sign up</button><button id="background">Training starten</button>';
+  w.document.getElementById('app').innerHTML = '<button data-auth-open>Login / Sign up</button><button data-auth-signup>Registrieren</button><button id="background">Training starten</button>';
   if(cloud)w.SetwerkCloud=cloud;
   w.__firebase = {
-    async login(email, password) { calls.push({ email, password }); if (loginError) throw Error(loginError); return { id:'alice', email }; },
+    async login(email, password) { calls.push({ email, password }); if (loginError) throw typeof loginError==='string' ? Error(loginError) : Object.assign(Error('Invalid credentials'),loginError); return { id:'alice', email }; },
     async signup(email, password, name) { calls.push({ email, password, name }); return {id:'alice',email}; },
     async logout() {}, async getUser() { return cloud?.user||null; }, async subscribeAuth(listener) { listener(cloud?.user||null); }, async resetPassword(email) {calls.push({reset:email});},
   };
@@ -94,11 +94,11 @@ test('failed login stays open; signup switches password autocomplete and name vi
 test('Firebase signup signs in immediately and never asks for a Netlify confirmation', async () => {
   const x=await setup();try{
     let goals;x.w.SetwerkPersonalization={setGoals(value){goals=value;}};
-    x.q('[data-auth-open]').click();x.q('#auth-switch').click();
-    assert.equal(x.q('#auth-goals-wrap').hidden,false);x.q('[name="weekly"]').value='4';x.q('[name="dailySteps"]').value='8000';
+    assert.equal(x.q('[data-auth-signup]').hidden,false);x.q('[data-auth-signup]').click();
+    assert.equal(x.q('#auth-panel').dataset.mode,'signup');assert.equal(x.q('#auth-goals-wrap').hidden,false);x.q('[name="weekly"]').value='4';x.q('[name="dailySteps"]').value='8000';
     x.q('[name="email"]').value='new@example.at';x.q('[name="password"]').value='TEST_ONLY_new_password';x.q('[name="name"]').value='Markus';
     x.q('#auth-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));await x.settle();
-    assert.deepEqual(x.calls,[{email:'new@example.at',password:'TEST_ONLY_new_password',name:'Markus'}]);assert.deepEqual(JSON.parse(JSON.stringify(goals)),{weekly:4,dailySteps:8000});
+    assert.equal(x.q('[data-auth-signup]').hidden,true);assert.deepEqual(x.calls,[{email:'new@example.at',password:'TEST_ONLY_new_password',name:'Markus'}]);assert.deepEqual(JSON.parse(JSON.stringify(goals)),{weekly:4,dailySteps:8000});
     assert.equal(x.q('#auth-gate').hidden,true);
     assert.equal(x.q('[data-auth-open]').dataset.authState,'signed-in');
     assert.equal(x.q('[name="password"]').value,'');
@@ -112,6 +112,18 @@ test('password reset uses the entered email without requiring a password', async
     assert.match(x.q('#auth-message').textContent,/Falls ein Konto/);
     x.q('#auth-switch').click();assert.equal(x.q('#auth-reset').hidden,true);
   }finally{x.dom.window.close();}
+});
+test('missing login inputs show accessible field hints without sending an authentication request',async()=>{
+ const x=await setup();try{x.q('[data-auth-open]').click();const form=x.q('#auth-form');assert.equal(form.noValidate,true);form.dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));await x.settle();assert.deepEqual(x.calls,[]);assert.match(x.q('#auth-email-error').textContent,/E-Mail-Adresse/);assert.match(x.q('#auth-password-error').textContent,/Passwort/);assert.equal(x.q('[name=email]').getAttribute('aria-invalid'),'true');assert.equal(x.w.document.activeElement,x.q('[name=email]'));assert.equal(x.q('#auth-reset').previousElementSibling.querySelector('[name=password]').name,'password');assert.equal(x.q('#auth-reset').parentElement,form);assert.equal(x.q('#auth-panel .eyebrow'),null);assert.doesNotMatch(x.q('#auth-description').textContent,/ohne Anmeldung/);}finally{x.dom.window.close();}
+});
+test('invalid email and signup passwords use themed warnings and clear when corrected',async()=>{
+ const x=await setup();try{x.q('[data-auth-open]').click();x.q('[name=email]').value='bad-email';x.q('[name=password]').value='TEST_ONLY_password';x.q('#auth-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));assert.deepEqual(x.calls,[]);assert.match(x.q('#auth-email-error').textContent,/gültige/);x.q('[name=email]').value='valid@example.test';x.q('[name=email]').dispatchEvent(new x.w.Event('input',{bubbles:true}));assert.equal(x.q('#auth-email-error').hidden,true);assert.equal(x.q('[name=email]').hasAttribute('aria-invalid'),false);x.q('#auth-switch').click();x.q('[name=password]').value='123';x.q('#auth-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));assert.match(x.q('#auth-password-error').textContent,/sechs Zeichen/);assert.deepEqual(x.calls,[]);}finally{x.dom.window.close();}
+});
+test('credential failures use a styled alert linked to both fields; changing input clears it',async()=>{
+ const x=await setup({code:'auth/invalid-credential'});try{x.q('[data-auth-open]').click();x.q('[name=email]').value='person@example.test';x.q('[name=password]').value='TEST_ONLY_password';x.q('#auth-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));await x.settle();assert.equal(x.q('#auth-message').getAttribute('role'),'alert');assert.equal(x.q('#auth-message').classList.contains('error'),true);assert.match(x.q('#auth-message').textContent,/E-Mail oder Passwort/);assert.match(x.q('[name=password]').getAttribute('aria-describedby'),/auth-message/);x.q('[name=password]').dispatchEvent(new x.w.Event('input',{bubbles:true}));assert.equal(x.q('#auth-message').textContent,'');assert.equal(x.q('[name=email]').hasAttribute('aria-invalid'),false);}finally{x.dom.window.close();}
+});
+test('password reset validates only email and shows styled hints instead of browser popups',async()=>{
+ const x=await setup();try{x.q('[data-auth-open]').click();x.q('#auth-reset').click();await x.settle();assert.deepEqual(x.calls,[]);assert.equal(x.q('[name=email]').getAttribute('aria-invalid'),'true');assert.equal(x.q('[name=password]').hasAttribute('aria-invalid'),false);x.q('[name=email]').value='person@example.test';x.q('#auth-reset').click();await x.settle();assert.deepEqual(x.calls,[{reset:'person@example.test'}]);assert.equal(x.q('#auth-message').getAttribute('role'),'status');}finally{x.dom.window.close();}
 });
 test('Firebase auth state updates from another tab connect each account only once',async()=>{
  const x=await setup();try{

@@ -1,69 +1,39 @@
 {
-  "version": "1.4.2",
-  "webSourceBaseCommit": "e8bd5ac7e3eb3a2b36ecd603962bfa45ce2b7589",
+  "version": "1.4.4",
+  "versionCode": 10,
+  "webSourceCommit": "d9c5621406b25d180c9b276f4ccca5635293abb7",
+  "sourceBranch": "release/android-1.4.4",
   "automatedTests": {
-    "webPassed": 103,
-    "androidPassed": 125,
-    "targetedStepTestsPassed": 17,
-    "nativeCounterTests": "baseline, increment, duplicate events, reboot/reset, delayed midnight event"
+    "androidPassed": 158,
+    "failed": 0,
+    "focusNavigationPassed": 12
   },
   "apk": {
     "built": true,
     "verified": true,
-    "versionCode": 7,
     "package": "at.setwerk.app.v2",
+    "versionCode": 10,
     "minSdk": 26,
     "targetSdk": 35,
+    "previousVersion": "1.4.3",
     "previousCertificateMatched": true,
     "certificateSha256": "30e9fec2689fb103630a494a9a8c04a74548050db0ac27de508f5e7fc426d026",
-    "sha256": "6aec15c99dd1803880885fdb4915766046a71a4eaa460068633231caec6fc143",
+    "sha256": "ca688475c066274fcbc86a69a06adb082084b2394131b8dac5f8844621786d42",
     "bundledAssetsMatch": true
   },
-  "steps": {
-    "healthConnectMinimumAndroid": 14,
-    "phoneCounterMinimumAndroid": 8,
-    "healthReadOnly": true,
-    "healthDays": 7,
-    "overviewRefreshSeconds": 120,
-    "automaticImports": "visible overview only; on entry and return",
-    "phoneBackgroundService": true,
-    "permissions": "Health READ_STEPS and/or Physical activity after explicit opt-in",
-    "sourcesNeverAdded": true,
-    "settingsLocation": "Account details",
-    "hardwareCounterRequired": true
-  },
+  "features": [
+    "Focus exercise list and set counts",
+    "Start without recording a set",
+    "Swipe transitions with reduced-motion support",
+    "Spontaneous additions and drag handles",
+    "Current login design",
+    "Native music and step integration retained"
+  ],
   "deviceTest": {
-    "status": "pending",
-    "checks": [
-      "real permissions",
-      "phone sensor and background service",
-      "Health Connect values",
-      "reboot and midnight",
-      "OEM battery behaviour"
-    ]
+    "status": "not-performed"
   },
   "browser": {
     "status": "not-run",
-    "reason": "No browser-control skill available; jsdom UI checks passed"
-  },
-  "musicPreview": {
-    "version": "1.4.3-preview",
-    "functionTests": {
-      "passed": 37,
-      "failed": 0
-    },
-    "queueAndPositionChecks": {
-      "passed": 12,
-      "failed": 0
-    },
-    "standalonePreviewIntegration": "passed",
-    "apkBuildAndSignature": "passed",
-    "browserLayoutCheck": "blocked: browser socket creation unavailable in this runtime",
-    "externalMusicApps": "Android device verification required",
-    "sourceLogoUpdate": {
-      "musicTestsPassed": 8,
-      "apkRebuilt": false,
-      "preview": "Spotify and YouTube Music logos and source switching checked"
-    }
+    "reason": "Local Chromium socket creation is unavailable; Android bridge and UI regression tests passed"
   }
 }

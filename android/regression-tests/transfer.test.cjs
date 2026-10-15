@@ -8,3 +8,13 @@ test('Fehlerhafte, fremde, übergroße und manipulierte Importdaten werden zurü
 
 test('Exportgrenze zählt UTF-8-Bytes, damit exportierte Dateien auch importierbar bleiben',()=>{const record=template();const it=record.items[0];it.notes='界'.repeat(10000);record.items=Array.from({length:50},()=>G.clone(it));const bundle=T.pack(record,'template',[builtin],true);assert.throws(()=>T.json(bundle),/zu groß/);assert.throws(()=>T.code(bundle),/zu groß/);});
 test('Cardio- und Ballsportpläne können ohne Übungen geteilt werden; ungültige Intervalle werden abgewiesen',()=>{const plans=[{name:'Laufintervalle',category:'Ausdauer',durationMinutes:25,notes:'',items:[],cardio:{type:'Laufen',other:'',mode:'interval',distanceMeters:null,elevationMeters:null,intervals:{count:8,workSeconds:120,restSeconds:30,distanceMeters:400}}},{name:'Fußball',sport:'Fußball',category:'Ballsport',durationMinutes:90,notes:'',items:[]}];for(const p of plans){const bundle=T.pack(p,'template',[]),copy=T.prepareImport(T.parse(T.code(bundle)),'template',[]).record;assert.equal(copy.durationMinutes,p.durationMinutes);assert.deepEqual(copy.items,[]);if(p.cardio)assert.deepEqual(copy.cardio,p.cardio);else assert.equal(copy.sport,'Fußball');assert.ok(G.start(copy));}const bad=T.pack(plans[0],'template',[]);bad.workout.cardio.intervals.count=-1;assert.throws(()=>T.normalize(bad));});
+
+test('Sharing and importing retain separate rest durations',()=>{
+ const G=require('../assets/core.js'),T=require('../assets/transfer.js');
+ const exercise={id:'rest-example',name:'Rest example',kind:'reps',muscle:'Brust',equipment:'Hantel',instructions:[]};
+ const plan={name:'Rest plan',category:'Kraft',items:[G.item(exercise,2,75)],setRest:75,exerciseRest:150};
+ const bundle=T.parse(T.code(T.pack(plan,'template',[exercise]))),imported=T.prepareImport(bundle,'template',[exercise]).record;
+ assert.equal(imported.setRest,75);assert.equal(imported.exerciseRest,150);assert.equal(imported.items[0].rest,75);
+ const active=G.start(imported,1000);assert.equal(active.exerciseRest,150);
+ assert.throws(()=>T.normalize({...bundle,workout:{...bundle.workout,exerciseRest:3601}}));
+});
