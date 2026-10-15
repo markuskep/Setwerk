@@ -157,7 +157,20 @@ function activityFocus(a){return `<div class="focus-shell"><header class="focus-
 function openActivityFinish(){const a=state.active;if(!a)return;const c=a.cardio,minutes=a.actualDurationSeconds?a.actualDurationSeconds/60:Math.max(0.1,Math.round((Date.now()-a.startedAt)/6000)/10);openModal('Training abschließen',`<form id="activity-finish-form" class="inline-form"><label>Dauer (Minuten)<input name="minutes" type="number" min="0.1" step="0.1" value="${minutes}" required></label>${c&&G.cardioHasDistance(c.type)?`<label>Erreichte Distanz (km, optional)<input name="distanceKm" type="number" min="0" step="0.001" value="${a.actualDurationSeconds&&c.distanceMeters!=null?c.distanceMeters/1000:''}"></label>`:''}${c&&G.cardioHasElevation(c.type)?`<label>Höhenmeter (optional)<input name="elevationM" type="number" min="0" step="1" value="${a.actualDurationSeconds&&c.elevationMeters!=null?c.elevationMeters:''}"></label>`:''}<label>Notizen<textarea name="notes">${esc(a.notes)}</textarea></label><button class="btn accent" type="submit">Weiter zum Trainingsgefühl</button>${btn('Zum laufenden Training zurück','resume','outline')}</form>`,'activity-finish');}
 function focusExerciseList(a){
  const current=a.focusExerciseUid||a.items[G.next(a)?.i]?.uid;
- return `<div class="focus-workout-list"><div class="eyebrow">DEIN WORKOUT</div><h1 id="focus-list-title" tabindex="-1">Alle Übungen</h1><div class="focus-exercise-list">${a.items.map((it,i)=>{const progress=G.exerciseStatus(it),status=progress.status==='pending'&&it.uid===current&&!a.focusNeedsStart?'started':progress.status;return `<button type="button" class="focus-exercise-row is-${status}" data-action="select-focus-exercise" data-id="${esc(it.uid)}" ${it.uid===current?'aria-current="true"':''} aria-label="${esc(itemName(it))}, ${progress.done}/${progress.total}, ${tr(status==='completed'?'Abgeschlossen':status==='started'?'Angefangen':'Noch nicht gestartet')}"><span class="focus-row-number" aria-hidden="true">${i+1}</span><span class="focus-row-name">${esc(itemName(it))}</span><span class="focus-row-count" aria-hidden="true">${progress.done}/${progress.total}</span>${icon('chevron')}</button>`;}).join('')}</div></div>`;
+ return `<div class="focus-workout-list"><div class="eyebrow">DEIN WORKOUT</div><h1 id="focus-list-title" tabindex="-1">Alle Übungen</h1><div class="focus-exercise-list">${a.items.map((it,i)=>{const progress=G.exerciseStatus(it),status=progress.status==='pending'&&it.uid===current&&!a.focusNeedsStart?'started':progress.status;return `<div class="focus-exercise-row is-${status}"><button type="button" class="focus-row-select" data-action="select-focus-exercise" data-id="${esc(it.uid)}" ${it.uid===current?'aria-current="true"':''} aria-label="${esc(itemName(it))}, ${progress.done}/${progress.total}, ${tr(status==='completed'?'Abgeschlossen':status==='started'?'Angefangen':'Noch nicht gestartet')}"><span class="focus-row-number" aria-hidden="true">${i+1}</span><span class="focus-row-name">${esc(itemName(it))}</span><span class="focus-row-count" aria-hidden="true">${progress.done}/${progress.total}</span>${icon('chevron')}</button>${ib('grip',tr('Übung verschieben')+': '+esc(itemName(it)),'open-focus-move',`data-id="${esc(it.uid)}"`,'focus-row-move')}</div>`;}).join('')}</div><div class="focus-list-add">${ib('plus','Übung hinzufügen','add-focus-exercise','','focus-add-exercise')}</div></div>`;
+}
+function openFocusMove(id){
+ const a=state.active,index=a?.items.findIndex(it=>it.uid===id);if(index===undefined||index<0)return;
+ openModal('Übung verschieben',`<form id="focus-move-form" class="inline-form"><input type="hidden" name="itemId" value="${esc(id)}"><p class="meta">${esc(itemName(a.items[index]))}</p><label>Position<select name="position">${a.items.map((it,i)=>`<option value="${i}" ${i===index?'selected':''}>${i+1} · ${esc(itemName(it))}</option>`).join('')}</select></label><div class="modal-actions"><button type="submit" class="btn accent">Verschieben</button>${btn('Abbrechen','close-modal','outline')}</div></form>`,'focus-move');
+}
+function moveFocusExercise(id,position){
+ const a=state.active,index=a?.items.findIndex(it=>it.uid===id);if(index===undefined||index<0||!Number.isInteger(position)||position<0||position>=a.items.length)throw Error('Ungültige Position.');
+ const previous=a.items.slice(),previousFocus=a.focusExerciseUid;
+ // Reordering changes the plan, while the current exercise and timer stay attached to their UID.
+ a.focusExerciseUid=a.focusExerciseUid||a.items[G.next(a)?.i]?.uid;
+ const [item]=a.items.splice(index,1);a.items.splice(position,0,item);
+ if(!save()){a.items=previous;if(previousFocus===undefined)delete a.focusExerciseUid;else a.focusExerciseUid=previousFocus;throw Error('Änderungen konnten nicht dauerhaft gespeichert werden. Bitte die App geöffnet lassen und Speicherplatz prüfen.');}
+ closeModal();render();$$('#app [data-action="open-focus-move"]').find(button=>button.dataset.id===id)?.focus({preventScroll:true});
 }
 function renderFocusNavigation(direction){
  document.querySelector('.focus-navigation-snapshot')?.remove();
@@ -171,7 +184,7 @@ function renderFocusNavigation(direction){
  snapshot.addEventListener('animationend',()=>snapshot.remove(),{once:true});setTimeout(()=>snapshot.remove(),450);
 }
 function closeFocusExercises(){focusListOpen=false;renderFocusNavigation('back');$('.focus-list-button')?.focus();}
-function showFocusExercises(){if(route!=='focus'||!state.active||G.isActivity(state.active)||!state.active.items.length||focusListOpen)return;focusListOpen=true;renderFocusNavigation('forward');$('#focus-list-title')?.focus({preventScroll:true});}
+function showFocusExercises(){if(route!=='focus'||!state.active||G.isActivity(state.active)||focusListOpen)return;focusListOpen=true;renderFocusNavigation('forward');$('#focus-list-title')?.focus({preventScroll:true});}
 function selectFocusExercise(id){const a=state.active;if(!a||!a.items.some(it=>it.uid===id))return;stopExerciseClock();if(!G.selectFocusExercise(a,id))return;focusListOpen=false;if(a.rest)a.rest.minimized=true;save();renderFocusNavigation('back');$('.focus-main h1')?.setAttribute('tabindex','-1');$('.focus-main h1')?.focus({preventScroll:true});}
 // Keep vertical scrolling and ignore controls, dialogs and native music gestures.
 document.addEventListener('pointerdown',e=>{focusSwipe=null;if(e.isPrimary===false||e.button!==0||route!=='focus'||!e.target.closest('.focus-shell')||e.target.closest('button,a,input,select,textarea,[role="slider"],.music-player,dialog'))return;focusSwipe={id:e.pointerId,x:e.clientX,y:e.clientY};});
@@ -202,7 +215,7 @@ function focus(){
   body=`<div class="finish-icon">${icon('check')}</div><div class="eyebrow">${a.spontaneous?'DEINE EINHEIT':'DEIN PLAN IST GESCHAFFT'}</div><h1>Stark gemacht.</h1><p class="focus-last">${done} Sätze abgeschlossen.</p><div class="stack" style="max-width:440px;margin:30px auto">${btn('Training beenden','save-active','accent')}${btn(icon('plus')+'Weitere Übungen aufzeichnen','extend-final','outline')}${btn('Notizen & Anstrengung ergänzen','focus-settings','ghost')}</div>`;
  }
  const remaining=a.rest?Math.max(0,Math.ceil((a.rest.until-Date.now())/1000)):0;
- return `<section class="focus-shell focus-navigable ${focusListOpen?'showing-exercises':''}" aria-label="Focus Mode"><header class="focus-top"><div class="focus-title">${esc(a.spontaneous?'Spontantraining':workoutName(a))}</div><div class="focus-top-actions">${a.items.length?ib(focusListOpen?'back':'list',focusListOpen?'Zur Übung zurück':'Alle Übungen',focusListOpen?'close-focus-exercises':'focus-exercises','','focus-list-button'):''}${ib('close','Training beenden','early-end','','focus-exit')}</div></header><main class="focus-main">${body}</main><footer class="focus-footer">${done} von ${total} Sätzen abgeschlossen</footer>${remaining>0&&!focusListOpen?`<div class="rest-overlay ${a.rest.minimized?'is-minimized':''}" role="region" aria-label="Satzpause"><div class="eyebrow">DURCHATMEN.</div><h2>Deine Pause</h2><div id="rest-clock" class="rest-clock" aria-live="off">${time(remaining)}</div><div class="rest-progress"><i id="rest-bar" style="width:${remaining/a.rest.total*100}%"></i></div><p>${p?'Gleich weiter mit '+esc(itemName(a.items[p.i])):'Alle geplanten Sätze sind geschafft.'}</p><div class="rest-actions">${ib('list','Alle Übungen','focus-exercises','','focus-list-button')}${btn(icon('skip')+'Pause überspringen','skip-rest')}${btn(a.rest.minimized?'Vergrößern':'Minimieren','minimize-rest','outline')}</div></div>`:''}</section>`;
+ return `<section class="focus-shell focus-navigable ${focusListOpen?'showing-exercises':''}" aria-label="Focus Mode"><header class="focus-top"><div class="focus-title">${esc(a.spontaneous?'Spontantraining':workoutName(a))}</div><div class="focus-top-actions">${ib(focusListOpen?'back':'list',focusListOpen?'Zur Übung zurück':'Alle Übungen',focusListOpen?'close-focus-exercises':'focus-exercises','','focus-list-button')}${ib('close','Training beenden','early-end','','focus-exit')}</div></header><main class="focus-main">${body}</main><footer class="focus-footer">${done} von ${total} Sätzen abgeschlossen</footer>${remaining>0&&!focusListOpen?`<div class="rest-overlay ${a.rest.minimized?'is-minimized':''}" role="region" aria-label="Satzpause"><div class="eyebrow">DURCHATMEN.</div><h2>Deine Pause</h2><div id="rest-clock" class="rest-clock" aria-live="off">${time(remaining)}</div><div class="rest-progress"><i id="rest-bar" style="width:${remaining/a.rest.total*100}%"></i></div><p>${p?'Gleich weiter mit '+esc(itemName(a.items[p.i])):'Alle geplanten Sätze sind geschafft.'}</p><div class="rest-actions">${ib('list','Alle Übungen','focus-exercises','','focus-list-button')}${btn(icon('skip')+'Pause überspringen','skip-rest')}${btn(a.rest.minimized?'Vergrößern':'Minimieren','minimize-rest','outline')}</div></div>`:''}</section>`;
 }
 function editValue(field){
  stopExerciseClock();const p=G.next(state.active);if(!p)return;const it=state.active.items[p.i],set=it.sets[p.s];
@@ -213,6 +226,7 @@ function editValue(field){
 }
 function chooseExercise(ex){
  if(pickerTarget==='draft'){ensureOpenTemplateItems();const index=pickerInsertIndex===null?draft.items.length:Math.max(0,Math.min(draft.items.length,pickerInsertIndex));const added=G.item(ex,3,draft.setRest??120);draft.items.splice(index,0,added);openTemplateItems.add(added.uid);pickerInsertIndex=null;persistDraft();}
+ else if(pickerTarget==='focus-list'){const a=state.active;a.items.push(G.item(ex,3,a.setRest??120));save();}
  else{const a=state.active;if(pickerTarget==='replace-active')G.replaceCurrentExercise(a,ex);else{if(pickerTarget==='extend-early')G.skipPending(a);delete a.focusExerciseUid;delete a.focusNeedsStart;a.items.push(G.item(ex));}stopRestAudio();a.rest=null;window.AndroidGym?.cancelRest();save();}
  closeModal();render('exercise');toast(pickerTarget==='replace-active'?'Übung gewechselt.':'Übung hinzugefügt.');
 }
@@ -293,6 +307,8 @@ const actions={
 'resume':()=>{closeModal();route='focus';render();requestWake();},'focus-settings':focusSettings,'early-end':earlyEnd,
 'focus-guide':b=>{const ex=exBy(b.dataset.id);openModal(esc(exName(ex)),`<ol class="guide">${instructionsFor(ex).map(t=>`<li>${esc(t)}</li>`).join('')}</ol>${btn('Zurück zu den Einstellungen','focus-settings','outline')}`);},
 'focus-exercises':showFocusExercises,
+'add-focus-exercise':()=>openPicker('focus-list'),
+'open-focus-move':b=>openFocusMove(b.dataset.id),
 'close-focus-exercises':closeFocusExercises,
 'select-focus-exercise':b=>selectFocusExercise(b.dataset.id),
 'start-focus-exercise':()=>{if(state.active.rest)return;if(G.startFocusExercise(state.active)){save();render();}},
@@ -343,6 +359,8 @@ document.addEventListener('submit',e=>{e.preventDefault();try{if(e.target.id==='
  const count=Number(raw);G.validateSteps(date,count);const previous=G.clone(state.dailySteps);state.dailySteps[date]=count;
  if(!save()){state.dailySteps=previous;throw Error('Schritte konnten nicht gespeichert werden.');}
  closeModal();render();toast('Schritte gespeichert.');
+ }else if(e.target.id==='focus-move-form'){
+ const f=new FormData(e.target);moveFocusExercise(f.get('itemId'),Number(f.get('position')));
  }else if(e.target.id==='value-form'){
  const f=new FormData(e.target),field=f.get('field'),value=Number(f.get('value')),p=G.next(state.active);if(!p)throw Error('Keine aktive Übung.');
  if(!['reps','weight','seconds','distance'].includes(field)||String(f.get('value')).trim()==='')throw Error('Bitte einen gültigen Wert eingeben.');

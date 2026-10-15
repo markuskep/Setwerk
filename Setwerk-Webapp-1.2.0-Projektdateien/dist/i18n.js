@@ -2,6 +2,7 @@
  * opaque slots: names, notes, IDs and form values are never translated. */
 window.SetwerkI18n=(()=>{
  const EN={
+ 'Übung verschieben':'Move exercise','Position':'Position','Verschieben':'Move','Ungültige Position.':'Invalid position.',
  'DEIN WORKOUT':'YOUR WORKOUT','Alle Übungen':'All exercises','Starte diese Übung':'Start this exercise','Zur Übung zurück':'Back to exercise','Angefangen':'In progress','Abgeschlossen':'Completed','Noch nicht gestartet':'Not started',
  'Pausen (optional)':'Rest periods (optional)','Zwischen Sätzen (Sekunden)':'Between sets (seconds)','Zwischen Übungen (Sekunden)':'Between exercises (seconds)','Zwischen Sätzen':'Between sets','Zwischen Übungen':'Between exercises','Pausen ändern':'Edit rest periods','Pausen':'Rest periods','Individuell':'Individual','Ohne Eingabe: 120 Sekunden. Mit 0 überspringst du die Pause.':'Default: 120 seconds. Enter 0 to skip the rest period.',
 
