@@ -159,11 +159,23 @@ function focusExerciseList(a){
  const current=a.focusExerciseUid||a.items[G.next(a)?.i]?.uid;
  return `<div class="focus-workout-list"><div class="eyebrow">DEIN WORKOUT</div><h1 id="focus-list-title" tabindex="-1">Alle Übungen</h1><div class="focus-exercise-list">${a.items.map((it,i)=>{const progress=G.exerciseStatus(it),status=progress.status==='pending'&&it.uid===current&&!a.focusNeedsStart?'started':progress.status;return `<button type="button" class="focus-exercise-row is-${status}" data-action="select-focus-exercise" data-id="${esc(it.uid)}" ${it.uid===current?'aria-current="true"':''} aria-label="${esc(itemName(it))}, ${progress.done}/${progress.total}, ${tr(status==='completed'?'Abgeschlossen':status==='started'?'Angefangen':'Noch nicht gestartet')}"><span class="focus-row-number" aria-hidden="true">${i+1}</span><span class="focus-row-name">${esc(itemName(it))}</span><span class="focus-row-count" aria-hidden="true">${progress.done}/${progress.total}</span>${icon('chevron')}</button>`;}).join('')}</div></div>`;
 }
-function showFocusExercises(){if(route!=='focus'||!state.active||G.isActivity(state.active)||!state.active.items.length)return;focusListOpen=true;render();$('#focus-list-title')?.focus({preventScroll:true});}
-function selectFocusExercise(id){const a=state.active;if(!a||!a.items.some(it=>it.uid===id))return;stopExerciseClock();if(!G.selectFocusExercise(a,id))return;focusListOpen=false;if(a.rest)a.rest.minimized=true;save();render('exercise');$('.focus-main h1')?.setAttribute('tabindex','-1');$('.focus-main h1')?.focus({preventScroll:true});}
+function renderFocusNavigation(direction){
+ document.querySelector('.focus-navigation-snapshot')?.remove();
+ const main=$('.focus-main'),reduce=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+ if(!main||reduce){render();return;}
+ const rect=main.getBoundingClientRect(),snapshot=document.createElement('div'),copy=main.cloneNode(true);
+ snapshot.className='focus-shell focus-navigation-snapshot navigation-'+direction;snapshot.setAttribute('aria-hidden','true');snapshot.setAttribute('inert','');
+ Object.assign(snapshot.style,{top:rect.top+'px',left:rect.left+'px',width:rect.width+'px',height:rect.height+'px'});
+ copy.classList.remove('motion-set','motion-exercise','motion-value','motion-focus-forward','motion-focus-back');copy.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));copy.querySelectorAll('[data-action]').forEach(node=>node.removeAttribute('data-action'));
+ snapshot.append(copy);render('focus-'+direction);document.body.append(snapshot);
+ snapshot.addEventListener('animationend',()=>snapshot.remove(),{once:true});setTimeout(()=>snapshot.remove(),450);
+}
+function closeFocusExercises(){focusListOpen=false;renderFocusNavigation('back');$('.focus-list-button')?.focus();}
+function showFocusExercises(){if(route!=='focus'||!state.active||G.isActivity(state.active)||!state.active.items.length||focusListOpen)return;focusListOpen=true;renderFocusNavigation('forward');$('#focus-list-title')?.focus({preventScroll:true});}
+function selectFocusExercise(id){const a=state.active;if(!a||!a.items.some(it=>it.uid===id))return;stopExerciseClock();if(!G.selectFocusExercise(a,id))return;focusListOpen=false;if(a.rest)a.rest.minimized=true;save();renderFocusNavigation('back');$('.focus-main h1')?.setAttribute('tabindex','-1');$('.focus-main h1')?.focus({preventScroll:true});}
 // Keep vertical scrolling and ignore controls, dialogs and native music gestures.
 document.addEventListener('pointerdown',e=>{focusSwipe=null;if(e.isPrimary===false||e.button!==0||route!=='focus'||!e.target.closest('.focus-shell')||e.target.closest('button,a,input,select,textarea,[role="slider"],.music-player,dialog'))return;focusSwipe={id:e.pointerId,x:e.clientX,y:e.clientY};});
-document.addEventListener('pointerup',e=>{const start=focusSwipe;focusSwipe=null;if(!start||start.id!==e.pointerId||$('#modal')?.open)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;if(dx<-60&&Math.abs(dx)>Math.abs(dy)*1.4)showFocusExercises();else if(focusListOpen&&dx>60&&Math.abs(dx)>Math.abs(dy)*1.4){focusListOpen=false;render();}});
+document.addEventListener('pointerup',e=>{const start=focusSwipe;focusSwipe=null;if(!start||start.id!==e.pointerId||$('#modal')?.open)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;if(dx<-60&&Math.abs(dx)>Math.abs(dy)*1.4)showFocusExercises();else if(focusListOpen&&dx>60&&Math.abs(dx)>Math.abs(dy)*1.4){closeFocusExercises();}});
 document.addEventListener('pointercancel',()=>{focusSwipe=null;});
 function focus(){
  const a=state.active;if(!a)return home();if(G.isActivity(a))return activityFocus(a);
@@ -281,7 +293,7 @@ const actions={
 'resume':()=>{closeModal();route='focus';render();requestWake();},'focus-settings':focusSettings,'early-end':earlyEnd,
 'focus-guide':b=>{const ex=exBy(b.dataset.id);openModal(esc(exName(ex)),`<ol class="guide">${instructionsFor(ex).map(t=>`<li>${esc(t)}</li>`).join('')}</ol>${btn('Zurück zu den Einstellungen','focus-settings','outline')}`);},
 'focus-exercises':showFocusExercises,
-'close-focus-exercises':()=>{focusListOpen=false;render();$('.focus-list-button')?.focus();},
+'close-focus-exercises':closeFocusExercises,
 'select-focus-exercise':b=>selectFocusExercise(b.dataset.id),
 'start-focus-exercise':()=>{if(state.active.rest)return;if(G.startFocusExercise(state.active)){save();render();}},
 'complete-set':()=>{if(state.active.rest||state.active.focusNeedsStart)return;stopExerciseClock();const result=G.complete(state.active);if(!result)return;save();if(result.rest>0){startRestAudio(state.active.rest);window.AndroidGym?.scheduleRest(state.active.rest.until);}navigator.vibrate?.(30);nextMotion=result.next&&result.completed.i!==result.next.i?'exercise':'set';render(result.rest?'':nextMotion);if(!result.rest)nextMotion='';},

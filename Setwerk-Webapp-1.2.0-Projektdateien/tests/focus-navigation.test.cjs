@@ -18,7 +18,7 @@ test('Linkswischen öffnet alle Übungen, vertikale und kurze Gesten sowie Einga
  x.swipe(x.q('.focus-main h1'),-100,5);assert.equal(x.w.document.querySelectorAll('.focus-exercise-row').length,3);assert.equal(x.q('#focus-list-title'),x.w.document.activeElement);
  assert.equal(x.q('.focus-row-count').textContent,'0/3');assert.ok(x.q('.focus-exercise-row').classList.contains('is-started'));
  assert.ok(x.w.document.querySelectorAll('.focus-exercise-row')[1].classList.contains('is-pending'));
- x.swipe(x.q('#focus-list-title'),100);assert.equal(x.q('.focus-exercise-list'),null);
+ x.swipe(x.q('#focus-list-title'),100);assert.equal(x.q('#app .focus-exercise-list'),null);
 }));
 test('Auswahl startet keinen Satz; ein Start-Klick aktiviert die gewählte Übung; erst danach wird gezählt',()=>use(fixture(),x=>{
  const ids=x.read().active.items.map(it=>it.uid);x.click(act('focus-exercises'));x.click(`[data-action=select-focus-exercise][data-id="${ids[1]}"]`);
