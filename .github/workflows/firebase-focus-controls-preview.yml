@@ -1,15 +1,15 @@
-name: Preview Setwerk Focus controls
+name: Preview Setwerk minimal Focus
 on:
   push:
-    branches: [preview/focus-workout-controls-20261020]
+    branches: [preview/minimal-focus-20261020]
 permissions:
   contents: read
 concurrency:
-  group: setwerk-focus-controls-preview
+  group: setwerk-minimal-focus-preview
   cancel-in-progress: true
 jobs:
   preview:
-    if: github.ref == 'refs/heads/preview/focus-workout-controls-20261020'
+    if: github.ref == 'refs/heads/preview/minimal-focus-20261020'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -22,7 +22,7 @@ jobs:
         run: npm ci && npm test && npm run test:android
       - name: Install Chromium for mobile interaction checks
         run: npm install --prefix .preview-tools --no-package-lock --ignore-scripts playwright@1.62.1 && .preview-tools/node_modules/.bin/playwright install --with-deps chromium
-      - name: Check set navigation, deletion, rest controls and tab gestures
+      - name: Check minimal Focus, music dock, unit conversion and tab gestures
         env:
           NODE_PATH: ${{ github.workspace }}/.preview-tools/node_modules
         run: node scripts/focus-controls-browser-check.cjs
@@ -38,6 +38,6 @@ jobs:
         with:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SETWERK_CB1E0 }}
           projectId: setwerk-cb1e0
-          channelId: focus-controls
+          channelId: minimal-focus
           expires: 7d
           entryPoint: .

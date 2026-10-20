@@ -194,6 +194,11 @@ window.SetwerkI18n=(()=>{
  'Übersicht bearbeiten':'Edit overview','Block verschieben':'Move block','Block nach oben':'Move block up','Block nach unten':'Move block down','Block entfernen':'Remove block','Blöcke hinzufügen':'Add blocks',
  'Blöcke am Griff verschieben oder mit den Pfeilen neu anordnen.':'Drag blocks by the handle or reorder them with the arrows.','Alle Blöcke sind bereits eingeblendet.':'All blocks are already visible.','Übersicht konnte nicht gespeichert werden.':'The overview could not be saved.','Übersicht gespeichert.':'Overview saved.'
  });
+ Object.assign(EN,{
+ 'Abgeschlossene Übungen':'Completed exercises','Übung bearbeiten':'Edit exercise','Wiederholungen erhöhen':'Increase repetitions','Wiederholungen verringern':'Decrease repetitions','Gewicht erhöhen':'Increase weight','Gewicht verringern':'Decrease weight',
+ 'Letzten Eintrag im Focus Mode anzeigen':'Show last entry in Focus Mode','Gewichtseinheit':'Weight unit','Streckeneinheit':'Distance unit','Kilogramm (kg)':'Kilograms (kg)','Pfund (lb)':'Pounds (lb)','Meter (m)':'Meters (m)','Meilen (mi)':'Miles (mi)','Pfund':'Pounds','PFUND':'POUNDS','Meilen':'Miles','MEILEN':'MILES',
+ 'Distanz (mi)':'Distance (mi)','Distanz (mi, optional)':'Distance (mi, optional)','Distanz je Intervall (mi, optional)':'Distance per interval (mi, optional)','Erreichte Distanz (mi, optional)':'Actual distance (mi, optional)','Strecke in Meilen Satz':'Distance in miles, set','Gewicht in Pfund Satz':'Weight in pounds, set','mi / Intervall':'mi / interval'
+ });
  const escapeRx=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
  const keys=Object.keys(EN).sort((a,b)=>b.length-a.length);
  const pattern=new RegExp('(?<![\\p{L}\\p{N}_])(?:'+keys.map(escapeRx).join('|')+')(?![\\p{L}\\p{N}_])','gu');

@@ -65,3 +65,43 @@ test('Satznavigation und Abschlussdialog sind auf Englisch verfügbar',()=>{cons
  test('Letzter Satz plant auch in Android keine weitere Hintergrundpause',()=>{const x=setup(fixture(1,1,120),true);try{x.click(act('finish-workout'));x.click(act('confirm-finish-workout'));assert.equal(x.nativeCalls.some(call=>call[0]==='schedule'),false);assert.ok(x.nativeCalls.some(call=>call[0]==='sync'&&call[1]===0));assert.equal(x.nativeCalls.at(-1)[0],'cancel');assert.equal(G.doneCount(x.read().active),1);}finally{x.dom.window.close();}});
 
  test('Wischklick wird nur auf seiner Zeile abgefangen; anderer Button reagiert sofort',()=>use(fixture(),x=>{x.click(act('focus-exercises'));const row=x.q('.focus-row-select');x.swipe(row,-120);const ghost=new x.w.MouseEvent('click',{bubbles:true,cancelable:true,detail:1});row.dispatchEvent(ghost);assert.equal(ghost.defaultPrevented,true);const back=x.q('.focus-top '+act('close-focus-exercises'));const next=new x.w.MouseEvent('click',{bubbles:true,cancelable:true,detail:1});back.dispatchEvent(next);assert.equal(next.defaultPrevented,false);assert.equal(x.q('#app .focus-workout-list'),null);}));
+
+test('Minimaler Focus zeigt nur Übungsfortschritt; ein einzelner Satz füllt den Balken noch nicht',()=>use(fixture(2,2),x=>{
+ assert.equal(x.q('.focus-title'),null);assert.equal(x.q('.focus-main .eyebrow'),null);assert.equal(x.q('.focus-details'),null);assert.equal(x.q('.next-card'),null);assert.equal(x.q('.focus-last'),null);
+ const progress=()=>Number(x.q('[role=progressbar]').getAttribute('aria-valuenow'));
+ assert.equal(progress(),0);x.click(act('complete-set'));assert.equal(progress(),0);x.click(act('complete-set'));assert.equal(progress(),1);assert.equal(x.q('[role=progressbar] i').style.width,'50%');
+}));
+test('Pfeile ändern nur den betrachteten Satz und Gewicht exakt in 0,5 kg Schritten, auch mit Pfund',()=>{
+ const s=fixture(2,4,120);s.goals.weightUnit='lb';G.complete(s.active);const until=s.active.rest.until;
+ use(s,x=>{x.click(act('minimize-rest'));x.click('[data-action=select-focus-set][data-set="3"]');
+ const arrow=(field,dir)=>`[data-action=adjust-focus-value][data-field=${field}][data-dir="${dir}"]`;
+ x.click(arrow('reps',1));x.click(arrow('weight',1));x.click(arrow('weight',1));assert.equal(x.read().active.items[0].sets[3].reps,11);assert.equal(x.read().active.items[0].sets[3].weight,1);assert.deepEqual(G.next(x.read().active),{i:0,s:1});assert.equal(x.read().active.rest.until,until);
+ x.click(arrow('weight',-1));assert.equal(x.read().active.items[0].sets[3].weight,.5);x.click(arrow('weight',-1));assert.equal(x.q(arrow('weight',-1)).disabled,true);
+ x.click('[data-action=select-focus-set][data-set="0"]');x.click(arrow('reps',-1));assert.equal(x.read().active.items[0].sets[0].reps,9);assert.equal(x.read().active.items[0].sets[0].done,true);assert.equal(G.doneCount(x.read().active),1);
+ });
+});
+test('Stift öffnet den Editor für die betrachtete, auch abgeschlossene Übung',()=>{
+ const s=fixture(2,2);s.active.items[0].sets.forEach(st=>st.done=true);use(s,x=>{x.click(act('focus-exercises'));x.click(`[data-action=select-focus-exercise][data-id="${s.active.items[0].uid}"]`);x.click('.exercise-pencil');assert.equal(x.q('#picker-search'),null);assert.equal(x.q('#modal .exercise-edit h3').textContent,'Übung 1');assert.equal(x.q('#modal [data-field=weight]').disabled,false);assert.equal(x.q(act('replace-exercise')),null);});
+});
+test('Letzter Eintrag ist standardmäßig aus und über Einstellungen dauerhaft aktivierbar',()=>use(fixture(),x=>{
+ assert.equal(x.q('.focus-last'),null);x.w.SetwerkPersonalization.open();assert.equal(x.q('[name=showLastSet]').checked,false);x.q('[name=showLastSet]').checked=true;x.q('#goals-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));assert.equal(x.read().goals.showLastSet,true);assert.ok(x.q('.focus-last'));
+}));
+test('Einheitenwechsel wandelt die Anzeige und Eingaben um, erhält kg Daten und unveränderte Eingaben exakt',()=>{
+ const s=fixture();s.active.items[0].sets[0].weight=60;use(s,x=>{
+ x.w.SetwerkPersonalization.open();x.q('[name=weightUnit]').value='lb';x.q('[name=distanceUnit]').value='mi';x.q('#goals-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));assert.equal(x.read().goals.weightUnit,'lb');assert.equal(x.read().goals.distanceUnit,'mi');assert.equal(x.read().active.items[0].sets[0].weight,60);assert.match(x.q('.focus-values').textContent,/132,28.*PFUND/s);
+ x.click('[data-action=edit-value][data-field=weight]');const initial=x.q('#quick-value').value;assert.ok(Math.abs(Number(initial)-132.2773573109)<1e-8);x.q('#value-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));assert.equal(x.read().active.items[0].sets[0].weight,60);
+ x.value('weight',22.046226218487757);assert.ok(Math.abs(x.read().active.items[0].sets[0].weight-10)<1e-10);x.click('.exercise-pencil');assert.match(x.q('#modal input[data-field=weight]').getAttribute('aria-label'),/Pfund/);const field=x.q('#modal input[data-field=weight]');field.value='44.092452436975514';field.dispatchEvent(new x.w.Event('input',{bubbles:true}));assert.ok(Math.abs(x.read().active.items[0].sets[0].weight-20)<1e-10);
+ });
+});
+test('Meilen im Streckenfokus werden in Metern gespeichert und im Verlauf korrekt angezeigt',()=>{
+ const s=fixture(1,2);s.goals.distanceUnit='mi';s.active.items[0].kind='distance';s.active.items[0].sets.forEach(st=>Object.assign(st,{seconds:60,distance:1609.344}));use(s,x=>{assert.match(x.q('.focus-values').textContent,/1MEILEN/);x.value('distance',2);assert.equal(x.read().active.items[0].sets[0].distance,3218.688);x.click('.exercise-pencil');assert.equal(x.q('#modal input[data-field=distance]').value,'2');});
+});
+test('Registerwechsel animiert Klick und Wischgeste in der jeweiligen Richtung',()=>use(G.fresh(),x=>{
+ x.click('[data-action=nav][data-route=calendar]');assert.ok(x.q('.main.tab-motion-forward'));x.click('[data-action=nav][data-route=templates]');assert.ok(x.q('.main.tab-motion-back'));x.swipe(x.q('.main'),-120);assert.ok(x.q('.main.tab-motion-forward'));assert.equal(x.w.location.hash,'#exercises');
+}));
+test('Meilen funktionieren auch beim Cardio-Nachtrag ohne Änderung des gespeicherten Meterformats',()=>use(G.fresh(),x=>{
+ x.w.SetwerkPersonalization.setGoals({distanceUnit:'mi'});x.w.createDraft('manual',null,{category:'Ausdauer',name:'Laufen',durationMinutes:30});const field=x.q('[data-cardio=distanceKm]');field.value='2';field.dispatchEvent(new x.w.Event('input',{bubbles:true}));x.q('#editor-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));assert.equal(x.read().sessions[0].cardio.distanceMeters,3219);x.click(act('session'));assert.match(x.q('#modal').textContent,/2 mi/);
+}));
+test('Ältere Daten erhalten metrische Standards; Cloud-Synchronisierung prüft neue Einstellungen',()=>{
+ const C=require('../dist/cloud-core.js'),old=G.fresh();delete old.goals.showLastSet;delete old.goals.weightUnit;delete old.goals.distanceUnit;const migrated=G.migrateState(old);assert.equal(migrated.goals.showLastSet,false);assert.equal(migrated.goals.weightUnit,'kg');assert.equal(migrated.goals.distanceUnit,'m');const projected=C.project(migrated);projected.goals.weightUnit='lb';projected.goals.distanceUnit='mi';projected.goals.showLastSet=true;assert.doesNotThrow(()=>C.validate(projected));for(const field of ['weightUnit','distanceUnit','showLastSet']){const invalid=G.clone(projected);invalid.goals[field]='invalid';assert.throws(()=>C.validate(invalid));}
+});
