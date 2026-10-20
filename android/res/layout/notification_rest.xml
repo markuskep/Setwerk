@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="48dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical">
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginEnd="12dp"
+        android:orientation="vertical">
+        <TextView
+            android:id="@+id/rest_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="@android:style/TextAppearance.Material.Notification.Title"
+            android:textSize="14sp"
+            android:singleLine="true"
+            android:ellipsize="end" />
+        <TextView
+            android:id="@+id/rest_hint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="@android:style/TextAppearance.Material.Notification.Line2"
+            android:textSize="11sp"
+            android:singleLine="true"
+            android:ellipsize="end" />
+    </LinearLayout>
+    <Chronometer
+        android:id="@+id/rest_countdown"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="76dp"
+        android:gravity="end|center_vertical"
+        android:textAppearance="@android:style/TextAppearance.Material.Notification.Title"
+        android:textSize="24sp"
+        android:fontFamily="monospace"
+        android:singleLine="true"
+        android:text="00:00" />
+</LinearLayout>

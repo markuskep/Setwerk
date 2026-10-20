@@ -1,4 +1,6 @@
-# Setwerk Android 1.4.5 – Focus-Steuerung (Vorschau)
+# Setwerk Android 1.4.6 – sichtbarer Pausen-Countdown (Vorschau)
+
+Version 1.4.6 verwendet ein eigenes `Chronometer`-Feld in der kompakten und aufgeklappten Android-Benachrichtigung. Die Restzeit hängt dadurch nicht mehr allein von der Zeitdarstellung im Systemkopf ab. Der gespeicherte Endzeitpunkt wird für das Widget auf Androids monotone Uhr umgerechnet. SystemUI aktualisiert den Countdown auch bei geschlossener Oberfläche; beim Ablauf wird die Anzeige entfernt. Die Darstellung auf dem betroffenen Gerät muss erneut geprüft werden.
 
 Diese Vorschau ergänzt die folgenden Änderungen gegenüber 1.4.4:
 
@@ -55,7 +57,7 @@ Die automatisierten Prüfungen simulieren Sensor-/Health-Antworten und prüfen d
 
 ## Installation
 
-`Setwerk-1.4.5-Vorschau.apk` als Update über Setwerk 1.4.4 installieren. Paketkennung `at.setwerk.app.v2` und Signatur bleiben gleich, der Versionscode steigt auf 11. Die App vorher nicht deinstallieren, damit die lokal gespeicherten Daten erhalten bleiben. Android 8 oder neuer ist erforderlich.
+`Setwerk-1.4.6-Vorschau.apk` als Update über Setwerk 1.4.5 installieren. Paketkennung `at.setwerk.app.v2` und Signatur bleiben gleich, der Versionscode steigt auf 12. Die App vorher nicht deinstallieren, damit die lokal gespeicherten Daten erhalten bleiben. Android 8 oder neuer ist erforderlich.
 
 Mit demselben Firebase-Konto wie in der aktuellen Webapp anmelden. Frühere Netlify-Anmeldungen werden nicht als Firebase-Sitzung übernommen. Registrierung und Passwort-Zurücksetzen sind direkt in der App möglich.
 
