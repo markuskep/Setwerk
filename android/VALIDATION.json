@@ -26,7 +26,22 @@
     "scope": "Android notification appearance, notification permission and countdown while the app is closed"
   },
   "browser": {
-    "status": "pending-ci",
-    "workflow": "firebase-focus-controls-preview.yml"
+    "status": "passed",
+    "workflow": "firebase-focus-controls-preview.yml",
+    "runUrl": "https://github.com/markuskep/Setwerk/actions/runs/39418426856",
+    "sourceCommit": "b5b52cd40f3d3b1feac9d7c172535a98e5ec69d6",
+    "checks": [
+      "future and completed set editing",
+      "long-press deletion",
+      "exercise-row swipe",
+      "music hidden in exercise list",
+      "single top-right list control during rests",
+      "finish or extend without another rest",
+      "swipe between standard tabs"
+    ]
+  },
+  "preview": {
+    "url": "https://setwerk-cb1e0--focus-controls-c3nuqtf1.web.app",
+    "productionPublished": false
   }
 }
