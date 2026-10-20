@@ -7,3 +7,15 @@
 @media(max-width:350px){.music-player{padding:12px}.music-art{display:none}.music-button{width:32px;min-width:32px}.music-toggle{width:36px;min-width:36px}.music-next-label{font-size:7px}}
 .music-heading .music-source{max-width:55%;min-width:0;gap:6px}.music-heading .music-source small{max-width:none;min-width:0;color:var(--tone-eef4e8,#eef4e8);font-size:11px;font-weight:600}.music-source-icon{display:block;width:18px;height:18px;object-fit:contain;border-radius:4px;flex:0 0 18px}.music-heading .music-source svg{width:18px;height:18px;flex:0 0 18px}
 @media(prefers-reduced-motion:reduce){.music-button{transition:none}}
+
+/* A compact dock keeps the workout values in focus. Swipe its title down to expand. */
+.focus-shell:has(>.music-player){padding-bottom:96px}
+.focus-shell>.music-player{position:fixed;z-index:8;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);width:calc(100% - 32px);max-width:480px;margin:0;padding:10px 12px;box-shadow:0 8px 30px #0003;max-height:70dvh;overflow-y:auto;overscroll-behavior:contain}
+.music-mini{display:flex;align-items:center;gap:12px;min-height:42px}
+.music-mini-title{flex:1;min-width:0;align-self:stretch;background:none;border:0;color:inherit;text-align:left;padding:8px 4px;touch-action:pan-x;cursor:pointer}
+.music-mini-title strong{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:13px;font-weight:600;line-height:1.5}
+.music-mini-title:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.music-full{padding:8px 4px 4px;border-top:1px solid var(--tone-3d5238,#3d5238);animation:music-expand .18s ease-out}
+.music-player.is-expanded .music-mini{min-height:30px}.music-player.is-expanded .music-mini-title{padding:3px 4px;color:var(--tone-b0c5a5,#b0c5a5)}
+@keyframes music-expand{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.music-full{animation:none}}

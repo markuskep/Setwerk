@@ -1,7 +1,7 @@
 'use strict';
 // Android-only adapter: music data never enters workout storage or cloud sync.
 window.SetwerkMusic = (() => {
-  let snapshot = null, receivedAt = 0, reading = false, busy = false, removing = null, problem = '';
+  let snapshot = null, receivedAt = 0, reading = false, busy = false, removing = null, problem = '', expanded = false, gesture = null, suppressClickUntil = 0;
   const $ = selector => document.querySelector(selector);
   const en = () => document.documentElement.lang === 'en';
   const t = (de, english) => en() ? english : de;
@@ -32,22 +32,25 @@ window.SetwerkMusic = (() => {
   }
   function paint() {
     const shell = $('.focus-shell:not(.focus-navigation-snapshot)');
-    if (!focused()) {$('#setwerk-music')?.remove();return;}
+    if (!focused()) {expanded = false;$('#setwerk-music')?.remove();return;}
     let player = $('#setwerk-music');
     if (!player) {player = document.createElement('section');player.id = 'setwerk-music';player.className = 'music-player';player.setAttribute('aria-label', t('Musiksteuerung', 'Music controls'));}
-    const rest = $('.rest-overlay:not(.is-minimized)');
-    const parent = rest || shell, before = rest ? rest.querySelector('.rest-actions') : shell.querySelector('.focus-footer');
-    if (player.parentNode !== parent || player.nextElementSibling !== before) parent.insertBefore(player, before);
+    const before = shell.querySelector('.focus-footer');
+    if (player.parentNode !== shell || player.nextElementSibling !== before) shell.insertBefore(player, before);
+    player.classList.toggle('is-expanded', expanded);
     // Position updates keep existing controls intact. Metadata/capability changes
     // repaint and preserve keyboard focus instead of showing an old track.
-    const signature = JSON.stringify({snapshot:snapshot ? {...snapshot,position:0} : null,problem,busy,removing,language:en()});
+    const signature = JSON.stringify({snapshot:snapshot ? {...snapshot,position:0} : null,problem,busy,removing,expanded,language:en()});
     if (player.dataset.signature === signature) {updatePosition();return;}
     const focus = player.contains(document.activeElement) ? document.activeElement : null;
     const seekFocused = focus?.matches('[data-music-seek]');
     const focusedAction = focus?.dataset.musicAction;
     if (seekFocused && !busy && !removing && snapshot?.active) {updatePosition();return;}
     player.dataset.signature = signature;
-    player.innerHTML = markup() + `<p class="music-status" role="status" ${problem || removing ? '' : 'hidden'}>${escape(problem || (removing ? t('Lied wird entfernt …', 'Removing track …') : ''))}</p>`;
+    const s = snapshot, title = s?.active ? s.title || t('Unbekannter Titel', 'Unknown track') : t('Deine Musik', 'Your music');
+    const toggle = s?.playing ? 'pause' : 'play', canToggle = s?.playing ? s?.canPause : s?.canPlay;
+    const mini = `<div class="music-mini"><button type="button" class="music-mini-title" data-music-expand aria-expanded="${expanded}" aria-controls="music-full" aria-label="${t(expanded?'Musikansicht verkleinern':'Musikansicht öffnen. Nach unten wischen', expanded?'Collapse music controls':'Open music controls. Swipe down')}"><strong title="${escape(title)}">${escape(title)}</strong></button>${!expanded && s?.active ? `<div class="music-controls">${button(toggle, toggle, s.playing?t('Pausieren','Pause'):t('Wiedergabe fortsetzen','Resume playback'),busy||!canToggle,'music-toggle')}${button('next','next',t('Nächstes Lied','Next track'),busy||!s.canNext)}</div>` : ''}</div>`;
+    player.innerHTML = mini + (expanded ? `<div class="music-full" id="music-full">${markup()}</div>` : '') + `<p class="music-status" role="status" ${problem || removing ? '' : 'hidden'}>${escape(problem || (removing ? t('Lied wird entfernt …', 'Removing track …') : ''))}</p>`;
     if (focusedAction) player.querySelector(`[data-music-action="${focusedAction}"]`)?.focus({preventScroll:true});
   }
   function updatePosition() {
@@ -86,10 +89,25 @@ window.SetwerkMusic = (() => {
     try {
       await SetwerkNative.call('music-' + action, body);
       if (action === 'remove-next') removing = {id:body.nextId,sessionKey:body.sessionKey,until:Date.now() + 4000};
-    } catch (error) {problem = message(error);}
+    } catch (error) {problem = message(error);expanded = true;}
     finally {busy = false;paint();await refresh();}
   }
-  document.addEventListener('click', event => {const b = event.target.closest?.('[data-music-action]');if (b && !b.disabled) command(b.dataset.musicAction);});
+  document.addEventListener('pointerdown', event => {
+    if (event.button !== 0 || event.isPrimary === false || !event.target.closest?.('.music-mini-title')) return;
+    gesture = {id:event.pointerId,x:event.clientX,y:event.clientY};
+    try {event.target.closest('.music-mini-title').setPointerCapture?.(event.pointerId);} catch (_) {}
+  });
+  document.addEventListener('pointerup', event => {
+    const start = gesture;gesture = null;
+    if (!start || start.id !== event.pointerId) return;
+    const dy = event.clientY - start.y, dx = event.clientX - start.x;
+    if (Math.abs(dy) < 40 || Math.abs(dy) < Math.abs(dx)*1.3) return;
+    expanded = dy > 0;suppressClickUntil = Date.now()+400;paint();event.preventDefault();
+  });
+  document.addEventListener('pointercancel', () => {gesture = null;});
+  document.addEventListener('click', event => {
+    if (event.target.closest?.('[data-music-expand]')) {if(Date.now()>=suppressClickUntil){expanded=!expanded;paint();}return;}
+    const b = event.target.closest?.('[data-music-action]');if (b && !b.disabled) command(b.dataset.musicAction);});
   document.addEventListener('input', event => {if (!event.target.matches?.('[data-music-seek]')) return;const input = event.target;input.style.setProperty('--music-progress', `${Number(input.value) / Number(input.max) * 100}%`);const label = $('[data-music-position]');if (label) label.textContent = time(input.value);});
   document.addEventListener('change', event => {if (event.target.matches?.('[data-music-seek]')) command('seek', event.target.value);});
   document.addEventListener('focusout', event => {if (event.target.closest?.('#setwerk-music')) setTimeout(paint, 0);});

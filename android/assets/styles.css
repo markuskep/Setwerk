@@ -244,3 +244,23 @@ body.focus-mode{background:var(--tone-101b14)}body.focus-mode #toast{bottom:calc
 
 /* Keep the existing top-right controls accessible above the rest screen. */
 .focus-top{position:relative;z-index:6}.set-dot{padding:0;border:0;cursor:pointer;touch-action:manipulation}.set-dot.done.current{outline:2px solid var(--accent);outline-offset:3px}.set-dot:focus-visible{outline:3px solid white;outline-offset:3px}.focus-row-select{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}.app-shell .main{touch-action:pan-y}
+
+/* Minimal Focus: completed exercises, set navigation, values and one main action. */
+.focus-top{flex-wrap:nowrap;min-height:44px;justify-content:flex-end}
+.focus-exercise-progress{height:3px;flex:1;max-width:240px;margin-right:auto;background:var(--tone-344932);border-radius:6px;overflow:hidden}
+.focus-exercise-progress i{display:block;height:100%;background:var(--accent);border-radius:inherit;transition:width .2s ease-out}
+.focus-exercise-title h1{font-size:clamp(1.6rem,6.5vw,2.6rem)}
+.focus-values{gap:24px;margin:24px auto 18px;max-width:520px;align-items:stretch}
+.focus-value-control{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;container-type:inline-size}
+.focus-value-control+.focus-value-control{border-left:1px solid var(--tone-344932)}
+.focus-value-control .focus-value{width:100%;flex:0 0 auto;border:0;border-radius:10px;padding:8px 4px}
+.focus-value-control .focus-value strong{font-size:clamp(3.2rem,15vw,6.5rem);line-height:1.12;letter-spacing:-2px}
+.focus-value-control .focus-value span{font-size:.65rem;letter-spacing:1.2px;margin-top:8px}
+.focus-adjust,.focus-adjust-spacer{height:42px;min-height:42px;width:60px;color:var(--tone-bbcdb5);border:0;background:transparent;display:grid;place-items:center;border-radius:10px}
+.focus-adjust .icon{width:23px;height:23px}.focus-adjust:hover{background:#ffffff09}.focus-adjust:active{background:#ffffff14}
+.focus-footer:empty{display:none}
+.tab-motion-forward{animation:tab-forward .2s ease-out both}.tab-motion-back{animation:tab-back .2s ease-out both}
+@keyframes tab-forward{from{opacity:.4;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+@keyframes tab-back{from{opacity:.4;transform:translateX(-18px)}to{opacity:1;transform:translateX(0)}}
+@media(max-width:350px){.focus-values{gap:12px}.focus-value-control .focus-value span{font-size:.58rem;letter-spacing:.7px}}
+@media(prefers-reduced-motion:reduce){.focus-exercise-progress i{transition:none}.tab-motion-forward,.tab-motion-back{animation:none}}

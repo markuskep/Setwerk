@@ -1,6 +1,10 @@
-# Setwerk Android 1.4.6 – sichtbarer Pausen-Countdown (Vorschau)
+# Setwerk Android 1.4.7 – minimalistischer Focus Mode (Vorschau)
 
-Version 1.4.6 verwendet ein eigenes `Chronometer`-Feld in der kompakten und aufgeklappten Android-Benachrichtigung. Die Restzeit hängt dadurch nicht mehr allein von der Zeitdarstellung im Systemkopf ab. Der gespeicherte Endzeitpunkt wird für das Widget auf Androids monotone Uhr umgerechnet. SystemUI aktualisiert den Countdown auch bei geschlossener Oberfläche; beim Ablauf wird die Anzeige entfernt. Die Darstellung auf dem betroffenen Gerät muss erneut geprüft werden.
+Version 1.4.7 entfernt Workout-Titel, Satzart, die zusätzliche Bearbeitungszeile und die Vorschau der nächsten Übung aus dem Focus Mode. Ein schmaler Balken zählt vollständig abgeschlossene Übungen. Der Stift öffnet den Editor der betrachteten Übung; die Satzkreise bleiben als Navigation erhalten. Größere Werte lassen sich direkt mit Pfeilen ändern: Wiederholungen um 1, Gewicht um 0,5 kg, auch bei Anzeige in Pfund.
+
+Unter „Personalisieren“ sind kg/Pfund, Meter/Meilen und der standardmäßig ausgeblendete letzte Eintrag einstellbar. Gespeicherte Trainingswerte bleiben in kg und Metern. Der Musikbereich sitzt als kompakte Leiste am unteren Rand: Titel, Pause und nächstes Lied. Nach unten über den Titel wischen oder ihn antippen öffnet die vollständigen Bedienelemente. Registerwechsel per Wischen oder Klick erhalten eine kurze Animation; reduzierte Bewegung wird respektiert.
+
+Die Countdown-Korrektur aus Version 1.4.6 verwendet ein eigenes `Chronometer`-Feld in der kompakten und aufgeklappten Android-Benachrichtigung. Die Restzeit hängt dadurch nicht mehr allein von der Zeitdarstellung im Systemkopf ab. Der gespeicherte Endzeitpunkt wird für das Widget auf Androids monotone Uhr umgerechnet. SystemUI aktualisiert den Countdown auch bei geschlossener Oberfläche; beim Ablauf wird die Anzeige entfernt. Die Darstellung auf dem betroffenen Gerät muss erneut geprüft werden.
 
 Diese Vorschau ergänzt die folgenden Änderungen gegenüber 1.4.4:
 
@@ -57,7 +61,7 @@ Die automatisierten Prüfungen simulieren Sensor-/Health-Antworten und prüfen d
 
 ## Installation
 
-`Setwerk-1.4.6-Vorschau.apk` als Update über Setwerk 1.4.5 installieren. Paketkennung `at.setwerk.app.v2` und Signatur bleiben gleich, der Versionscode steigt auf 12. Die App vorher nicht deinstallieren, damit die lokal gespeicherten Daten erhalten bleiben. Android 8 oder neuer ist erforderlich.
+`Setwerk-1.4.7-Vorschau.apk` als Update über Setwerk 1.4.6 installieren. Paketkennung `at.setwerk.app.v2` und Signatur bleiben gleich, der Versionscode steigt auf 13. Die App vorher nicht deinstallieren, damit die lokal gespeicherten Daten erhalten bleiben. Android 8 oder neuer ist erforderlich.
 
 Mit demselben Firebase-Konto wie in der aktuellen Webapp anmelden. Frühere Netlify-Anmeldungen werden nicht als Firebase-Sitzung übernommen. Registrierung und Passwort-Zurücksetzen sind direkt in der App möglich.
 

@@ -1,14 +1,13 @@
 {
-  "version": "1.4.6",
-  "versionCode": 12,
-  "webSourceCommit": "3b574a2869de263847ab2c28ca74427d562e9dc1",
-  "sourceBranch": "preview/android-rest-countdown-20261020",
+  "version": "1.4.7",
+  "versionCode": 13,
+  "webSourceCommit": "9f03a6f8d7d2991674d02d795e7e06270f6de07a",
+  "sourceBranch": "preview/minimal-focus-20261020",
   "automatedTests": {
-    "websitePassed": 140,
-    "androidPassed": 174,
+    "websitePassed": 149,
+    "androidPassed": 184,
     "failed": 0,
-    "focusControlsPassed": 14,
-    "inheritedRegressionResults": "1.4.5; bundled JavaScript assets unchanged",
+    "focusControlsPassed": 23,
     "nativeNotificationPayload": {
       "status": "passed",
       "runner": "python3 android/tests/rest-notification-check.py",
@@ -22,18 +21,19 @@
         "German and English labels",
         "Android 8 API compatibility"
       ],
-      "limitation": "Recording Android API test doubles; OEM visual rendering requires a device"
+      "limitation": "Recording Android API test doubles; OEM visual rendering requires a device",
+      "inheritedFrom": "1.4.6; native notification source and layout unchanged"
     }
   },
   "apk": {
     "built": true,
     "verified": true,
     "package": "at.setwerk.app.v2",
-    "versionCode": 12,
+    "versionCode": 13,
     "minSdk": 26,
     "targetSdk": 35,
-    "previousVersion": "1.4.5",
-    "sha256": "ccfd0b4300f877a3bcd16d6244d444c49fc4f44e422c8c3eecae275d096513b7",
+    "previousVersion": "1.4.6",
+    "sha256": "db1b391e38dbb50041121b7ee7501575d5cbf9ab29cddd8e923de69c37739a1f",
     "bundledAssetsMatch": true,
     "previousCertificateMatched": true
   },
@@ -43,22 +43,24 @@
     "scope": "Confirm the explicit Chronometer is visible and counts down on the affected device"
   },
   "browser": {
-    "status": "inherited-ui-assets-unchanged",
+    "status": "pending-ci",
     "workflow": "firebase-focus-controls-preview.yml",
-    "runUrl": "https://github.com/markuskep/Setwerk/actions/runs/39418426856",
-    "sourceCommit": "b5b52cd40f3d3b1feac9d7c172535a98e5ec69d6",
     "checks": [
+      "minimal Focus at 390px and 320px",
+      "completed-exercise progress",
+      "direct repetitions and half-kilogram controls",
+      "editing via exercise pencil",
+      "kg/lb and meter/mile presentation and canonical storage",
+      "compact music dock and downward swipe",
       "future and completed set editing",
       "long-press deletion",
       "exercise-row swipe",
-      "music hidden in exercise list",
-      "single top-right list control during rests",
-      "finish or extend without another rest",
-      "swipe between standard tabs"
+      "finish without extra rest",
+      "tab gestures and transition direction"
     ]
   },
   "preview": {
-    "url": "https://setwerk-cb1e0--focus-controls-c3nuqtf1.web.app",
+    "status": "pending-ci",
     "productionPublished": false
   }
 }
