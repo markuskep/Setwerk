@@ -1,69 +1,31 @@
 {
-  "version": "1.4.2",
-  "webSourceBaseCommit": "e8bd5ac7e3eb3a2b36ecd603962bfa45ce2b7589",
+  "version": "1.4.5",
+  "versionCode": 11,
+  "webSourceCommit": "8dc17627dead747c009c0da13148fe5a3503f4df",
+  "sourceBranch": "preview/focus-workout-controls-20261020",
   "automatedTests": {
-    "webPassed": 103,
-    "androidPassed": 125,
-    "targetedStepTestsPassed": 17,
-    "nativeCounterTests": "baseline, increment, duplicate events, reboot/reset, delayed midnight event"
+    "websitePassed": 139,
+    "androidPassed": 173,
+    "failed": 0,
+    "focusControlsPassed": 13
   },
   "apk": {
     "built": true,
     "verified": true,
-    "versionCode": 7,
     "package": "at.setwerk.app.v2",
+    "versionCode": 11,
     "minSdk": 26,
     "targetSdk": 35,
-    "previousCertificateMatched": true,
-    "certificateSha256": "30e9fec2689fb103630a494a9a8c04a74548050db0ac27de508f5e7fc426d026",
-    "sha256": "6aec15c99dd1803880885fdb4915766046a71a4eaa460068633231caec6fc143",
+    "previousVersion": "1.4.4",
+    "sha256": "abe35ad42ab2c01cb2e8f8ae24ab1c6b0736af56473e9c014bd348dd3cf41f6c",
     "bundledAssetsMatch": true
   },
-  "steps": {
-    "healthConnectMinimumAndroid": 14,
-    "phoneCounterMinimumAndroid": 8,
-    "healthReadOnly": true,
-    "healthDays": 7,
-    "overviewRefreshSeconds": 120,
-    "automaticImports": "visible overview only; on entry and return",
-    "phoneBackgroundService": true,
-    "permissions": "Health READ_STEPS and/or Physical activity after explicit opt-in",
-    "sourcesNeverAdded": true,
-    "settingsLocation": "Account details",
-    "hardwareCounterRequired": true
-  },
   "deviceTest": {
-    "status": "pending",
-    "checks": [
-      "real permissions",
-      "phone sensor and background service",
-      "Health Connect values",
-      "reboot and midnight",
-      "OEM battery behaviour"
-    ]
+    "status": "not-performed",
+    "scope": "Android notification appearance, notification permission and countdown while the app is closed"
   },
   "browser": {
-    "status": "not-run",
-    "reason": "No browser-control skill available; jsdom UI checks passed"
-  },
-  "musicPreview": {
-    "version": "1.4.3-preview",
-    "functionTests": {
-      "passed": 37,
-      "failed": 0
-    },
-    "queueAndPositionChecks": {
-      "passed": 12,
-      "failed": 0
-    },
-    "standalonePreviewIntegration": "passed",
-    "apkBuildAndSignature": "passed",
-    "browserLayoutCheck": "blocked: browser socket creation unavailable in this runtime",
-    "externalMusicApps": "Android device verification required",
-    "sourceLogoUpdate": {
-      "musicTestsPassed": 8,
-      "apkRebuilt": false,
-      "preview": "Spotify and YouTube Music logos and source switching checked"
-    }
+    "status": "pending-ci",
+    "workflow": "firebase-focus-controls-preview.yml"
   }
 }

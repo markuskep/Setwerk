@@ -10,7 +10,7 @@ window.SetwerkMusic = (() => {
   const shapes = {music:'M9 18V5l12-2v13M9 9l12-2M9 18a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Zm12-2a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Z',previous:'M5 5v14m14-14-10 7 10 7V5Z',next:'M19 5v14M5 5l10 7-10 7V5Z',play:'m8 5 11 7-11 7V5Z',pause:'M8 5v14M16 5v14',close:'m7 7 10 10M17 7 7 17'};
   const icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${shapes[name]}"/></svg>`;
   const button = (action, glyph, label, disabled = false, extra = '') => `<button type="button" class="music-button ${extra}" data-music-action="${action}" aria-label="${escape(label)}" title="${escape(label)}" ${disabled ? 'disabled' : ''}>${icon(glyph)}</button>`;
-  const focused = () => !!$('.focus-shell') && !!window.AndroidGym && !!window.SetwerkNative;
+  const focused = () => !!$('.focus-shell:not(.focus-navigation-snapshot)') && !$('.focus-shell:not(.focus-navigation-snapshot) .focus-workout-list') && !!window.AndroidGym && !!window.SetwerkNative;
   const visible = () => focused() && !document.hidden;
   function position() {
     if (!snapshot) return 0;
@@ -31,7 +31,7 @@ window.SetwerkMusic = (() => {
     return `${heading}<div class="music-current"><div class="music-art" aria-hidden="true">${icon('music')}</div><div class="music-track"><strong title="${escape(s.title)}">${escape(s.title || t('Unbekannter Titel', 'Unknown track'))}</strong><span title="${escape(s.artist)}">${escape(s.artist || t('Interpret unbekannt', 'Unknown artist'))}</span></div><div class="music-controls">${button('previous', 'previous', t('Vorheriges Lied', 'Previous track'), busy || !s.canPrevious)}${button(s.playing ? 'pause' : 'play', s.playing ? 'pause' : 'play', label, busy || !canToggle, 'music-toggle')}${button('next', 'next', t('Nächstes Lied', 'Next track'), busy || !s.canNext)}</div></div><div class="music-timeline"><input type="range" data-music-seek aria-label="${t('Position im Lied', 'Track position')}" min="0" max="${duration || 1}" step="1000" value="${p}" ${busy || !s.canSeek || !duration ? 'disabled' : ''} style="--music-progress:${duration ? p / duration * 100 : 0}%"><div class="music-times"><span data-music-position>${time(p)}</span><span>${duration ? time(duration) : '–:–'}</span></div></div>${s.next ? `<div class="music-next"><span class="music-next-label">${t('ALS NÄCHSTES', 'UP NEXT')}</span><div class="music-next-track"><strong title="${escape(s.next.title)}">${escape(s.next.title || t('Unbekannter Titel', 'Unknown track'))}</strong>${s.next.artist ? `<small>${escape(s.next.artist)}</small>` : ''}</div>${s.canRemoveNext ? button('remove-next', 'close', t('Nächstes Lied aus der Warteschlange entfernen', 'Remove next track from queue'), busy || !!removing, 'music-remove') : ''}</div>` : `<p class="music-queue-hint">${t('Kein nächstes Lied verfügbar.', 'No next track available.')}</p>`}`;
   }
   function paint() {
-    const shell = $('.focus-shell');
+    const shell = $('.focus-shell:not(.focus-navigation-snapshot)');
     if (!focused()) {$('#setwerk-music')?.remove();return;}
     let player = $('#setwerk-music');
     if (!player) {player = document.createElement('section');player.id = 'setwerk-music';player.className = 'music-player';player.setAttribute('aria-label', t('Musiksteuerung', 'Music controls'));}

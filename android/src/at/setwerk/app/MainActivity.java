@@ -16,13 +16,13 @@ public class MainActivity extends Activity {
   private MusicControlClient music;
   private HealthStepsClient health;
   private HealthStepsClient.Reply stepPermissionReply;
-  private WebView web; private SharedPreferences prefs; private CloudClient cloud;
+  private WebView web;private boolean foreground=false;private long queuedRestUntil=0; private SharedPreferences prefs; private CloudClient cloud;
   private final ScheduledExecutorService restSounds=Executors.newSingleThreadScheduledExecutor();
   private final List<ScheduledFuture<?>> restSoundJobs=new ArrayList<>();
-  private synchronized void clearRestSounds(){for(ScheduledFuture<?> job:restSoundJobs)job.cancel(false);restSoundJobs.clear();}
+  private synchronized void clearRestSounds(){for(ScheduledFuture<?> job:restSoundJobs)job.cancel(false);restSoundJobs.clear();queuedRestUntil=0;}
   private void restTone(boolean high){try{int rate=24000,count=rate/5;short[] samples=new short[count];for(int i=0;i<count;i++){double envelope=Math.min(1.0,i/(rate*.01))*Math.min(1.0,(count-i)/(rate*.03));samples[i]=(short)(Math.sin(2*Math.PI*(high?1100:700)*i/rate)*(high?16000:9000)*envelope);}android.media.AudioTrack track=new android.media.AudioTrack.Builder().setAudioAttributes(new android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_MEDIA).setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build()).setAudioFormat(new android.media.AudioFormat.Builder().setSampleRate(rate).setEncoding(android.media.AudioFormat.ENCODING_PCM_16BIT).setChannelMask(android.media.AudioFormat.CHANNEL_OUT_MONO).build()).setBufferSizeInBytes(count*2).setTransferMode(android.media.AudioTrack.MODE_STATIC).build();track.write(samples,0,count);track.play();restSounds.schedule(track::release,300,TimeUnit.MILLISECONDS);}catch(Exception ignored){}}
 
-  private synchronized void queueRestSounds(long until){clearRestSounds();for(int n=3;n>=0;n--){long delay=until-System.currentTimeMillis()-n*1000;boolean high=n==0;if(delay>0)restSoundJobs.add(restSounds.schedule(()->restTone(high),delay,TimeUnit.MILLISECONDS));}}
+  private synchronized void queueRestSounds(long until){clearRestSounds();queuedRestUntil=until;for(int n=3;n>=0;n--){long delay=until-System.currentTimeMillis()-n*1000;boolean high=n==0;if(delay>0)restSoundJobs.add(restSounds.schedule(()->restTone(high),delay,TimeUnit.MILLISECONDS));}}
   private final ExecutorService network=Executors.newSingleThreadExecutor();
   private ValueCallback<Uri[]> fileCallback; private byte[] exportBytes;
   private static final String ORIGIN="https://appassets.androidplatform.net";
@@ -132,8 +132,12 @@ public class MainActivity extends Activity {
       network.execute(()->deliver(id,operation.startsWith("legacy-")?legacy(operation,body):cloud.call(operation,body)));
     }
     @JavascriptInterface public void playRestStart(){restTone(false);}
-    @JavascriptInterface public void scheduleRest(double until){queueRestSounds((long)until);ReminderReceiver.scheduleRest(MainActivity.this,(long)until);}
-    @JavascriptInterface public void cancelRest(){clearRestSounds();ReminderReceiver.cancelRest(MainActivity.this);}
+    @JavascriptInterface public void scheduleRest(double until){runOnUiThread(()->{
+      syncRestDeadline((long)until);
+      if(!prefs.getBoolean("rest-notification-requested",false)){prefs.edit().putBoolean("rest-notification-requested",true).apply();requestNotifications();}
+    });}
+    @JavascriptInterface public void syncRest(double until){runOnUiThread(()->syncRestDeadline((long)until));}
+    @JavascriptInterface public void cancelRest(){runOnUiThread(()->{clearRestSounds();ReminderReceiver.cancelRest(MainActivity.this);});}
     @JavascriptInterface public void accountSettings(String raw){try{JSONObject state=new JSONObject(raw);String goals=state.getJSONObject("goals").toString();boolean changed=!goals.equals(prefs.getString("goals",""));prefs.edit().putString("display-language",state.optString("language","de")).putString("goals",goals).commit();cloud.language(state.optString("language","de"));if(changed)ReminderReceiver.scheduleAll(MainActivity.this);}catch(Exception ignored){}}
     @JavascriptInterface public void setReminders(String raw){try{JSONObject goals=new JSONObject(raw);prefs.edit().putString("goals",raw).commit();ReminderReceiver.scheduleAll(MainActivity.this);if(goals.optBoolean("reminders"))runOnUiThread(()->requestNotifications());}catch(Exception ignored){}}
     @JavascriptInterface public void saveFile(String name,String data){
@@ -142,9 +146,18 @@ public class MainActivity extends Activity {
       runOnUiThread(()->{if(exportBytes!=null)return;exportBytes=bytes;Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/json").putExtra(Intent.EXTRA_TITLE,name.replaceAll("[^A-Za-z0-9_.-]","_"));startActivityForResult(intent,81);});
     }
   }
+  private void syncRestDeadline(long until){
+    long now=System.currentTimeMillis(),stored=prefs.getLong("rest-until",0);
+    if(until<=now||until>now+3600000L){clearRestSounds();if(stored!=0)ReminderReceiver.cancelRest(this);else RestNotification.hide(this);return;}
+    if(stored!=until)ReminderReceiver.scheduleRest(this,until);
+    if(queuedRestUntil!=until)queueRestSounds(until);
+    if(foreground)RestNotification.hide(this);else RestNotification.show(this,until);
+  }
+  @Override protected void onStart(){super.onStart();foreground=true;RestNotification.hide(this);}
+  @Override protected void onStop(){foreground=false;RestNotification.show(this,prefs.getLong("rest-until",0));super.onStop();}
   private void requestNotifications(){if(Build.VERSION.SDK_INT>=33&&checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=PackageManager.PERMISSION_GRANTED)requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},7);}
   @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] grants){
-    super.onRequestPermissionsResult(request,permissions,grants);if(request==83&&health!=null)health.permissionResult();
+    super.onRequestPermissionsResult(request,permissions,grants);if(request==7&&!foreground)RestNotification.show(this,prefs.getLong("rest-until",0));if(request==83&&health!=null)health.permissionResult();
     if(request==84&&stepPermissionReply!=null){HealthStepsClient.Reply reply=stepPermissionReply;stepPermissionReply=null;try{reply.send(200,StepCounterService.status(this).toString());}catch(Exception e){reply.send(503,"{\"code\":\"steps/unavailable\"}");}}
   }
   @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);

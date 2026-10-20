@@ -13,7 +13,49 @@ const accountUI=createAccountUI({logout,updateUserProfile,changePassword,removeA
 function setMessage(text, error=false) {
   message.textContent = text || '';
   message.classList.toggle('error', error);
+  message.setAttribute('role', error ? 'alert' : 'status');
 }
+const authForm = document.getElementById('auth-form');
+function fieldError(input, warning='') {
+  const id = 'auth-' + input.name + '-error';
+  let hint = document.getElementById(id);
+  if (!hint) { hint = document.createElement('span');hint.id = id;hint.className = 'auth-field-error';hint.setAttribute('aria-live','polite');input.closest('label').append(hint); }
+  hint.textContent = warning;hint.hidden = !warning;
+  input.classList.toggle('auth-input-error', !!warning);
+  if (warning) input.setAttribute('aria-invalid','true');else input.removeAttribute('aria-invalid');
+  input.setAttribute('aria-describedby', id);
+}
+function clearFieldErrors() {
+  authForm.querySelectorAll('input').forEach(input=>fieldError(input));
+}
+function validateFields(emailOnly=false) {
+  let first = null;
+  for (const input of authForm.querySelectorAll('input:not(:disabled)')) {
+    if (emailOnly && input.name !== 'email') continue;
+    let warning = '';
+    if (input.name === 'email') {
+      input.value = input.value.trim();
+      if (!input.value) warning = text('Bitte gib deine E-Mail-Adresse ein.','Please enter your email address.');
+      else if (input.validity.typeMismatch) warning = text('Bitte gib eine gültige E-Mail-Adresse ein.','Please enter a valid email address.');
+    } else if (input.name === 'password') {
+      if (!input.value) warning = text('Bitte gib dein Passwort ein.','Please enter your password.');
+      else if (panel.dataset.mode === 'signup' && input.value.length < 6) warning = text('Bitte verwende mindestens sechs Zeichen für dein Passwort.','Please use at least six characters for your password.');
+    } else if (input.name === 'weekly' && (!Number.isInteger(Number(input.value)) || Number(input.value)<1 || Number(input.value)>21)) {
+      warning = text('Bitte gib eine Zahl zwischen 1 und 21 ein.','Please enter a number between 1 and 21.');
+    } else if (input.name === 'dailySteps' && (!Number.isSafeInteger(Number(input.value)) || Number(input.value)<1)) {
+      warning = text('Bitte gib ein gültiges tägliches Schrittziel ein.','Please enter a valid daily step goal.');
+    }
+    fieldError(input, warning);if (warning && !first) first = input;
+  }
+  first?.focus();return !first;
+}
+authForm.addEventListener('input', event=>{
+  if (event.target.matches('input')) fieldError(event.target);
+  if (message.classList.contains('error')) {
+    setMessage('');
+    authForm.querySelectorAll('[aria-describedby~="auth-message"]').forEach(input=>fieldError(input));
+  }
+});
 function showLogin() {
   panel.dataset.mode = 'login';
   document.getElementById('auth-goals-wrap').hidden=true;
@@ -25,6 +67,8 @@ function showLogin() {
   document.querySelector('#auth-form input[name="name"]').disabled = true;
   document.querySelector('#auth-form input[name="password"]').autocomplete = 'current-password';
   document.getElementById('auth-reset').hidden = false;
+  document.getElementById('auth-description').textContent = text('Melde dich mit deiner E-Mail und deinem Passwort an oder erstelle ein Konto.','Sign in with your email and password or create an account.');
+  clearFieldErrors();
   setMessage('');
 }
 function showSignup() {
@@ -38,6 +82,8 @@ function showSignup() {
   document.querySelector('#auth-form input[name="name"]').disabled = false;
   document.querySelector('#auth-form input[name="password"]').autocomplete = 'new-password';
   document.getElementById('auth-reset').hidden = true;
+  document.getElementById('auth-description').textContent = text('Melde dich mit deiner E-Mail und deinem Passwort an oder erstelle ein Konto.','Sign in with your email and password or create an account.');
+  clearFieldErrors();
   setMessage('');
 }
 function closeAuth() {
@@ -50,7 +96,7 @@ function closeAuth() {
 }
 function openAuth(trigger) {
   authReturnFocus = trigger || document.activeElement;
-  showLogin();
+  trigger?.hasAttribute('data-auth-signup') ? showSignup() : showLogin();
   gate.hidden = false;
   document.body.classList.add('auth-open');
   document.getElementById('app').inert = true;
@@ -69,6 +115,8 @@ window.addEventListener('setwerk:render', () => updateAuthButton());
 window.addEventListener('setwerk:cloud-status', () => updateAuthButton());
 document.addEventListener('click', async (event) => {
   if (event.target.closest('[data-auth-close]')) { closeAuth(); return; }
+  const signupButton = event.target.closest('[data-auth-signup]');
+  if (signupButton) { if (!currentUser) openAuth(signupButton); return; }
   const button = event.target.closest('[data-auth-open]');
   if (!button) return;
   if (button.dataset.authState === 'signed-in') {
@@ -96,6 +144,9 @@ document.addEventListener('keydown', event => {
 document.getElementById('auth-form').addEventListener('submit', async event => {
   event.preventDefault();
   const formElement = event.currentTarget;
+  if (document.getElementById('auth-submit').disabled) return;
+  setMessage('');
+  if (!validateFields()) return;
   const form = new FormData(formElement);
   const email = String(form.get('email') || '').trim();
   const password = String(form.get('password') || '');
@@ -120,6 +171,9 @@ document.getElementById('auth-form').addEventListener('submit', async event => {
     formElement.reset();
   } catch (error) {
     setMessage(authError(error), true);
+    if (['auth/invalid-credential','auth/wrong-password','auth/user-not-found'].includes(error?.code)) {
+      authForm.querySelectorAll('[name="email"],[name="password"]').forEach(input=>{input.classList.add('auth-input-error');input.setAttribute('aria-invalid','true');input.setAttribute('aria-describedby','auth-' + input.name + '-error auth-message');});
+    }
   } finally {
     submit.disabled = false;
   }
@@ -148,7 +202,8 @@ function authError(error) {
 }
 document.getElementById('auth-reset').addEventListener('click',async()=>{
   const input=document.querySelector('#auth-form input[name="email"]');
-  if(!input.value.trim()||!input.checkValidity()){input.reportValidity();input.focus();return;}
+  setMessage('');
+  if(!validateFields(true))return;
   const button=document.getElementById('auth-reset');button.disabled=true;
   try{
     await resetPassword(input.value.trim());

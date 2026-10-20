@@ -98,7 +98,7 @@ test('real workout UI saves feedback locally and sends only the finished session
   x.loadApp();await x.cloud.connect({id:'alice'});const q=s=>x.w.document.querySelector(s),click=action=>{const b=q('[data-action="'+action+'"]');assert.ok(b,action);b.click();};
   click('start-select');click('start-spontaneous');click('extend-final');q('#picker-search').value='Bankdrücken (Langhantel)';q('#picker-search').dispatchEvent(new x.w.Event('input',{bubbles:true}));q('#picker-results [data-action="choose-exercise"]').click();
   const state=x.account().state;state.active.items[0].sets=state.active.items[0].sets.slice(0,1);x.cloud.saveLocal(state);x.w.dispatchEvent(new x.w.CustomEvent('setwerk:account-state',{detail:{state,accountChanged:false}}));x.calls.length=0;
-  click('complete-set');await x.cloud.sync();assert.equal(x.calls.length,0);click('save-active');
+  click('finish-workout');await x.cloud.sync();assert.equal(x.calls.length,0);click('confirm-finish-workout');
   q('#feedback-form').dispatchEvent(new x.w.Event('submit',{bubbles:true,cancelable:true}));await x.cloud.sync();
   assert.equal(x.account().state.active,null);assert.equal(x.account().state.sessions.length,1);const posted=x.calls.find(c=>c.method==='POST');assert.ok(posted);assert.equal(posted.body.data.sessions[0].items[0].sets[0].done,true);assert.equal(posted.body.data.active,undefined);
  }finally{x.dom.window.close();}
