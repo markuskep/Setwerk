@@ -34,7 +34,7 @@ test('Auswahl und Startzustand überleben Reload, Eingaben betreffen ausschließ
 test('Alle drei Status sind nur durch Zeilenformat sichtbar; abgeschlossene Übungen lassen sich sicher ansehen',()=>{
  const s=fixture();G.complete(s.active);G.complete(s.active);G.complete(s.active);G.complete(s.active);
  use(s,x=>{const id=s.active.items[0].uid;x.click(act('focus-exercises'));const rows=[...x.w.document.querySelectorAll('.focus-exercise-row')];assert.ok(rows[0].classList.contains('is-completed'));assert.ok(rows[1].classList.contains('is-started'));assert.ok(rows[2].classList.contains('is-pending'));assert.deepEqual(rows.map(r=>r.querySelector('.focus-row-count').textContent),['3/3','1/3','0/3']);assert.doesNotMatch(x.q('.focus-exercise-list').textContent,/Angefangen|Abgeschlossen|Noch nicht gestartet/);
- x.click(`[data-action=select-focus-exercise][data-id="${id}"]`);assert.equal(x.q('.focus-main h1').textContent,'Übung 1');assert.equal(x.q(act('complete-set')),null);assert.equal(x.q(act('start-focus-exercise')),null);assert.equal(x.w.document.querySelectorAll('.focus-completed-sets .finished-set').length,3);assert.equal(G.doneCount(x.read().active),4);
+ x.click(`[data-action=select-focus-exercise][data-id="${id}"]`);assert.equal(x.q('.focus-main h1').textContent,'Übung 1');assert.equal(x.q(act('complete-set')),null);assert.equal(x.q(act('start-focus-exercise')),null);assert.equal(x.w.document.querySelectorAll('.set-dot.done').length,3);assert.ok(x.q('[data-action=edit-value][data-field=weight]'));assert.equal(G.doneCount(x.read().active),4);
  });
 });
 test('Pause läuft beim Navigieren weiter und verhindert Abschluss und Start; Stoppuhr schreibt in die ursprüngliche Übung',()=>{

@@ -2,6 +2,8 @@
  * opaque slots: names, notes, IDs and form values are never translated. */
 window.SetwerkI18n=(()=>{
  const EN={
+ 'Zum aktuellen Satz':'Back to current set','Training abschließen?':'Finish workout?','Möchtest du dein Training abschließen oder weitere Übungen hinzufügen?':'Would you like to finish your workout or add more exercises?','Mit eigenen Übungen erweitern':'Add more exercises','Übung löschen':'Delete exercise','Übung gelöscht.':'Exercise deleted.','Die Übung und ihre aufgezeichneten Sätze werden aus dieser Einheit entfernt.':'The exercise and its recorded sets will be removed from this workout.','Der Trainingsstand hat sich geändert.':'The workout has changed.',
+
  'Ziehen oder mit den Pfeiltasten verschieben.':'Drag or use the arrow keys to move.','Übung verschoben.':'Exercise moved.',
  'Übung verschieben':'Move exercise','Position':'Position','Verschieben':'Move','Ungültige Position.':'Invalid position.',
  'DEIN WORKOUT':'YOUR WORKOUT','Alle Übungen':'All exercises','Starte diese Übung':'Start this exercise','Zur Übung zurück':'Back to exercise','Angefangen':'In progress','Abgeschlossen':'Completed','Noch nicht gestartet':'Not started',
