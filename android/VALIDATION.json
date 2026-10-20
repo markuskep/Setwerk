@@ -1,13 +1,13 @@
 {
   "version": "1.4.5",
   "versionCode": 11,
-  "webSourceCommit": "8dc17627dead747c009c0da13148fe5a3503f4df",
+  "webSourceCommit": "3b574a2869de263847ab2c28ca74427d562e9dc1",
   "sourceBranch": "preview/focus-workout-controls-20261020",
   "automatedTests": {
-    "websitePassed": 139,
-    "androidPassed": 173,
+    "websitePassed": 140,
+    "androidPassed": 174,
     "failed": 0,
-    "focusControlsPassed": 13
+    "focusControlsPassed": 14
   },
   "apk": {
     "built": true,
@@ -17,8 +17,9 @@
     "minSdk": 26,
     "targetSdk": 35,
     "previousVersion": "1.4.4",
-    "sha256": "abe35ad42ab2c01cb2e8f8ae24ab1c6b0736af56473e9c014bd348dd3cf41f6c",
-    "bundledAssetsMatch": true
+    "sha256": "7bc5d3bf34c5398636c58e7bbd7323cfe38fa0eb21ff4412c5fc7775aec3d9ae",
+    "bundledAssetsMatch": true,
+    "previousCertificateMatched": true
   },
   "deviceTest": {
     "status": "not-performed",

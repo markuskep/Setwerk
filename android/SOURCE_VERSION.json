@@ -3,7 +3,7 @@
   "versionCode": 11,
   "webRepository": "markuskep/Setwerk",
   "webBranch": "firebase-migration",
-  "webCommit": "8dc17627dead747c009c0da13148fe5a3503f4df",
+  "webCommit": "3b574a2869de263847ab2c28ca74427d562e9dc1",
   "firebaseProject": "setwerk-cb1e0",
   "files": {
     "icon-512.png": {
@@ -67,8 +67,8 @@
       "android_adapter": true
     },
     "app.js": {
-      "web_sha256": "408b029cc23d7ee470f8ef8343ec191cb32b33cfe8aee719cd0ab51f3272974f",
-      "android_sha256": "7d79519c0fb8f7934c2af88e90d42416df6ac8d70f393f1e365c081cde2f213a",
+      "web_sha256": "f2f7401eea5d6744759f3cb0f5a7c3e258bec6f731742a47c3475563edaf57b9",
+      "android_sha256": "d49c5e2adf36c751e77e2538e3e8675b17592c65f7418f336a4d53f0e9059925",
       "android_adapter": true
     },
     "transfer.js": {

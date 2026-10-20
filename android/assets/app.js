@@ -1,7 +1,7 @@
 /* Setwerk – gemeinsame Oberfläche für Android und Browser. */
 'use strict';
 const G=GymCore,$=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-let restAudio=null,restAudioNodes=[],focusListOpen=false,focusSwipe=null,focusDrag=null,focusSetView=null,focusRowPress=null,finishRequest=null,tabSwipe=null,tabSwipeClickUntil=0;
+let restAudio=null,restAudioNodes=[],focusListOpen=false,focusSwipe=null,focusDrag=null,focusSetView=null,focusRowPress=null,finishRequest=null,tabSwipe=null,tabSwipeClickUntil=0,tabSwipeClickTarget=null;
 const KEY='setwerk.v1';let storageFault=false,writeFault=false;
 function readState(){try{const raw=window.SetwerkCloud?SetwerkCloud.readState():window.AndroidGym?AndroidGym.readState():localStorage.getItem(KEY);if(!raw)return G.fresh();const s=JSON.parse(raw);if(s.version!==1||!Array.isArray(s.templates)||!Array.isArray(s.sessions))throw Error();return G.migrateState(s);}catch(e){storageFault=true;return G.fresh();}}
 let state=readState(),route=state.active?'focus':'home',draft=state.draft||null,selectedDate=G.localDate(),calMonth=selectedDate.slice(0,7),manualMonth=calMonth,search='',muscle='',equipment='',limit=60,selectedExercise='',pickerTarget='',pickerInsertIndex=null,openTemplateItems=null,pickerSearch='',pickerMuscle='',modalKind='',viewSession='',toastTimer,exerciseClock=null,wakeLock=null,lastFocus='',nextMotion='',feedbackTarget='',feedbackDraft=null;
@@ -226,28 +226,28 @@ function closeFocusExercises(){focusListOpen=false;renderFocusNavigation('back')
 function showFocusExercises(){if(route!=='focus'||!state.active||G.isActivity(state.active)||focusListOpen)return;focusListOpen=true;renderFocusNavigation('forward');$('#focus-list-title')?.focus({preventScroll:true});}
 function selectFocusExercise(id){const a=state.active,it=a?.items.find(it=>it.uid===id);if(!it)return;stopExerciseClock();focusSetView=null;if(it.sets.some(st=>!st.done&&!st.skipped)){if(!G.selectFocusExercise(a,id))return;}else{const k=it.sets.findIndex(st=>!st.skipped);if(k>=0)focusSetView={sessionId:a.id,exerciseUid:id,setId:it.sets[k].id,setIndex:k};}focusListOpen=false;if(a.rest)a.rest.minimized=true;save();renderFocusNavigation('back');$('.focus-main h1')?.setAttribute('tabindex','-1');$('.focus-main h1')?.focus({preventScroll:true});}
 // Exercise rows allow navigation swipes while drag handles and other controls keep their gestures.
-let focusSwipeClickUntil=0;
-document.addEventListener('pointerdown',e=>{focusSwipe=null;if(e.isPrimary===false||e.button!==0||route!=='focus'||!e.target.closest('.focus-shell')||e.target.closest('a,input,select,textarea,[role="slider"],.music-player,dialog,[data-focus-handle]')||e.target.closest('button:not(.focus-row-select)'))return;focusSwipe={id:e.pointerId,x:e.clientX,y:e.clientY};});
-document.addEventListener('pointerup',e=>{const start=focusSwipe;focusSwipe=null;if(!start||start.id!==e.pointerId||$('#modal')?.open||focusDrag)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;if(Math.abs(dx)<=60||Math.abs(dx)<=Math.abs(dy)*1.4)return;focusSwipeClickUntil=Date.now()+400;if(dx<0)showFocusExercises();else if(focusListOpen)closeFocusExercises();});
-document.addEventListener('click',e=>{if(e.detail!==0&&Date.now()<focusSwipeClickUntil&&e.target.closest('.focus-shell')){e.preventDefault();e.stopImmediatePropagation();}},{capture:true});
+let focusSwipeClickUntil=0,focusSwipeClickTarget=null;
+document.addEventListener('pointerdown',e=>{focusSwipe=null;if(e.isPrimary===false||e.button!==0||route!=='focus'||!e.target.closest('.focus-shell')||e.target.closest('a,input,select,textarea,[role="slider"],.music-player,dialog,[data-focus-handle]')||e.target.closest('button:not(.focus-row-select)'))return;focusSwipe={id:e.pointerId,x:e.clientX,y:e.clientY,target:e.target.closest('.focus-row-select')||e.target};});
+document.addEventListener('pointerup',e=>{const start=focusSwipe;focusSwipe=null;if(!start||start.id!==e.pointerId||$('#modal')?.open||focusDrag)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;if(Math.abs(dx)<=60||Math.abs(dx)<=Math.abs(dy)*1.4)return;focusSwipeClickUntil=Date.now()+400;focusSwipeClickTarget=start.target;if(dx<0)showFocusExercises();else if(focusListOpen)closeFocusExercises();});
+document.addEventListener('click',e=>{if(e.detail!==0&&Date.now()<focusSwipeClickUntil&&focusSwipeClickTarget?.contains(e.target)){e.preventDefault();e.stopImmediatePropagation();}},{capture:true});
 document.addEventListener('pointercancel',()=>{focusSwipe=null;});
 function cancelFocusRowPress(){if(focusRowPress)clearTimeout(focusRowPress.timer);focusRowPress=null;}
 document.addEventListener('pointerdown',e=>{
  cancelFocusRowPress();const row=e.target.closest('#app .focus-row-select');if(!row||!focusListOpen||e.isPrimary===false||e.button!==0||$('#modal')?.open)return;
  const press={id:e.pointerId,x:e.clientX,y:e.clientY,exerciseId:row.dataset.id,sessionId:state.active.id};focusRowPress=press;
- press.timer=setTimeout(()=>{if(focusRowPress!==press||!focusListOpen||state.active?.id!==press.sessionId||$('#modal')?.open||!row.isConnected)return;focusSwipe=null;focusSwipeClickUntil=Date.now()+600;cancelFocusRowPress();openFocusExerciseOptions(press.exerciseId);},550);
+ press.timer=setTimeout(()=>{if(focusRowPress!==press||!focusListOpen||state.active?.id!==press.sessionId||$('#modal')?.open||!row.isConnected)return;focusSwipe=null;focusSwipeClickUntil=Date.now()+600;focusSwipeClickTarget=row;cancelFocusRowPress();openFocusExerciseOptions(press.exerciseId);},550);
 });
 document.addEventListener('pointermove',e=>{const p=focusRowPress;if(p&&p.id===e.pointerId&&Math.hypot(e.clientX-p.x,e.clientY-p.y)>10)cancelFocusRowPress();});
 for(const type of ['pointerup','pointercancel'])document.addEventListener(type,cancelFocusRowPress);
-document.addEventListener('contextmenu',e=>{const row=e.target.closest('#app .focus-row-select');if(!row||!focusListOpen)return;e.preventDefault();cancelFocusRowPress();focusSwipe=null;focusSwipeClickUntil=Date.now()+600;openFocusExerciseOptions(row.dataset.id);});
+document.addEventListener('contextmenu',e=>{const row=e.target.closest('#app .focus-row-select');if(!row||!focusListOpen)return;e.preventDefault();cancelFocusRowPress();focusSwipe=null;focusSwipeClickUntil=Date.now()+600;focusSwipeClickTarget=row;openFocusExerciseOptions(row.dataset.id);});
 document.addEventListener('keydown',e=>{const row=e.target.closest('#app .focus-row-select');if(row&&(e.key==='ContextMenu'||e.shiftKey&&e.key==='F10')){e.preventDefault();cancelFocusRowPress();openFocusExerciseOptions(row.dataset.id);}});
 document.addEventListener('pointerdown',e=>{
  tabSwipe=null;if(e.isPrimary===false||e.button!==0||!navs.some(([r])=>r===route)||overviewDraft||$('#modal')?.open||document.querySelector('#auth-gate:not([hidden]),#account-menu')||!e.target.closest('.main')||e.target.closest('input,select,textarea,a,summary,dialog,[contenteditable="true"],[role="slider"],[data-overview-handle],.set-scroll'))return;
- tabSwipe={id:e.pointerId,x:e.clientX,y:e.clientY,route};
+ tabSwipe={id:e.pointerId,x:e.clientX,y:e.clientY,route,target:e.target.closest('button')||e.target};
 });
-document.addEventListener('pointerup',e=>{const start=tabSwipe;tabSwipe=null;if(!start||start.id!==e.pointerId||start.route!==route||$('#modal')?.open)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;if(Math.abs(dx)<=70||Math.abs(dx)<=Math.abs(dy)*1.4)return;tabSwipeClickUntil=Date.now()+500;const i=navs.findIndex(([r])=>r===route),target=navs[i+(dx<0?1:-1)];if(target)navigate(target[0]);});
+document.addEventListener('pointerup',e=>{const start=tabSwipe;tabSwipe=null;if(!start||start.id!==e.pointerId||start.route!==route||$('#modal')?.open)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;if(Math.abs(dx)<=70||Math.abs(dx)<=Math.abs(dy)*1.4)return;tabSwipeClickUntil=Date.now()+500;tabSwipeClickTarget=start.target;const i=navs.findIndex(([r])=>r===route),target=navs[i+(dx<0?1:-1)];if(target)navigate(target[0]);});
 document.addEventListener('pointercancel',()=>{tabSwipe=null;});
-document.addEventListener('click',e=>{if(e.detail!==0&&Date.now()<tabSwipeClickUntil&&e.target.closest('.app-shell')){e.preventDefault();e.stopImmediatePropagation();}},{capture:true});
+document.addEventListener('click',e=>{if(e.detail!==0&&Date.now()<tabSwipeClickUntil&&tabSwipeClickTarget?.contains(e.target)){e.preventDefault();e.stopImmediatePropagation();}},{capture:true});
 function focusSetPosition(a=state.active){
  if(!a)return null;
  if(focusSetView?.sessionId===a.id){const i=a.items.findIndex(it=>it.uid===focusSetView.exerciseUid),it=a.items[i],k=it?(focusSetView.setId?it.sets.findIndex(st=>st.id===focusSetView.setId):focusSetView.setIndex):-1;if(k>=0&&!it.sets[k].skipped)return{i,s:k};}
