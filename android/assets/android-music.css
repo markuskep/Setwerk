@@ -19,3 +19,8 @@
 .music-player.is-expanded .music-mini{min-height:30px}.music-player.is-expanded .music-mini-title{padding:3px 4px;color:var(--tone-b0c5a5,#b0c5a5)}
 @keyframes music-expand{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.music-full{animation:none}}
+/* Keep a minimized pause and the bottom music dock separately accessible. */
+.focus-shell:has(>.music-player):has(>.rest-overlay.is-minimized){padding-bottom:180px}
+.focus-shell:has(>.music-player)>.rest-overlay.is-minimized{bottom:calc(88px + env(safe-area-inset-bottom));left:50%;right:auto;transform:translateX(-50%);width:calc(100% - 32px);max-width:480px}
+.focus-shell:has(>.music-player)>.rest-overlay.is-minimized .btn{margin-top:0}
+.focus-shell>.music-player.is-expanded{z-index:31}

@@ -33,7 +33,7 @@
     "minSdk": 26,
     "targetSdk": 35,
     "previousVersion": "1.4.6",
-    "sha256": "db1b391e38dbb50041121b7ee7501575d5cbf9ab29cddd8e923de69c37739a1f",
+    "sha256": "6e8388867e5a2fe192a6380157edd6269730b88d1f9c9b6c29b3c8b4d4c2572f",
     "bundledAssetsMatch": true,
     "previousCertificateMatched": true
   },
@@ -56,7 +56,8 @@
       "long-press deletion",
       "exercise-row swipe",
       "finish without extra rest",
-      "tab gestures and transition direction"
+      "tab gestures and transition direction",
+      "minimized rest timer above compact music dock"
     ]
   },
   "preview": {
