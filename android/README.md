@@ -45,7 +45,7 @@ tests/health.test.cjs`; `MusicQueuePolicyTest.java` prüft Queue-Zuordnung und
 Positionsberechnung. `tests/music-browser-check.cjs` prüft die eigenständige
 interaktive Vorschau. Die native Musiksteuerung wird mit diesem APK-Update installiert.
 
-Android auf dem Funktionsstand der Webapp unter https://setwerk-cb1e0.web.app/ (Vorschau-Commit `3b574a2869de263847ab2c28ca74427d562e9dc1`). Die Oberfläche und alle 269 Übungen liegen in der APK; Training funktioniert auch ohne Anmeldung und ohne Internet.
+Android auf dem Funktionsstand der Webapp unter https://setwerk-cb1e0.web.app/ (Vorschau-Commit `9f03a6f8d7d2991674d02d795e7e06270f6de07a`). Die Oberfläche und alle 269 Übungen liegen in der APK; Training funktioniert auch ohne Anmeldung und ohne Internet.
 
 ## Automatische Schritte und Health Connect
 
@@ -107,7 +107,7 @@ Das Skript kopiert gemeinsame Assets, übernimmt die wenigen Android-Anpassungen
 Benötigt: JDK 17, Android SDK Platform 35 und Build Tools 35.0.0. Alternativ zum JDK-Compiler kann Eclipse ECJ 3.38.0 verwendet werden.
 
 ```bash
-python3 build.py --tools /path/to/build-tools/35.0.0 --platform /path/to/android-35/android.jar --signing /private/signing.properties --keystore /private/setwerk-stable-release.jks --output /path/to/Setwerk-1.4.4.apk
+python3 build.py --tools /path/to/build-tools/35.0.0 --platform /path/to/android-35/android.jar --signing /private/signing.properties --keystore /private/setwerk-stable-release.jks --output /path/to/Setwerk-1.4.7.apk
 ```
 
 Bei ECJ zusätzlich `--compiler /path/to/ecj.jar`. Die bestehende private Signatursicherung separat verwenden; sie gehört nicht in den Quellcode. Build-Verzeichnisse können gelöscht werden.
