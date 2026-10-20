@@ -45,7 +45,7 @@ tests/health.test.cjs`; `MusicQueuePolicyTest.java` prüft Queue-Zuordnung und
 Positionsberechnung. `tests/music-browser-check.cjs` prüft die eigenständige
 interaktive Vorschau. Die native Musiksteuerung wird mit diesem APK-Update installiert.
 
-Android auf dem Funktionsstand der Webapp unter https://setwerk-cb1e0.web.app/ (Vorschau-Commit `9f03a6f8d7d2991674d02d795e7e06270f6de07a`). Die Oberfläche und alle 269 Übungen liegen in der APK; Training funktioniert auch ohne Anmeldung und ohne Internet.
+Android verwendet die gemeinsame Web-Oberfläche aus Vorschau-Commit `9f03a6f8d7d2991674d02d795e7e06270f6de07a`. Die Oberfläche und alle 269 Übungen liegen in der APK; Training funktioniert auch ohne Anmeldung und ohne Internet.
 
 ## Automatische Schritte und Health Connect
 

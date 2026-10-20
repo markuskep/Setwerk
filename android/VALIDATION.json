@@ -43,7 +43,7 @@
     "scope": "Confirm the explicit Chronometer is visible and counts down on the affected device"
   },
   "browser": {
-    "status": "pending-ci",
+    "status": "passed",
     "workflow": "firebase-focus-controls-preview.yml",
     "checks": [
       "minimal Focus at 390px and 320px",
@@ -58,10 +58,22 @@
       "finish without extra rest",
       "tab gestures and transition direction",
       "minimized rest timer above compact music dock"
+    ],
+    "runUrl": "https://github.com/markuskep/Setwerk/actions/runs/39424734826",
+    "sourceCommit": "03b5335c32d88041c1615a279aab0d5b12b6a2fb",
+    "viewports": [
+      {
+        "width": 390,
+        "height": 844
+      },
+      {
+        "width": 320,
+        "height": 740
+      }
     ]
   },
   "preview": {
-    "status": "pending-ci",
+    "url": "https://setwerk-cb1e0--minimal-focus-vaom5tpq.web.app",
     "productionPublished": false
   }
 }
