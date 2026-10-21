@@ -1,0 +1,51 @@
+name: Preview Google tag integration
+
+on:
+  push:
+    branches:
+      - preview/google-tag-20261021
+
+permissions:
+  contents: read
+
+concurrency:
+  group: setwerk-google-tag-preview
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Run application and consent tests
+        run: npm ci && npm test
+      - name: Install browser checks
+        run: |
+          npm install --prefix .preview-tools --no-package-lock --ignore-scripts playwright@1.56.1
+          .preview-tools/node_modules/.bin/playwright install --with-deps chromium
+      - name: Check consent on desktop and mobile, and offline cache updates
+        env:
+          NODE_PATH: ${{ github.workspace }}/.preview-tools/node_modules
+        run: |
+          node scripts/analytics-browser-check.cjs
+          node scripts/cache-update-browser-check.cjs
+      - name: Keep preview screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: google-tag-preview
+          path: ${{ runner.temp }}/setwerk-ui
+          if-no-files-found: ignore
+      - name: Deploy review channel
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SETWERK_CB1E0 }}
+          projectId: setwerk-cb1e0
+          channelId: google-tag-20261021
+          expires: 7d
+          entryPoint: .

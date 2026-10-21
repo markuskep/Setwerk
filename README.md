@@ -18,6 +18,31 @@ Die Einrichtung und das Datenmodell stehen in [FIREBASE-SETUP.md](FIREBASE-SETUP
 
 GitHub Actions veröffentlicht den Branch `firebase-migration` nach erfolgreichen Anwendungs-, Emulator- und Browserprüfungen auf Firebase Hosting. `main` und `android-web-parity` enthalten ebenfalls den konsolidierten aktuellen Projektstand. Private Dienstkontoschlüssel gehören ausschließlich in die vorgesehenen GitHub-Secrets; Android-Signaturschlüssel werden separat gesichert.
 
+## Google Analytics auf der Website
+
+Die Website verwendet den Google-Tag `G-LN5XDNS42W` des Firebase-Webprojekts.
+`analytics.js` lädt Google Analytics erst nach einer ausdrücklichen Zustimmung.
+Ablehnen und Zustimmen sind gleichwertig erreichbar; die Auswahl wird auf dem
+jeweiligen Browser gespeichert und lässt sich am Seitenende über
+„Statistik-Einstellungen“ ändern. Bei Widerruf wird Analytics deaktiviert und
+die erreichbaren Analytics-Cookies werden entfernt. Werbezwecke bleiben
+deaktiviert. Diese Einbindung überträgt keine Kontonamen, E-Mail-Adressen oder
+Trainingsinhalte als eigene Ereignisse; die konfigurierte Seitenadresse enthält
+keine URL-Parameter oder Fragmente.
+
+Die Änderung gilt nur für die Website. Der native Android-Client lädt diesen
+Tag nicht. Zusätzliche Ereignisse für gestartete oder abgeschlossene Trainings
+sind nicht Teil dieser Einbindung.
+
+Prüfung: Auf der Website zustimmen, den Request für
+`googletagmanager.com/gtag/js?id=G-LN5XDNS42W` prüfen und den Echtzeitbericht der
+zugehörigen Google-Analytics-Property öffnen. Automatisierte Prüfungen fangen
+Google-Anfragen ab und senden keine Testdaten an die Property:
+
+```sh
+node scripts/analytics-browser-check.cjs
+```
+
 ## Prüfungen
 
 Mit Node.js 22 oder neuer:
